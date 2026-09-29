@@ -119,15 +119,18 @@ def chief_complaint(discharge_note: str) -> str:
 
 # ---- radiology -----------------------------------------------------------------
 
+# Vocabulary mirrors MIMIC-IV-Ext-CDM's radiology `modality` / `region` fields (Hager et al.
+# tools/utils.py): broad modalities CT, MRI, Ultrasound, Radiograph plus special cases
+# such as HIDA; pelvis studies fall under region "Abdomen" (CDM has no Pelvis region).
 _MODALITY_PATTERNS = (
-    ("CT", r"\bCT\b|\bCTA\b|computed tomography"),
-    ("MRI", r"\bMRI?\b|\bMRCP\b|magnetic resonance"),
-    ("Ultrasound", r"\bUS\b|ultrasound|sonogra|\bDUPLEX\b"),
+    ("HIDA", r"\bHIDA\b|hepatobiliary.*scintigra|cholescintigra"),
+    ("CT", r"\bCT\b|\bCTA\b|\bCTU\b|computed tomography"),
+    ("MRI", r"\bMRI?\b|\bMRCP\b|\bMRE\b|\bMRA\b|magnetic resonance"),
+    ("Ultrasound", r"\bUS\b|ultrasound|sonogra|\bDUPLEX\b|\bEUS\b"),
     ("Radiograph", r"\bX-?RAY\b|radiograph|\bCXR\b|\bKUB\b|\bCHEST \(PA|\bPORTABLE\b"),
-    ("Nuclear", r"\bHIDA\b|scintigra|nuclear"),
 )
 _REGION_PATTERNS = (
-    ("Abdomen", r"\bABD|abdom|pelvi|\bRUQ\b|liver|gallbladder|pancrea|renal|kidney|appendix|\bKUB\b|\bHIDA\b"),
+    ("Abdomen", r"\bABD|abdom|pelvi|\bRUQ\b|liver|gallbladder|pancrea|renal|kidney|appendix|\bKUB\b|\bHIDA\b|\bMRCP\b"),
     ("Chest", r"chest|thora|\bCXR\b|lung"),
     ("Head", r"head|brain"),
 )

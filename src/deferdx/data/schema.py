@@ -17,6 +17,7 @@ class LabResult:
     flag: str | None = None
     fluid: str | None = None
     charttime: str | None = None
+    itemid: str | None = None  # MIMIC d_labitems itemid, when known
 
 
 @dataclass
@@ -25,6 +26,7 @@ class MicroResult:
     specimen: str | None = None
     result: str = ""
     charttime: str | None = None
+    itemid: str | None = None
 
 
 @dataclass

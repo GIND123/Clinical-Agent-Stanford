@@ -71,30 +71,47 @@ def test_roundtrip_and_patient_level_split(tmp_path, synth):
     assert set(splits.values()) == {"train", "val", "test"}
 
 
-def test_cdm_csv_loader(tmp_path):
+def _write_mock_cdm(d, with_pathology_ids: bool):
+    """Mock of the PhysioNet v1.1 CSVs, columns as read by Hager et al.'s ConvertPhysionet.py."""
+    pd.DataFrame({"hadm_id": [1, 2, 3], "subject_id": [10, 20, 30],
+                  "hpi": ["History of Present Illness: RLQ pain\nSocial History: smoker", "RUQ pain", "pain"]}
+                 ).to_csv(d / "history_of_present_illness.csv", index=False)
+    pd.DataFrame({"hadm_id": [1, 2], "pe": ["tender RLQ", "Murphy +"]}).to_csv(d / "physical_examination.csv", index=False)
+    pd.DataFrame({"hadm_id": [1, 1, 2], "itemid": [51755, 51301, 50956], "valuestr": ["18", "15", "40"],
+                  "ref_range_lower": [4, 4, 0], "ref_range_upper": [11, 11, 60],
+                  "charttime": ["2150-01-02", "2150-01-01", "2150-01-01"]}).to_csv(d / "laboratory_tests.csv", index=False)
+    pd.DataFrame({"itemid": [51301, 50956, 90201, 70012], "label": ["White Blood Cells", "Lipase", "Blood Culture, Routine", "BLOOD CULTURE"],
+                  "fluid": ["Blood", "Blood", "Microbiology", "Microbiology"], "category": ["Hematology", "Chemistry", "", ""],
+                  "corresponding_ids": ["[51755]", "[]", "[]", "[]"]}).to_csv(d / "lab_test_mapping.csv", index=False)
+    pd.DataFrame({"hadm_id": [2], "test_itemid": [90201], "valuestr": ["NO GROWTH"], "spec_itemid": [70012]}
+                 ).to_csv(d / "microbiology.csv", index=False)
+    pd.DataFrame({"hadm_id": [1], "note_id": ["n1"], "text": ["FINDINGS: dilated appendix"], "modality": ["CT"],
+                  "region": ["Abdomen"], "exam_name": ["CT ABD"]}).to_csv(d / "radiology_reports.csv", index=False)
+    pd.DataFrame({"hadm_id": [1, 2, 3], "discharge_diagnosis": ["Acute appendicitis", "cholecystitis", "appendicitis and pancreatitis"]}
+                 ).to_csv(d / "discharge_diagnosis.csv", index=False)
+    pd.DataFrame({"hadm_id": [3, 3], "icd_diagnosis": ["Acute pancreatitis", "Hypertension"]}).to_csv(d / "icd_diagnosis.csv", index=False)
+    if with_pathology_ids:
+        (d / "pathology_ids.json").write_text(json.dumps({"appendicitis": [1], "cholecystitis": [2], "pancreatitis": [3],
+                                                          "diverticulitis": []}))
+
+
+@pytest.mark.parametrize("v11", [True, False])
+def test_cdm_csv_loader(tmp_path, v11):
     from deferdx.config import load_yaml
     from deferdx.data.cdm_loader import load_cdm
 
-    pd.DataFrame({"hadm_id": [1, 2, 3], "subject_id": [10, 20, 30],
-                  "hpi": ["History of Present Illness: RLQ pain\nSocial History: smoker", "RUQ pain", "pain"]}
-                 ).to_csv(tmp_path / "history_of_present_illness.csv", index=False)
-    pd.DataFrame({"hadm_id": [1, 2], "pe": ["tender RLQ", "Murphy +"]}).to_csv(tmp_path / "physical_examination.csv", index=False)
-    pd.DataFrame({"hadm_id": [1, 1, 2], "itemid": [51301, 51301, 50956], "valuestr": ["15", "18", "40"],
-                  "ref_range_lower": [4, 4, 0], "ref_range_upper": [11, 11, 60]}).to_csv(tmp_path / "laboratory_tests.csv", index=False)
-    pd.DataFrame({"itemid": [51301, 50956], "label": ["White Blood Cells", "Lipase"], "fluid": ["Blood", "Blood"],
-                  "corresponding_ids": ["[51755]", ""]}).to_csv(tmp_path / "lab_test_mapping.csv", index=False)
-    pd.DataFrame({"hadm_id": [1], "text": ["EXAMINATION: CT ABD\nappendicitis"], "modality": ["CT"], "region": ["Abdomen"],
-                  "exam_name": ["CT ABD"]}).to_csv(tmp_path / "radiology_reports.csv", index=False)
-    pd.DataFrame({"hadm_id": [1, 2, 3], "discharge_diagnosis": ["Acute appendicitis", "cholecystitis", "appendicitis and pancreatitis"]}
-                 ).to_csv(tmp_path / "discharge_diagnosis.csv", index=False)
-    fmt = load_yaml("configs/cdm_format.yaml")
-    cases = {c.case_id: c for c in load_cdm(tmp_path, fmt)}
-    assert set(cases) == {"1", "2"}  # case 3 is ambiguous -> dropped
+    _write_mock_cdm(tmp_path, with_pathology_ids=v11)
+    cases = {c.case_id: c for c in load_cdm(tmp_path, load_yaml("configs/cdm_format.yaml"))}
+    # v1.1: pathology_ids labels case 3; v1.0: its discharge dx is ambiguous, ICD titles resolve it
+    assert set(cases) == {"1", "2", "3"}
+    assert cases["3"].label == "pancreatitis"
     c1 = cases["1"]
     assert c1.label == "appendicitis" and c1.hpi == "RLQ pain" and c1.history["social_history"] == "smoker"
-    assert [(x.name, x.value) for x in c1.labs] == [("White Blood Cells", "15")]  # earliest kept
+    # 51755 folds into White Blood Cells via corresponding_ids; earliest charttime kept
+    assert [(x.name, x.value, x.itemid) for x in c1.labs] == [("White Blood Cells", "15", "51301")]
     assert c1.imaging[0].modality == "CT" and c1.subject_id == "10"
-    assert cases["2"].labs[0].name == "Lipase"
+    m = cases["2"].microbiology[0]
+    assert (m.test_name, m.specimen, m.result) == ("Blood Culture, Routine", "BLOOD CULTURE", "NO GROWTH")
 
 
 def test_cdm_pickle_loader(tmp_path):

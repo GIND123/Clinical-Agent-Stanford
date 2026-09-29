@@ -1,8 +1,10 @@
-"""Load MIMIC-IV-Ext-CDM v1.0 into canonical `Case` records.
+"""Load MIMIC-IV-Ext-CDM (v1.1) into canonical `Case` records.
 
 Two on-disk layouts are supported, selected in `configs/cdm_format.yaml`:
 
-* ``csv``    — the PhysioNet release (one table per modality, keyed by hadm_id).
+* ``csv``    — the PhysioNet release (one table per modality, keyed by hadm_id). Column
+  names follow Hager et al.'s ConvertPhysionet.py; v1.1 adds ``pathology_ids.json``
+  (the authoritative label source).
 * ``pickle`` — the per-pathology ``*_hadm_info_first_diag.pkl`` dictionaries produced by
   Hager et al.'s MIMIC-Clinical-Decision-Making-Framework.
 
@@ -13,6 +15,7 @@ here runs locally; nothing is sent anywhere.
 
 from __future__ import annotations
 
+import json
 import logging
 import math
 import re
@@ -73,6 +76,9 @@ def inspect_cdm(cdm_dir: str | Path, nrows: int = 3) -> str:
     for path in sorted(list(cdm_dir.rglob("*.csv")) + list(cdm_dir.rglob("*.csv.gz"))):
         df = pd.read_csv(path, nrows=nrows)
         lines.append(f"== {path.relative_to(cdm_dir)}\n   columns: {list(df.columns)}")
+    for path in sorted(cdm_dir.rglob("pathology_ids.json")):
+        counts = {k: len(v) for k, v in load_pathology_ids(path).items()}
+        lines.append(f"== {path.relative_to(cdm_dir)}  {counts}")
     for path in sorted(cdm_dir.rglob("*.pkl")):
         obj = pd.read_pickle(path)
         if isinstance(obj, dict) and obj:
@@ -180,7 +186,7 @@ def load_cdm_csv(cdm_dir: str | Path, fmt: dict[str, Any], icd_groups: dict | No
             labs[cid].append(LabResult(
                 name=name, value=_str(r.get(c["value"])), unit=_str(r.get(c.get("unit", ""))) or None,
                 ref_low=_num(r.get(c.get("ref_low", ""))), ref_high=_num(r.get(c.get("ref_high", ""))),
-                fluid=fluid, charttime=_str(r.get(c.get("charttime", ""))) or None,
+                fluid=fluid, charttime=_str(r.get(c.get("charttime", ""))) or None, itemid=itemid or None,
             ))
 
     micro: dict[str, list[MicroResult]] = defaultdict(list)
@@ -188,11 +194,13 @@ def load_cdm_csv(cdm_dir: str | Path, fmt: dict[str, Any], icd_groups: dict | No
     if micro_df is not None:
         c = tables["microbiology"]["columns"]
         for r in micro_df.to_dict("records"):
-            test = _str(r.get(c["test"]))
-            test = lab_map.get(test, (test, None))[0] if test.replace(".", "").isdigit() else test
+            test_id = _itemid(r.get(c["test"]))
+            spec = _itemid(r.get(c.get("specimen", "")))
             micro[str(r[key])].append(MicroResult(
-                test_name=test, specimen=_str(r.get(c.get("specimen", ""))) or None,
+                test_name=lab_map.get(test_id, (test_id, None))[0],
+                specimen=lab_map.get(spec, (spec, None))[0] or None,
                 result=_str(r.get(c["value"])), charttime=_str(r.get(c.get("charttime", ""))) or None,
+                itemid=test_id or None,
             ))
 
     imaging: dict[str, list[ImagingReport]] = defaultdict(list)
@@ -209,7 +217,8 @@ def load_cdm_csv(cdm_dir: str | Path, fmt: dict[str, Any], icd_groups: dict | No
                 text=text, charttime=_str(r.get(c.get("charttime", ""))) or None,
             ))
 
-    labels = _labels_csv(table, tables, key, fmt.get("label_source", ["discharge_diagnosis", "icd"]), icd_groups)
+    labels = _labels_csv(table, tables, key, fmt.get("label_source", ["pathology_ids", "discharge_diagnosis", "icd"]),
+                         icd_groups, cdm_dir, fmt.get("pathology_ids_file", "pathology_ids.json"))
 
     out = []
     dropped = 0
@@ -230,10 +239,25 @@ def load_cdm_csv(cdm_dir: str | Path, fmt: dict[str, Any], icd_groups: dict | No
     return out
 
 
-def _labels_csv(table, tables, key, sources, icd_groups) -> dict[str, str]:
+def load_pathology_ids(path: str | Path) -> dict[str, list[str]]:
+    """{pathology: [hadm_id, ...]} from CDM v1.1's pathology_ids.json, order preserved."""
+    with Path(path).open(encoding="utf-8") as f:
+        raw = json.load(f)
+    return {normalize_label(k) or k: [_itemid(x) for x in v] for k, v in raw.items()}
+
+
+def _labels_csv(table, tables, key, sources, icd_groups, cdm_dir=None, ids_file="pathology_ids.json") -> dict[str, str]:
     labels: dict[str, str] = {}
     for source in sources:
-        if source == "column" and "label" in tables:
+        if source == "pathology_ids":
+            path = _find(Path(cdm_dir), ids_file) if cdm_dir else None
+            if path is None:
+                log.warning("%s not found (CDM v1.0?); falling back to other label sources", ids_file)
+                continue
+            for label, ids in load_pathology_ids(path).items():
+                for i in ids:
+                    labels.setdefault(i, label)
+        elif source == "column" and "label" in tables:
             df = table("label")
             if df is not None:
                 c = tables["label"]["columns"]["label"]
@@ -249,15 +273,15 @@ def _labels_csv(table, tables, key, sources, icd_groups) -> dict[str, str]:
                     lab = label_from_text(_str(r[c]))
                     if lab:
                         labels.setdefault(str(r[key]), lab)
-        elif source == "icd" and "icd_diagnosis" in tables and icd_groups:
+        elif source == "icd" and "icd_diagnosis" in tables:
             df = table("icd_diagnosis")
             if df is not None:
                 c = tables["icd_diagnosis"]["columns"]["code"]
                 grouped = df.groupby(key)[c].apply(lambda s: [_str(x) for x in s])
-                for cid, codes in grouped.items():
-                    # a cell may itself hold a list literal of codes
-                    flat = [t for code in codes for t in re.findall(r"[A-Z]?\d[\dA-Z]*", code.upper())]
-                    lab = label_from_icd(flat, icd_groups)
+                for cid, entries in grouped.items():
+                    # CDM's icd_diagnosis may hold codes or code titles; try codes, then text
+                    flat = [t for e in entries for t in re.findall(r"\b[A-Z]?\d[\dA-Z]{2,}\b", e.upper())]
+                    lab = (label_from_icd(flat, icd_groups) if icd_groups else None) or label_from_text(" ; ".join(entries))
                     if lab:
                         labels.setdefault(str(cid), lab)
     return labels
@@ -286,10 +310,12 @@ def load_cdm_pickles(cdm_dir: str | Path, fmt: dict[str, Any]) -> list[Case]:
             highs = rec.get(keys["ref_high"], {}) or {}
             labs = []
             for itemid, value in (rec.get(keys["labs"], {}) or {}).items():
-                name, fluid = lab_map.get(str(itemid), (str(itemid), None))
+                iid = _itemid(itemid)
+                name, fluid = lab_map.get(iid, (iid, None))
                 labs.append(LabResult(name=name, value=_str(value), ref_low=_num(lows.get(itemid)),
-                                      ref_high=_num(highs.get(itemid)), fluid=fluid))
-            micro = [MicroResult(test_name=lab_map.get(str(k), (str(k), None))[0], result=_str(v))
+                                      ref_high=_num(highs.get(itemid)), fluid=fluid, itemid=iid))
+            micro = [MicroResult(test_name=lab_map.get(_itemid(k), (_itemid(k), None))[0], result=_str(v),
+                                 itemid=_itemid(k))
                      for k, v in (rec.get(keys["microbiology"], {}) or {}).items()]
             imaging = []
             for rad in rec.get(keys["radiology"], []) or []:
