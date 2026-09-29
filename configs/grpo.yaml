@@ -1,0 +1,45 @@
+base: base.yaml
+
+model: Qwen/Qwen3-8B
+init_adapter: outputs/sft/final     # continue from the Stage-1 LoRA
+dtype: bfloat16
+device_map: auto
+gradient_checkpointing: true
+chat_template_kwargs: {enable_thinking: true}
+
+train_cases: data/cdm/train.jsonl
+val_cases: data/cdm/val.jsonl
+output_dir: outputs/grpo
+
+steps: 500
+cases_per_step: 8
+group_size: 16           # G >= 8 needed for a usable p_hat
+lr: 1.0e-6
+warmup_ratio: 0.05
+micro_batch_size: 2
+ppo_epochs: 1
+clip_low: 0.2
+clip_high: 0.3
+kl_coef: 0.0
+entropy_coef: 0.002
+max_grad_norm: 1.0
+max_seq_len: 12288
+normalize_std: true
+dynamic_sampling: true   # drop zero-variance groups (DAPO)
+
+generation:
+  max_new_tokens: 768
+  temperature: 1.0
+  top_p: 1.0
+  batch_size: 32
+
+# tau curriculum (§5.4): start permissive (deferral cheap), anneal to the target.
+tau_schedule: {start: 0.95, end: 0.85, steps: 150}
+# terminal-action entropy bonus for the first steps (cold-start DEFER exploration)
+action_entropy: {coef: 0.05, until_step: 50}
+
+eval_every: 25
+eval_cases: 240
+save_every: 50
+log_rollouts_every: 25
+seed: 0

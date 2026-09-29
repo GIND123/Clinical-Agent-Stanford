@@ -1,0 +1,19 @@
+# Asymmetric clinical severity cost C[y, d] (rows: TRUE label y, cols: PREDICTED d).
+# Diagonal is 0. Values in [0, 1], multiplied by reward.severity_kappa.
+#
+# PLACEHOLDER PROXY — derived from time-sensitivity of definitive management:
+#   * true OTHER includes the most time-critical conditions (ruptured AAA, ectopic
+#     pregnancy, mesenteric ischemia, perforation) -> anchoring on any in-set dx is worst.
+#   * missed appendicitis risks perforation within 24-72 h -> high.
+#   * missed pancreatitis delays fluid resuscitation -> moderately high.
+#   * cholecystitis / diverticulitis confusions are usually recoverable -> moderate.
+#   * predicting OTHER for an in-set case is penalised less than a confident wrong
+#     in-set label (it does not anchor treatment on the wrong organ).
+# Replace with a clinician-built matrix (stanford_idea §3.2) and report it as such.
+labels: [appendicitis, cholecystitis, diverticulitis, pancreatitis, other]
+matrix:
+  appendicitis:   [0.0, 0.8, 0.8, 0.8, 0.6]
+  cholecystitis:  [0.5, 0.0, 0.5, 0.4, 0.4]
+  diverticulitis: [0.5, 0.5, 0.0, 0.5, 0.4]
+  pancreatitis:   [0.6, 0.5, 0.6, 0.0, 0.5]
+  other:          [1.0, 1.0, 1.0, 1.0, 0.0]

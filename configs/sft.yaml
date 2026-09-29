@@ -1,0 +1,23 @@
+base: base.yaml
+
+model: Qwen/Qwen3-8B
+dtype: bfloat16
+device_map: auto
+attn_implementation: null      # e.g. flash_attention_2 if installed
+lora: {r: 16, alpha: 32, dropout: 0.0, target_modules: all-linear}
+gradient_checkpointing: true
+chat_template_kwargs: {enable_thinking: true}
+
+train_files:
+  - data/sft/sft_train.jsonl
+output_dir: outputs/sft
+
+epochs: 2
+lr: 2.0e-5
+warmup_ratio: 0.05
+batch_size: 32          # assistant turns per optimizer step
+micro_batch_size: 4
+max_seq_len: 8192
+max_grad_norm: 1.0
+save_every: 0
+seed: 0

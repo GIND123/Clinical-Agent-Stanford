@@ -1,0 +1,132 @@
+# Action vocabulary for TEST(x) and ASK(q), with per-action cost.
+#
+# Costs are APPROXIMATE US-dollar figures (order of magnitude from CMS Clinical Lab /
+# Physician Fee Schedules; imaging = global technical+professional). They are placeholders
+# for the investigation-cost term of the reward: VERIFY against the current fee schedule
+# before quoting any cost number in the paper. reward.cost_scale converts $ -> reward units.
+#
+# Lab `names` must match canonical lab labels in the loaded cases (CDM lab_test_mapping /
+# MIMIC d_labitems.label), case-insensitive. Run `deferdx data coverage` to see which
+# catalog entries resolve on your data and which lab names are never reached.
+
+ask:
+  physical_exam:           {cost: 0.0,  display: "Physical examination"}
+  past_medical_history:    {cost: 0.0,  display: "Past medical history"}
+  past_surgical_history:   {cost: 0.0,  display: "Past surgical history"}
+  medications:             {cost: 0.0,  display: "Current medications"}
+  allergies:               {cost: 0.0,  display: "Allergies"}
+  family_history:          {cost: 0.0,  display: "Family history"}
+  social_history:          {cost: 0.0,  display: "Social history"}
+
+tests:
+  cbc:
+    kind: lab
+    cost: 8
+    display: "Complete blood count with differential"
+    names: ["White Blood Cells", "Hemoglobin", "Hematocrit", "Platelet Count", "Red Blood Cells",
+            "MCV", "RDW", "Neutrophils", "Lymphocytes", "Monocytes", "Eosinophils", "Basophils",
+            "Absolute Neutrophil Count", "Bands"]
+    fluid: Blood
+  bmp:
+    kind: lab
+    cost: 9
+    display: "Basic metabolic panel"
+    names: ["Sodium", "Potassium", "Chloride", "Bicarbonate", "Urea Nitrogen", "Creatinine",
+            "Glucose", "Anion Gap", "Calcium, Total", "Magnesium", "Phosphate"]
+    fluid: Blood
+  liver_panel:
+    kind: lab
+    cost: 9
+    display: "Hepatic function panel"
+    names: ["Alanine Aminotransferase (ALT)", "Asparate Aminotransferase (AST)", "Aspartate Aminotransferase (AST)",
+            "Alkaline Phosphatase", "Bilirubin, Total", "Bilirubin, Direct", "Bilirubin, Indirect",
+            "Albumin", "Gamma Glutamyltransferase", "Protein, Total"]
+    fluid: Blood
+  lipase:
+    kind: lab
+    cost: 7
+    display: "Serum lipase"
+    names: ["Lipase"]
+  amylase:
+    kind: lab
+    cost: 8
+    display: "Serum amylase"
+    names: ["Amylase"]
+  crp:
+    kind: lab
+    cost: 5
+    display: "C-reactive protein"
+    names: ["C-Reactive Protein"]
+  lactate:
+    kind: lab
+    cost: 11
+    display: "Lactate"
+    names: ["Lactate", "L-Lactate"]
+  coagulation:
+    kind: lab
+    cost: 10
+    display: "PT/INR and PTT"
+    names: ["PT", "INR(PT)", "PTT"]
+  triglycerides:
+    kind: lab
+    cost: 8
+    display: "Triglycerides"
+    names: ["Triglycerides"]
+  urinalysis:
+    kind: lab
+    cost: 3
+    display: "Urinalysis"
+    fluid: Urine
+    names: ["Specific Gravity", "pH", "Protein", "Glucose", "Ketone", "Blood", "Nitrite", "Leukocytes",
+            "Bilirubin", "Urobilinogen", "WBC", "RBC", "Bacteria", "Yeast", "Epithelial Cells"]
+  pregnancy_test:
+    kind: lab
+    cost: 15
+    display: "hCG (pregnancy test)"
+    names: ["HCG, Urine, Qualitative", "Urine HCG", "HCG", "hCG, Serum, Qualitative", "Human Chorionic Gonadotropin"]
+  blood_culture:
+    kind: micro
+    cost: 12
+    display: "Blood culture"
+    names: ["BLOOD CULTURE", "Blood Culture, Routine"]
+  urine_culture:
+    kind: micro
+    cost: 10
+    display: "Urine culture"
+    names: ["URINE CULTURE"]
+  ct_abdomen:
+    kind: imaging
+    cost: 300
+    display: "CT abdomen/pelvis"
+    modality: [CT]
+    region: [Abdomen, Pelvis]
+  us_abdomen:
+    kind: imaging
+    cost: 110
+    display: "Ultrasound abdomen (incl. RUQ)"
+    modality: [Ultrasound, US]
+    region: [Abdomen, Pelvis]
+  xray_abdomen:
+    kind: imaging
+    cost: 30
+    display: "Abdominal radiograph"
+    modality: [Radiograph, X-Ray, Xray, CR, DX]
+    region: [Abdomen]
+  xray_chest:
+    kind: imaging
+    cost: 30
+    display: "Chest radiograph"
+    modality: [Radiograph, X-Ray, Xray, CR, DX]
+    region: [Chest]
+  mri_abdomen:
+    kind: imaging
+    cost: 450
+    display: "MRI/MRCP abdomen"
+    modality: [MRI, MR]
+    region: [Abdomen, Pelvis]
+  hida_scan:
+    kind: imaging
+    cost: 300
+    display: "Hepatobiliary (HIDA) scan"
+    modality: [Nuclear, NM]
+    region: [Abdomen]

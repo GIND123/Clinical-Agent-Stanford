@@ -1,0 +1,382 @@
+"""`deferdx` command-line interface."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import logging
+import sys
+from pathlib import Path
+
+from .config import apply_overrides, load_config, load_yaml
+
+
+def _base(args) -> dict:
+    return load_config(args.config)
+
+
+def _catalog_env(cfg: dict, args=None):
+    from .env import EnvConfig, TestCatalog
+
+    env = dict(cfg.get("env", {}))
+    if args is not None and getattr(args, "no_defer", False):
+        env["allow_defer"] = False
+    if args is not None and getattr(args, "closed_world", False):
+        env["open_world"] = False
+    return TestCatalog.from_yaml(cfg["test_catalog"]), EnvConfig.from_dict(env)
+
+
+def _severity(cfg: dict):
+    from .rewards import SeverityMatrix
+
+    path = cfg.get("reward", {}).get("severity_matrix")
+    return SeverityMatrix.from_yaml(path) if path else SeverityMatrix.uniform()
+
+
+def _load_many(paths: list[str]):
+    from .data import load_cases
+
+    cases = []
+    for p in paths:
+        cases.extend(load_cases(p))
+    return cases
+
+
+# ---- data ---------------------------------------------------------------------------
+
+
+def cmd_data_synth(args):
+    from .data.io import assign_splits, save_cases, write_splits
+    from .data.synthetic import synth_cases
+
+    cases = synth_cases(args.n, args.n_other, args.seed)
+    out = Path(args.out)
+    in_set = [c for c in cases if c.label != "other"]
+    other = [c for c in cases if c.label == "other"]
+    counts = write_splits(out, in_set, assign_splits(in_set, seed=args.seed))
+    save_cases(out / "other.jsonl", other)
+    print(f"synthetic cases -> {out}: {counts}, other={len(other)}  (SYNTHETIC: never report results on these)")
+
+
+def cmd_data_inspect(args):
+    from .data.cdm_loader import inspect_cdm
+
+    print(inspect_cdm(args.cdm_dir))
+
+
+def cmd_data_build_cdm(args):
+    from collections import Counter
+
+    from .data.cdm_loader import load_cdm
+    from .data.io import assign_splits, load_split_file, save_cases, write_splits
+
+    fmt = load_yaml(args.format)
+    icd = load_yaml(args.icd)["cdm_conditions"] if args.icd else None
+    cases = load_cdm(args.cdm_dir, fmt, icd)
+    out = Path(args.out)
+    save_cases(out / "all.jsonl", cases)
+    if args.split_file:
+        splits = load_split_file(args.split_file)
+        missing = sum(c.case_id not in splits for c in cases)
+        if missing:
+            print(f"WARNING: {missing} cases are not in the split file and were left out of train/val/test")
+    else:
+        print("WARNING: no --split-file given; generating a deterministic patient-level 70/10/20 split. "
+              "For leaderboard comparability use the official split.")
+        splits = assign_splits(cases, seed=args.seed)
+    counts = write_splits(out, cases, splits)
+    print(f"{len(cases)} cases {dict(Counter(c.label for c in cases))} -> {out} {counts}")
+
+
+def cmd_data_build_ow(args):
+    from collections import Counter
+
+    from .data.io import load_cases, save_cases
+    from .data.openworld import build_openworld
+
+    icd = load_yaml(args.icd)
+    exclude = {c.case_id for c in load_cases(args.exclude_cases)} if args.exclude_cases else set()
+    cases = build_openworld(args.mimic_dir, args.note_dir, icd, target_n=args.n, seed=args.seed,
+                            exclude_case_ids=exclude, include_controls=args.controls,
+                            controls_per_label=args.controls_per_label)
+    other = [c for c in cases if c.label == "other"]
+    controls = [c for c in cases if c.label != "other"]
+    out = Path(args.out)
+    save_cases(out / "other.jsonl", other)
+    if controls:
+        save_cases(out / "controls.jsonl", controls)
+    leaks = sum(c.meta.get("possible_label_leak", False) for c in cases)
+    print(f"OTHER: {len(other)} {dict(Counter(c.meta['group'] for c in other))}; controls: {len(controls)}; "
+          f"possible label leaks flagged: {leaks} -> {out}")
+
+
+def cmd_data_coverage(args):
+    from collections import Counter
+
+    cfg = _base(args)
+    catalog, _ = _catalog_env(cfg)
+    cases = _load_many(args.cases)
+    avail = Counter()
+    for c in cases:
+        avail.update(catalog.available_tests(c))
+    print(f"{len(cases)} cases. Fraction of cases where each catalog test has a result:")
+    for key in catalog.tests:
+        print(f"  {key:16s} {avail[key] / max(1, len(cases)):.3f}")
+    unreached = catalog.unreached_lab_names(cases)
+    print(f"\nLab names never reachable through the catalog ({len(unreached)}), top {args.top}:")
+    for name, n in list(unreached.items())[: args.top]:
+        print(f"  {n:6d}  {name}")
+
+
+# ---- rollouts / evaluation -------------------------------------------------------------
+
+
+def _make_policy(args, cfg):
+    kw = cfg.get("chat_template_kwargs", {"enable_thinking": True})
+    if args.policy == "oracle":
+        from .policy import OraclePolicy
+
+        return OraclePolicy(seed=args.seed)
+    if args.policy == "random":
+        from .policy import RandomPolicy
+
+        return RandomPolicy(seed=args.seed)
+    if args.policy == "hf":
+        from .policy.hf import HFPolicy
+
+        return HFPolicy.from_pretrained(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
+                                        temperature=args.temperature, do_sample=args.temperature > 0,
+                                        batch_size=args.batch_size, chat_template_kwargs=kw)
+    if args.policy == "vllm":
+        from .policy.vllm_policy import VLLMPolicy
+
+        return VLLMPolicy(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
+                          temperature=args.temperature, chat_template_kwargs=kw, seed=args.seed)
+    raise ValueError(args.policy)
+
+
+def cmd_rollout(args):
+    from .data.io import write_jsonl
+    from .rollout import run_episodes
+
+    cfg = _base(args)
+    catalog, env_cfg = _catalog_env(cfg, args)
+    cases = _load_many(args.cases)
+    if args.limit:
+        cases = cases[: args.limit]
+    policy = _make_policy(args, cfg)
+    rollouts = run_episodes(policy, catalog, env_cfg, cases, n_samples=args.samples,
+                            on_turn=lambda t, n: print(f"  turn {t}: {n} active", file=sys.stderr))
+    n = write_jsonl(args.out, (ro.to_dict() for ro in rollouts))
+    print(f"{n} rollouts -> {args.out}")
+
+
+def _results(path):
+    from .data.io import read_jsonl
+    from .env import EpisodeResult
+
+    return [EpisodeResult.from_dict(r["result"]) for r in read_jsonl(path)]
+
+
+def cmd_evaluate(args):
+    from .eval import format_report, summarize
+
+    cfg = _base(args)
+    results = _results(args.rollouts)
+    cf = None
+    if args.counterfactual:
+        cf = {r.case_id: r.correct for r in _results(args.counterfactual)}
+    rep = summarize(results, _severity(cfg), cf, confident_threshold=args.confident_threshold)
+    print(format_report(rep))
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(rep, indent=2), encoding="utf-8")
+
+
+def cmd_baseline(args):
+    from .baselines import apply_threshold, sgr_threshold, threshold_for_coverage, threshold_for_risk
+    from .eval import format_report, summarize
+
+    cfg = _base(args)
+    val, test = _results(args.val), _results(args.test)
+    if args.method == "coverage":
+        thr = threshold_for_coverage(val, args.target)
+    elif args.method == "risk":
+        thr = threshold_for_risk(val, args.target)
+    else:
+        thr = sgr_threshold(val, args.target, args.delta)
+    print(f"{args.method} threshold (fit on val) = {thr}")
+    rep = summarize(apply_threshold(test, thr), _severity(cfg))
+    rep["threshold"] = {"method": args.method, "target": args.target, "value": thr}
+    print(format_report(rep))
+    if args.out:
+        Path(args.out).write_text(json.dumps(rep, indent=2), encoding="utf-8")
+
+
+# ---- SFT data / training -----------------------------------------------------------------
+
+
+def cmd_sft_oracle(args):
+    from .data.io import write_jsonl
+    from .training.sft_data import oracle_sft
+
+    cfg = _base(args)
+    catalog, env_cfg = _catalog_env(cfg, args)
+    rows = oracle_sft(_load_many(args.cases), catalog, env_cfg, args.defer_fraction, args.seed)
+    print(f"{write_jsonl(args.out, rows)} oracle trajectories -> {args.out}")
+
+
+def cmd_sft_rollouts(args):
+    from collections import Counter
+
+    from .data.io import read_jsonl, write_jsonl
+    from .training.sft_data import rollouts_sft
+
+    rows = rollouts_sft(read_jsonl(args.rollouts), args.tau, args.max_correct_per_case, args.max_defer_fraction,
+                        args.seed)
+    write_jsonl(args.out, rows)
+    print(f"{len(rows)} trajectories {dict(Counter(r['kind'] for r in rows))} -> {args.out}")
+
+
+def cmd_train_sft(args):
+    from .training.sft import train_sft
+
+    print(f"saved -> {train_sft(apply_overrides(load_config(args.config), args.set))}")
+
+
+def cmd_train_grpo(args):
+    from .training.grpo import train_grpo
+
+    print(f"saved -> {train_grpo(apply_overrides(load_config(args.config), args.set))}")
+
+
+def cmd_crossover(args):
+    import numpy as np
+
+    from .rewards import RewardConfig, crossover_p_hat
+
+    cfg = _base(args)
+    rcfg = RewardConfig.from_dict(cfg.get("reward"), _severity(cfg))
+    print("tau   -> reward-induced crossover p_hat (defer below, commit above)")
+    for tau in np.round(np.arange(0.6, 1.0001, 0.05), 2):
+        rcfg.tau = float(tau)
+        q = crossover_p_hat(rcfg)
+        print(f"{tau:.2f}  -> {q:.3f}" if q is not None else f"{tau:.2f}  -> never commits")
+
+
+# ---- parser ---------------------------------------------------------------------------
+
+
+def build_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(prog="deferdx", description=__doc__)
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    def with_config(sp, default="configs/base.yaml"):
+        sp.add_argument("--config", default=default)
+        return sp
+
+    data = sub.add_parser("data", help="build / inspect datasets").add_subparsers(dest="sub", required=True)
+    sp = data.add_parser("synth", help="synthetic cases for pipeline tests")
+    sp.add_argument("--out", default="data/synthetic")
+    sp.add_argument("--n", type=int, default=400)
+    sp.add_argument("--n-other", type=int, default=80)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.set_defaults(fn=cmd_data_synth)
+
+    sp = data.add_parser("inspect-cdm", help="list tables/columns of a MIMIC-IV-Ext-CDM download")
+    sp.add_argument("--cdm-dir", required=True)
+    sp.set_defaults(fn=cmd_data_inspect)
+
+    sp = data.add_parser("build-cdm", help="MIMIC-IV-Ext-CDM -> canonical JSONL + splits")
+    sp.add_argument("--cdm-dir", required=True)
+    sp.add_argument("--format", default="configs/cdm_format.yaml")
+    sp.add_argument("--icd", default="configs/openworld_icd.yaml")
+    sp.add_argument("--split-file")
+    sp.add_argument("--out", default="data/cdm")
+    sp.add_argument("--seed", type=int, default=0)
+    sp.set_defaults(fn=cmd_data_build_cdm)
+
+    sp = data.add_parser("build-openworld", help="MIMIC-IV -> MIMIC-CDM-OW (label OTHER)")
+    sp.add_argument("--mimic-dir", required=True, help="MIMIC-IV v2.2 root (contains hosp/)")
+    sp.add_argument("--note-dir", required=True, help="MIMIC-IV-Note root (contains note/)")
+    sp.add_argument("--icd", default="configs/openworld_icd.yaml")
+    sp.add_argument("--exclude-cases", help="CDM all.jsonl; these hadm_ids are excluded")
+    sp.add_argument("--n", type=int, default=800)
+    sp.add_argument("--controls", action="store_true", help="also extract same-pipeline in-set controls")
+    sp.add_argument("--controls-per-label", type=int, default=100)
+    sp.add_argument("--out", default="data/openworld")
+    sp.add_argument("--seed", type=int, default=0)
+    sp.set_defaults(fn=cmd_data_build_ow)
+
+    sp = with_config(data.add_parser("coverage", help="catalog coverage audit on a case file"))
+    sp.add_argument("--cases", nargs="+", required=True)
+    sp.add_argument("--top", type=int, default=30)
+    sp.set_defaults(fn=cmd_data_coverage)
+
+    sp = with_config(sub.add_parser("rollout", help="run a policy in the environment"))
+    sp.add_argument("--cases", nargs="+", required=True)
+    sp.add_argument("--policy", choices=["oracle", "random", "hf", "vllm"], required=True)
+    sp.add_argument("--model")
+    sp.add_argument("--adapter")
+    sp.add_argument("--samples", type=int, default=1)
+    sp.add_argument("--temperature", type=float, default=0.0)
+    sp.add_argument("--max-new-tokens", type=int, default=768)
+    sp.add_argument("--batch-size", type=int, default=16)
+    sp.add_argument("--limit", type=int)
+    sp.add_argument("--no-defer", action="store_true", help="forced-choice control")
+    sp.add_argument("--closed-world", action="store_true", help="do not offer OTHER")
+    sp.add_argument("--seed", type=int, default=0)
+    sp.add_argument("--out", required=True)
+    sp.set_defaults(fn=cmd_rollout)
+
+    sp = with_config(sub.add_parser("evaluate", help="metric report for a rollout file"))
+    sp.add_argument("--rollouts", required=True)
+    sp.add_argument("--counterfactual", help="no-defer rollouts of the same cases (deferral P/R target)")
+    sp.add_argument("--confident-threshold", type=float, default=0.8)
+    sp.add_argument("--out")
+    sp.set_defaults(fn=cmd_evaluate)
+
+    sp = with_config(sub.add_parser("baseline", help="post-hoc threshold / SGR on no-defer rollouts"))
+    sp.add_argument("--method", choices=["coverage", "risk", "sgr"], required=True)
+    sp.add_argument("--val", required=True)
+    sp.add_argument("--test", required=True)
+    sp.add_argument("--target", type=float, required=True, help="coverage or selective risk")
+    sp.add_argument("--delta", type=float, default=0.05)
+    sp.add_argument("--out")
+    sp.set_defaults(fn=cmd_baseline)
+
+    sft = sub.add_parser("sft-data", help="build SFT trajectories").add_subparsers(dest="sub", required=True)
+    sp = with_config(sft.add_parser("oracle"))
+    sp.add_argument("--cases", nargs="+", required=True)
+    sp.add_argument("--defer-fraction", type=float, default=0.1)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.add_argument("--out", required=True)
+    sp.set_defaults(fn=cmd_sft_oracle)
+    sp = sft.add_parser("rollouts", help="STaR rejection sampling + deferral exemplars")
+    sp.add_argument("--rollouts", required=True)
+    sp.add_argument("--tau", type=float, default=0.85)
+    sp.add_argument("--max-correct-per-case", type=int, default=2)
+    sp.add_argument("--max-defer-fraction", type=float, default=0.3)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.add_argument("--out", required=True)
+    sp.set_defaults(fn=cmd_sft_rollouts)
+
+    train = sub.add_parser("train", help="SFT / GRPO").add_subparsers(dest="sub", required=True)
+    for name, fn, default in (("sft", cmd_train_sft, "configs/sft.yaml"), ("grpo", cmd_train_grpo, "configs/grpo.yaml")):
+        sp = with_config(train.add_parser(name), default)
+        sp.add_argument("--set", nargs="*", help="overrides, e.g. steps=10 group_size=8")
+        sp.set_defaults(fn=fn)
+
+    sp = with_config(sub.add_parser("crossover", help="effective deferral threshold induced by the reward"))
+    sp.set_defaults(fn=cmd_crossover)
+    return p
+
+
+def main(argv: list[str] | None = None) -> None:
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
+    args = build_parser().parse_args(argv)
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

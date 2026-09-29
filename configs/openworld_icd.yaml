@@ -1,0 +1,69 @@
+# ICD prefixes for MIMIC-CDM-OW construction.
+# MIMIC-IV stores codes WITHOUT dots (K3580, 5400); prefixes below are dot-free.
+# VERIFY with a clinician collaborator before freezing the cohort (stanford_idea §4.2).
+
+# Any admission carrying ANY of these codes (any seq_num) is excluded from OTHER.
+# Keys must be the canonical in-set labels; also used for same-pipeline controls.
+cdm_conditions:
+  appendicitis:
+    icd10: [K35, K36, K37]
+    icd9: ["540", "541", "542"]
+  cholecystitis:
+    icd10: [K81, K800, K801, K804, K806]  # incl. cholelithiasis with cholecystitis
+    icd9: ["5750", "5751", "5740", "5741", "5743", "5744", "5746", "5747", "5748"]
+  diverticulitis:
+    icd10: [K5700, K5701, K5712, K5713, K5720, K5721, K5732, K5733, K5740, K5741, K5752, K5753, K5780, K5781, K5792, K5793]
+    icd9: ["56211", "56213", "56201", "56203"]
+  pancreatitis:
+    icd10: [K85]
+    icd9: ["5770"]
+
+# Primary (seq_num = 1) diagnoses that define OTHER, grouped for stratified sampling.
+other_groups:
+  bowel_obstruction:
+    icd10: [K56]
+    icd9: ["560"]
+  peptic_ulcer_perforation_or_bleed:
+    icd10: [K251, K252, K255, K256, K261, K262, K265, K266, K271, K272, K275, K276, K281, K282, K285, K286]
+    icd9: ["5311", "5312", "5315", "5316", "5321", "5322", "5325", "5326", "5331", "5332", "5335", "5336", "5341", "5342", "5345", "5346"]
+  mesenteric_ischemia:
+    icd10: [K550]
+    icd9: ["5570"]
+  urolithiasis:
+    icd10: [N20, N23]
+    icd9: ["592", "7880"]
+  gi_bleed:
+    icd10: [K920, K921, K922]
+    icd9: ["578"]
+  abdominal_aortic_aneurysm:
+    icd10: [I713, I714]
+    icd9: ["4413", "4414"]
+  ectopic_pregnancy:
+    icd10: [O00]
+    icd9: ["633"]
+  diabetic_ketoacidosis:
+    icd10: [E101, E111, E131]
+    icd9: ["2501"]
+  gastroenteritis_colitis:
+    icd10: [A08, A09, K52]
+    icd9: ["008", "009", "558"]
+
+# Chief-complaint filter applied to the discharge summary ("Chief Complaint: ...").
+complaint_regex: "abd|abdominal|belly|epigastr|flank|RLQ|RUQ|LLQ|LUQ|pelvic pain"
+
+# Regexes that, if found in the extracted HPI, flag a possible label leak
+# (meta.possible_label_leak). Review flagged cases manually; do not silently drop.
+leak_terms:
+  bowel_obstruction: ["\\bSBO\\b", "obstruction"]
+  peptic_ulcer_perforation_or_bleed: ["perforat", "\\bulcer\\b"]
+  mesenteric_ischemia: ["mesenteric ischemia"]
+  urolithiasis: ["\\bstone\\b", "nephrolith", "ureterolith"]
+  gi_bleed: ["\\bGIB\\b", "\\bbleed"]
+  abdominal_aortic_aneurysm: ["\\bAAA\\b", "aneurysm"]
+  ectopic_pregnancy: ["ectopic"]
+  diabetic_ketoacidosis: ["\\bDKA\\b", "ketoacidosis"]
+  gastroenteritis_colitis: ["gastroenteritis", "colitis"]
+  appendicitis: ["appendicitis"]
+  cholecystitis: ["cholecystitis"]
+  diverticulitis: ["diverticulitis"]
+  pancreatitis: ["pancreatitis"]

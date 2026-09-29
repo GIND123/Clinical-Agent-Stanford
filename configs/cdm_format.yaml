@@ -1,0 +1,49 @@
+# On-disk layout of MIMIC-IV-Ext-CDM v1.0.
+#
+# !! VERIFY against your download: run `deferdx data inspect-cdm --cdm-dir <dir>` and
+# !! fix file/column names below. The defaults are a best guess, not a spec.
+layout: csv          # csv (PhysioNet release) | pickle (Hager et al. framework output)
+key: hadm_id
+
+# Label resolution order. Admissions with no unambiguous label are dropped (logged).
+label_source: [discharge_diagnosis, icd]
+
+tables:
+  history:
+    file: history_of_present_illness.csv
+    columns: {text: hpi, subject_id: subject_id}
+  physical_exam:
+    file: physical_examination.csv
+    columns: {text: pe}
+  labs:
+    file: laboratory_tests.csv
+    columns: {itemid: itemid, value: valuestr, ref_low: ref_range_lower, ref_high: ref_range_upper}
+  lab_mapping:
+    file: lab_test_mapping.csv
+    columns: {itemid: itemid, label: label, fluid: fluid, corresponding_ids: corresponding_ids}
+  microbiology:
+    file: microbiology.csv
+    columns: {test: test_itemid, value: valuestr, specimen: spec_itemid}
+  radiology:
+    file: radiology_reports.csv
+    columns: {text: text, modality: modality, region: region, exam_name: exam_name}
+  discharge_diagnosis:
+    file: discharge_diagnosis.csv
+    columns: {text: discharge_diagnosis}
+  icd_diagnosis:
+    file: icd_diagnosis.csv
+    columns: {code: icd_code}
+
+# Used when layout: pickle
+pickle:
+  file_pattern: "{pathology}_hadm_info_first_diag.pkl"
+  lab_mapping_file: lab_test_mapping.pkl
+  lab_mapping_columns: {itemid: itemid, label: label, fluid: fluid, corresponding_ids: corresponding_ids}
+  keys:
+    history: Patient History
+    physical_exam: Physical Examination
+    labs: Laboratory Tests
+    ref_low: Reference Range Lower
+    ref_high: Reference Range Upper
+    microbiology: Microbiology
+    radiology: Radiology

@@ -1,0 +1,32 @@
+# ---- PhysioNet credentialed data: NEVER commit ----
+# MIMIC-IV / MIMIC-IV-Note / MIMIC-IV-Ext-CDM and anything derived from them.
+data/
+*.csv
+*.csv.gz
+*.pkl
+*.parquet
+*.jsonl
+
+# Model outputs, rollouts (contain MIMIC text), checkpoints
+outputs/
+runs/
+checkpoints/
+wandb/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

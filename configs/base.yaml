@@ -1,0 +1,32 @@
+# Shared environment + reward settings. Training/eval configs include this via `base:`.
+test_catalog: configs/test_catalog.yaml
+
+env:
+  max_steps: 8            # ASK/TEST budget per episode (LDTL used 3 coarse steps)
+  max_invalid: 2          # malformed turns tolerated before the episode ends as INVALID
+  allow_defer: true       # false -> forced-choice control (§6.1 baseline #2/#3)
+  open_world: true        # offer OTHER as a COMMIT diagnosis
+  charge_unavailable: true
+  max_obs_chars: 6000
+
+reward:
+  severity_matrix: configs/severity_matrix.yaml
+  alpha: 1.0              # accuracy
+  brier_lambda: 1.0       # Brier (proper scoring rule) on stated probability
+  severity_kappa: 0.5     # asymmetric clinical severity C[y, d]
+  cost_scale: 0.0005      # reward per US$ of investigation (CT ~ $300 -> 0.15)
+  gamma: 2.0              # group-consensus deferral slope
+  tau: 0.85               # nominal safety threshold (sweep for the risk-coverage curve)
+  handoff_mu: 0.1         # fixed clinician-handoff cost
+  openworld_defer_reward: 1.2   # minus handoff_mu must exceed alpha: escalating out-of-set beats COMMIT(OTHER)
+  invalid_penalty: 1.0
+  timeout_penalty: 1.0
+  empty_group_phat: neutral     # p_hat when no rollout committed: neutral (=tau) | zero
+  action_entropy_coef: 0.0
+
+# Coverage floor against deferral collapse (adaptive Lagrangian, §3.2).
+constraint:
+  rho_max: 0.30
+  lr: 2.0
+  patience: 2
+  nu_max: 5.0
