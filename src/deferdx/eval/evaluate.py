@@ -128,6 +128,9 @@ def summarize(
         "mean_tests": float(np.mean([r.n_tests for r in results])),
         "mean_asks": float(np.mean([r.n_asks for r in results])),
         "mean_cost_usd": float(np.mean([r.total_cost for r in results])),
+        # only tests that returned a result (LA-CDM's "avg. test cost" convention)
+        "mean_cost_performed_usd": float(np.mean([
+            sum(s.cost for s in r.steps if s.available and s.action.get("type") == "TEST") for r in results])),
         "investigations_histogram": dict(sorted(Counter(n_inv).items())),
         "one_step_terminations": int(sum(n == 1 for n in n_inv)),
     }

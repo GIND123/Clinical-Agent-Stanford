@@ -54,7 +54,9 @@ class RewardConfig:
     alpha: float = 1.0
     brier_lambda: float = 1.0
     severity_kappa: float = 0.5
-    cost_scale: float = 0.0005  # reward units per $ of investigation cost
+    # reward units per $ of investigation cost. Config value "auto" = alpha / (sum of all
+    # catalog test costs): ordering every test costs one correct diagnosis (LA-CDM, App. C).
+    cost_scale: float = 0.0005
     gamma: float = 2.0
     tau: float = 0.85
     handoff_mu: float = 0.1
@@ -69,9 +71,14 @@ class RewardConfig:
     severity: SeverityMatrix = field(default_factory=SeverityMatrix.uniform, repr=False)
 
     @classmethod
-    def from_dict(cls, d: dict | None, severity: SeverityMatrix | None = None) -> "RewardConfig":
+    def from_dict(cls, d: dict | None, severity: SeverityMatrix | None = None,
+                  total_test_cost: float | None = None) -> "RewardConfig":
         d = dict(d or {})
         d.pop("severity_matrix", None)
+        if d.get("cost_scale") == "auto":
+            if not total_test_cost:
+                raise ValueError("cost_scale: auto needs the catalog's total test cost")
+            d["cost_scale"] = float(d.get("alpha", cls.alpha)) / total_test_cost
         cfg = cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__ and k != "severity"})
         if severity is not None:
             cfg.severity = severity

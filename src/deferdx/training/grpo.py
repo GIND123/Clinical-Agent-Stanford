@@ -94,7 +94,7 @@ def _reward_setup(cfg: dict[str, Any]):
     env_cfg = EnvConfig.from_dict(cfg.get("env"))
     sev_path = cfg.get("reward", {}).get("severity_matrix")
     severity = SeverityMatrix.from_yaml(sev_path) if sev_path else SeverityMatrix.uniform()
-    rcfg = RewardConfig.from_dict(cfg.get("reward"), severity)
+    rcfg = RewardConfig.from_dict(cfg.get("reward"), severity, catalog.total_test_cost)
     return catalog, env_cfg, rcfg, severity
 
 

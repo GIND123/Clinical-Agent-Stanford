@@ -14,7 +14,7 @@ reward:
   alpha: 1.0              # accuracy
   brier_lambda: 1.0       # Brier (proper scoring rule) on stated probability
   severity_kappa: 0.5     # asymmetric clinical severity C[y, d]
-  cost_scale: 0.0005      # reward per US$ of investigation (CT ~ $300 -> 0.15)
+  cost_scale: auto        # alpha / total catalog cost (LA-CDM convention); or a number per US$
   gamma: 2.0              # group-consensus deferral slope
   tau: 0.85               # nominal safety threshold (sweep for the risk-coverage curve)
   handoff_mu: 0.1         # fixed clinician-handoff cost

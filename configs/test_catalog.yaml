@@ -1,13 +1,17 @@
-# Action vocabulary for TEST(x) and ASK(q), with per-action cost.
+# Action vocabulary for TEST(x) and ASK(q), with per-action cost (US$).
 #
-# Costs are APPROXIMATE US-dollar figures (order of magnitude from CMS Clinical Lab /
-# Physician Fee Schedules; imaging = global technical+professional). They are placeholders
-# for the investigation-cost term of the reward: VERIFY against the current fee schedule
-# before quoting any cost number in the paper. reward.cost_scale converts $ -> reward units.
+# Panels and itemids follow Hager et al.'s ADDITIONAL_LAB_TEST_MAPPING
+# (MIMIC-Clinical-Decision-Making-Framework, tools/utils.py); LA-CDM (ICLR 2026) exposes
+# the same panels. A lab matches a test if its MIMIC itemid is listed, or (for data
+# without itemids, e.g. synthetic cases) if its label is in `names` with matching fluid.
 #
-# Lab `names` must match canonical lab labels in the loaded cases (CDM lab_test_mapping /
-# MIMIC d_labitems.label), case-insensitive. Run `deferdx data coverage` to see which
-# catalog entries resolve on your data and which lab names are never reached.
+# Costs:
+#   cost_source: bidmc  -> 2025 BIDMC standard charges (CMS price transparency), as
+#                          published in LA-CDM Table 4. BIDMC is where MIMIC was collected.
+#   cost_source: placeholder -> NOT sourced; chargemaster-scale guesses. Replace before
+#                          quoting any cost number.
+# reward.cost_scale: auto normalises by the catalog total (LA-CDM's convention: ordering
+# every test costs exactly one correct diagnosis).
 
 ask:
   physical_exam:           {cost: 0.0,  display: "Physical examination"}
@@ -19,114 +23,183 @@ ask:
   social_history:          {cost: 0.0,  display: "Social history"}
 
 tests:
+  # ---- panels (LA-CDM action set) ------------------------------------------------
   cbc:
     kind: lab
-    cost: 8
-    display: "Complete blood count with differential"
+    cost: 71
+    cost_source: bidmc
+    display: "Complete blood count"
+    itemids: [51279, 51301, 51755, 51300, 51222, 50811, 51221, 51638, 50810, 51250, 51248, 51249, 51265,
+              51244, 51133, 52769, 51245, 51146, 52069, 51200, 52073, 51254, 52074, 51253, 51256, 52075,
+              51277, 52172]
     names: ["White Blood Cells", "Hemoglobin", "Hematocrit", "Platelet Count", "Red Blood Cells",
-            "MCV", "RDW", "Neutrophils", "Lymphocytes", "Monocytes", "Eosinophils", "Basophils",
-            "Absolute Neutrophil Count", "Bands"]
+            "MCV", "MCH", "MCHC", "RDW", "Neutrophils", "Lymphocytes", "Monocytes", "Eosinophils", "Basophils"]
     fluid: Blood
   bmp:
     kind: lab
-    cost: 9
+    cost: 298
+    cost_source: bidmc
     display: "Basic metabolic panel"
+    itemids: [50809, 50931, 52569, 50824, 50983, 52623, 50822, 50971, 52610, 50806, 50902, 52535,
+              50803, 50882, 51006, 52647, 50912, 52024, 52546, 50808, 50893, 51624]
     names: ["Sodium", "Potassium", "Chloride", "Bicarbonate", "Urea Nitrogen", "Creatinine",
-            "Glucose", "Anion Gap", "Calcium, Total", "Magnesium", "Phosphate"]
+            "Glucose", "Calcium, Total"]
+    fluid: Blood
+  cmp:
+    kind: lab
+    cost: 636
+    cost_source: bidmc
+    display: "Comprehensive metabolic panel"
+    itemids: [50809, 50931, 52569, 50824, 50983, 52623, 50822, 50971, 52610, 50806, 50902, 52535,
+              50803, 50882, 51006, 52647, 50912, 52024, 52546, 50808, 50893, 51624,
+              50861, 50863, 50878, 50883, 50884, 50885, 50976]
+    names: ["Sodium", "Potassium", "Chloride", "Bicarbonate", "Urea Nitrogen", "Creatinine", "Glucose",
+            "Calcium, Total", "Alanine Aminotransferase (ALT)", "Alkaline Phosphatase",
+            "Asparate Aminotransferase (AST)", "Bilirubin, Total", "Protein, Total"]
+    fluid: Blood
+  renal_panel:
+    kind: lab
+    cost: 394
+    cost_source: bidmc
+    display: "Renal function panel"
+    itemids: [50862, 51006, 52647, 50824, 50983, 52623, 50808, 50893, 51624, 50804, 51739, 50806,
+              50902, 52535, 50912, 52024, 52546, 50809, 50931, 52569, 50970, 50822, 50971, 52610]
+    names: ["Albumin", "Urea Nitrogen", "Creatinine", "Sodium", "Potassium", "Chloride", "Phosphate"]
     fluid: Blood
   liver_panel:
     kind: lab
-    cost: 9
-    display: "Hepatic function panel"
-    names: ["Alanine Aminotransferase (ALT)", "Asparate Aminotransferase (AST)", "Aspartate Aminotransferase (AST)",
-            "Alkaline Phosphatase", "Bilirubin, Total", "Bilirubin, Direct", "Bilirubin, Indirect",
-            "Albumin", "Gamma Glutamyltransferase", "Protein, Total"]
+    cost: 413
+    cost_source: bidmc
+    display: "Liver function panel"
+    itemids: [50861, 50878, 50863, 50927, 50883, 50884, 50885, 51274, 51237, 51675, 50976, 50862]
+    names: ["Alanine Aminotransferase (ALT)", "Asparate Aminotransferase (AST)", "Alkaline Phosphatase",
+            "Gamma Glutamyltransferase", "Bilirubin, Total", "Bilirubin, Direct", "Albumin"]
     fluid: Blood
+  urinalysis:
+    kind: lab
+    cost: 50
+    cost_source: bidmc
+    display: "Urinalysis"
+    itemids: [51508, 51506, 51512, 51108, 51498, 51994, 51093, 51069, 51070, 51082, 51106, 51097, 51100,
+              51102, 51068, 51492, 51992, 51104, 51462, 51469, 51503, 51505, 51510, 51493, 51494, 51495,
+              51516, 51517, 51518, 51507, 51094, 51491, 52730, 51464, 51966, 51084, 51478, 51981, 51514,
+              52002, 51484, 51984, 51487, 51987, 51486, 51985, 51476, 51497, 51501, 51489, 51488]
+    names: ["Specific Gravity", "pH", "Protein", "Glucose", "Ketone", "Blood", "Nitrite", "Leukocytes",
+            "Bilirubin", "Urobilinogen", "WBC", "RBC", "Bacteria", "Yeast", "Epithelial Cells"]
+    fluid: Urine
+  electrolyte_panel:
+    kind: lab
+    cost: 134
+    cost_source: bidmc
+    display: "Electrolyte panel"
+    itemids: [50824, 50983, 52623, 50822, 50971, 52610, 50806, 50902, 52535, 50803, 50882]
+    names: ["Sodium", "Potassium", "Chloride", "Bicarbonate"]
+    fluid: Blood
+
+  # ---- individual tests (finer-grained than LA-CDM / LDTL) ----------------------
   lipase:
     kind: lab
-    cost: 7
+    cost: 150
+    cost_source: placeholder
     display: "Serum lipase"
+    itemids: [50956]
     names: ["Lipase"]
   amylase:
     kind: lab
-    cost: 8
+    cost: 150
+    cost_source: placeholder
     display: "Serum amylase"
+    itemids: [50867]
     names: ["Amylase"]
   crp:
     kind: lab
-    cost: 5
+    cost: 100
+    cost_source: placeholder
     display: "C-reactive protein"
+    itemids: [50889]
     names: ["C-Reactive Protein"]
   lactate:
     kind: lab
-    cost: 11
+    cost: 150
+    cost_source: placeholder
     display: "Lactate"
+    itemids: [50813]
     names: ["Lactate", "L-Lactate"]
   coagulation:
     kind: lab
-    cost: 10
+    cost: 150
+    cost_source: placeholder
     display: "PT/INR and PTT"
+    itemids: [51274, 51275, 51675, 51237]
     names: ["PT", "INR(PT)", "PTT"]
   triglycerides:
     kind: lab
-    cost: 8
+    cost: 100
+    cost_source: placeholder
     display: "Triglycerides"
+    itemids: [51000]
     names: ["Triglycerides"]
-  urinalysis:
-    kind: lab
-    cost: 3
-    display: "Urinalysis"
-    fluid: Urine
-    names: ["Specific Gravity", "pH", "Protein", "Glucose", "Ketone", "Blood", "Nitrite", "Leukocytes",
-            "Bilirubin", "Urobilinogen", "WBC", "RBC", "Bacteria", "Yeast", "Epithelial Cells"]
   pregnancy_test:
     kind: lab
-    cost: 15
+    cost: 150
+    cost_source: placeholder
     display: "hCG (pregnancy test)"
+    itemids: [51085, 52720]
     names: ["HCG, Urine, Qualitative", "Urine HCG", "HCG", "hCG, Serum, Qualitative", "Human Chorionic Gonadotropin"]
   blood_culture:
     kind: micro
-    cost: 12
+    cost: 250
+    cost_source: placeholder
     display: "Blood culture"
-    names: ["BLOOD CULTURE", "Blood Culture, Routine"]
+    itemids: [90201]
+    names: ["Blood Culture, Routine", "BLOOD CULTURE"]
   urine_culture:
     kind: micro
-    cost: 10
+    cost: 150
+    cost_source: placeholder
     display: "Urine culture"
-    names: ["URINE CULTURE"]
+    names: ["URINE CULTURE", "Urine Culture"]
+
+  # ---- imaging: CDM modality vocabulary; regions per CDM (no separate Pelvis) -----
   ct_abdomen:
     kind: imaging
-    cost: 300
+    cost: 1306
+    cost_source: bidmc
     display: "CT abdomen/pelvis"
-    modality: [CT]
+    modality: [CT, CTU]
     region: [Abdomen, Pelvis]
   us_abdomen:
     kind: imaging
-    cost: 110
+    cost: 1288
+    cost_source: bidmc
     display: "Ultrasound abdomen (incl. RUQ)"
-    modality: [Ultrasound, US]
+    modality: [Ultrasound, US, EUS]
+    region: [Abdomen, Pelvis]
+  mri_abdomen:
+    kind: imaging
+    cost: 4866
+    cost_source: bidmc
+    display: "MRI/MRCP abdomen"
+    modality: [MRI, MR, MRCP, MRE]
     region: [Abdomen, Pelvis]
   xray_abdomen:
     kind: imaging
-    cost: 30
+    cost: 434
+    cost_source: bidmc
     display: "Abdominal radiograph"
     modality: [Radiograph, X-Ray, Xray, CR, DX]
     region: [Abdomen]
   xray_chest:
     kind: imaging
-    cost: 30
+    cost: 434
+    cost_source: bidmc
     display: "Chest radiograph"
     modality: [Radiograph, X-Ray, Xray, CR, DX]
     region: [Chest]
-  mri_abdomen:
-    kind: imaging
-    cost: 450
-    display: "MRI/MRCP abdomen"
-    modality: [MRI, MR]
-    region: [Abdomen, Pelvis]
   hida_scan:
     kind: imaging
-    cost: 300
+    cost: 3000
+    cost_source: placeholder
     display: "Hepatobiliary (HIDA) scan"
-    modality: [Nuclear, NM]
+    modality: [HIDA, Nuclear, NM]
     region: [Abdomen]

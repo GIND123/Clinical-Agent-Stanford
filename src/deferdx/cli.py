@@ -256,7 +256,9 @@ def cmd_crossover(args):
     from .rewards import RewardConfig, crossover_p_hat
 
     cfg = _base(args)
-    rcfg = RewardConfig.from_dict(cfg.get("reward"), _severity(cfg))
+    catalog, _ = _catalog_env(cfg)
+    rcfg = RewardConfig.from_dict(cfg.get("reward"), _severity(cfg), catalog.total_test_cost)
+    print(f"cost_scale={rcfg.cost_scale:.3g} per $ (CT = {rcfg.cost_scale * catalog.tests['ct_abdomen'].cost:.3f} reward)")
     print("tau   -> reward-induced crossover p_hat (defer below, commit above)")
     for tau in np.round(np.arange(0.6, 1.0001, 0.05), 2):
         rcfg.tau = float(tau)

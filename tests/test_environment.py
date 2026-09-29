@@ -1,3 +1,5 @@
+import pytest
+
 from deferdx.data.schema import Case, ImagingReport, LabResult
 from deferdx.env import DiagnosticEnv, EnvConfig
 from deferdx.env.actions import ASK, COMMIT, DEFER, TEST, Action
@@ -68,3 +70,27 @@ def test_defer_result(catalog, env_cfg):
     out = env.step(Action(DEFER, differential=["diverticulitis", "appendicitis"], reason="unclear"))
     assert out.done and env.result.terminal == "defer"
     assert env.result.forced_prediction == "diverticulitis" and not env.result.correct
+
+
+def test_itemid_matching_beats_names(catalog):
+    case = Case("c2", "pancreatitis", "epigastric pain", labs=[
+        LabResult("Glucose", "neg", fluid="Urine", itemid="51084"),
+        LabResult("Glucose", "140", fluid="Blood", itemid="50931"),
+        LabResult("Leukocyte Count", "13", itemid="51301"),  # synonym label, known itemid
+        LabResult("Lipase", "900"),                          # no itemid -> name fallback
+    ])
+    bmp = catalog.resolve_test("bmp", case)
+    assert "140" in bmp and "neg" not in bmp
+    assert "neg" in catalog.resolve_test("urinalysis", case)
+    assert "Leukocyte Count: 13" in catalog.resolve_test("cbc", case)
+    assert "900" in catalog.resolve_test("lipase", case)
+    assert catalog.unreached_lab_names([case]) == {}
+
+
+def test_auto_cost_scale(catalog):
+    from deferdx.rewards import RewardConfig
+
+    rc = RewardConfig.from_dict({"cost_scale": "auto", "alpha": 1.0}, total_test_cost=catalog.total_test_cost)
+    assert abs(rc.cost_scale * catalog.total_test_cost - 1.0) < 1e-9
+    with pytest.raises(ValueError):
+        RewardConfig.from_dict({"cost_scale": "auto"})
