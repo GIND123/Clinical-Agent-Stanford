@@ -19,6 +19,7 @@ format failures only because they ignored the JSON wrapper.
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from dataclasses import dataclass, field
@@ -128,9 +129,8 @@ def parse_action(text: str, valid_tests: set[str], valid_topics: set[str]) -> Ac
     tags = _ACTION_TAG.findall(body)
     if tags:
         raw = tags[-1]
-        try:
-            obj = json.loads(raw)
-        except json.JSONDecodeError:
+        obj = _loads_lenient(raw)
+        if obj is None:
             m = _CALL.search(raw)
             if m:
                 return _from_call(m.group(1), m.group(2), valid_tests, valid_topics)
@@ -143,7 +143,39 @@ def parse_action(text: str, valid_tests: set[str], valid_topics: set[str]) -> Ac
         pass
     if m:
         return _from_call(m.group(1), m.group(2), valid_tests, valid_topics)
+    # untagged JSON object with a "type" key after the reasoning
+    obj = _loads_lenient(body) if '"type"' in body or "'type'" in body else None
+    if isinstance(obj, dict) and "type" in obj:
+        return _from_json(obj, valid_tests, valid_topics)
+    if "<action" in body and "</action>" not in body:
+        return Action(INVALID, error="unterminated <action> block (output truncated?)")
     return Action(INVALID, error="no <action>...</action> block found")
+
+
+_FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
+
+
+def _loads_lenient(raw: str):
+    """JSON object from a model's action block, tolerating code fences, text around the
+    object, single-quoted (Python-literal) dicts and trailing commas. None if hopeless."""
+    fenced = _FENCE.search(raw)
+    if fenced:
+        raw = fenced.group(1)
+    start, end = raw.find("{"), raw.rfind("}")
+    candidates = [raw.strip()]
+    if start != -1 and end > start:
+        candidates.append(raw[start : end + 1])
+    for cand in candidates:
+        for fixed in (cand, re.sub(r",\s*([}\]])", r"\1", cand)):
+            try:
+                return json.loads(fixed)
+            except json.JSONDecodeError:
+                pass
+            try:
+                return ast.literal_eval(fixed)
+            except (ValueError, SyntaxError):
+                pass
+    return None
 
 
 def render_action(action: Action, thought: str = "") -> str:

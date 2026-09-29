@@ -51,3 +51,16 @@ def test_render_roundtrip():
                 Action(DEFER, differential=["pancreatitis"], reason="unclear")):
         back = p(render_action(act, "reasoning"))
         assert back.to_json() == act.to_json()
+
+
+def test_lenient_json_variants():
+    assert p('<action>```json\n{"type": "TEST", "test": "lipase"}\n```</action>').test == "lipase"
+    assert p("<action>{'type': 'TEST', 'test': 'cbc'}</action>").test == "cbc"
+    assert p('<action>{"type": "TEST", "test": "cbc",}</action>').test == "cbc"
+    assert p('<action>I choose: {"type": "ASK", "topic": "physical_exam"} now</action>').topic == "physical_exam"
+    assert p('</think>\n{"type": "COMMIT", "diagnosis": "appendicitis", "probability": 0.8}').type == COMMIT
+
+
+def test_truncated_action_is_reported():
+    a = p('<think>long reasoning</think>\n\n<action')
+    assert a.type == INVALID and "truncated" in a.error

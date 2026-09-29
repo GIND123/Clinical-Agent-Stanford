@@ -28,7 +28,7 @@ normalize_std: true
 dynamic_sampling: true   # drop zero-variance groups (DAPO)
 
 generation:
-  max_new_tokens: 768
+  max_new_tokens: 1024     # Qwen3 thinking often needs >512 (see scripts/check_model.py)
   temperature: 1.0
   top_p: 1.0
   batch_size: 32

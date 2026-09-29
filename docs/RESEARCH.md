@@ -64,7 +64,27 @@ Sources: the Qwen3-8B model card, and the Qwen3-0.6B tokenizer inspected locally
 - **Thinking mode:** the recommended sampling is T=0.6, top-p 0.95, top-k 20, and the card says **"DO NOT use greedy decoding"**. → these are now the CLI and GRPO evaluation defaults.
 - **Context:** 32,768 tokens natively.
 
-## 5. Consequences for the abstract
+## 5. Real-model loop check (Qwen3-0.6B, CPU, synthetic cases)
+
+`scripts/check_model.py`, run twice:
+
+| | Run 1: 4 cases, 512-token budget, strict parser | Run 2: 2 cases, 1,024-token budget, lenient parser, brevity prompt |
+|---|---|---|
+| Valid actions | 4/14 (29%) | 4/4 |
+| Truncated turns | shown `example_turn` cut off mid-`<action`; truncation not counted | 0/4 |
+| `<think>` survives decoding | 13/14 | 4/4 |
+| SFT prompt token-identical to generation prompt | 14/14 | 4/4 |
+| Mean completion length | 344 tokens | 432 tokens |
+
+In run 2, one of the 4 valid actions was untagged JSON after `</think>`, which only the new fallback parses. Changes made:
+- A 1,024-token generation default.
+- A "think briefly" instruction in the system prompt (LA-CDM's prompt also demands brevity).
+- A more tolerant JSON extractor.
+- A truncation counter.
+
+These are small samples on a 0.6B model. They validate the plumbing, not the model's accuracy.
+
+## 6. Consequences for the abstract
 
 - Quote LA-CDM numbers only against results on the LA-CDM split, and say which "mean" is used.
 - Quote LDTL numbers as "reported". Their split can't be reproduced.

@@ -365,7 +365,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--temperature", type=float, default=0.6)
     sp.add_argument("--top-p", type=float, default=0.95)
     sp.add_argument("--top-k", type=int, default=20)
-    sp.add_argument("--max-new-tokens", type=int, default=768)
+    sp.add_argument("--max-new-tokens", type=int, default=1024)
     sp.add_argument("--batch-size", type=int, default=16)
     sp.add_argument("--limit", type=int)
     sp.add_argument("--no-defer", action="store_true", help="forced-choice control")
