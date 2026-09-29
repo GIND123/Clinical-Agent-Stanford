@@ -1,6 +1,6 @@
 # ---- PhysioNet credentialed data: NEVER commit ----
 # MIMIC-IV / MIMIC-IV-Note / MIMIC-IV-Ext-CDM and anything derived from them.
-data/
+/data/
 *.csv
 *.csv.gz
 *.pkl
