@@ -25,6 +25,12 @@ class EnvConfig:
     open_world: bool = True  # offer OTHER as a COMMIT option
     charge_unavailable: bool = True  # ordering a test never performed still costs
     max_obs_chars: int = 6000
+    # MIMIC-CDM stores PMH/social/family history inside one history blob, and LA-CDM / LDTL
+    # show it at reset; so by default the whole history is the initial observation and
+    # ASK is limited to `ask_topics`. history_at_reset=false hides split-out sections
+    # behind ASK (only meaningful for data whose history has line-separated headers).
+    history_at_reset: bool = True
+    ask_topics: list[str] | None = None  # None = every ASK topic in the catalog
 
     @classmethod
     def from_dict(cls, d: dict | None) -> "EnvConfig":
@@ -91,11 +97,17 @@ class DiagnosticEnv:
         self.cfg = config or EnvConfig()
         self.case: Case | None = None
         self._valid_tests = set(catalog.tests)
-        self._valid_topics = set(catalog.asks)
+        topics = self.cfg.ask_topics if self.cfg.ask_topics is not None else list(catalog.asks)
+        unknown = set(topics) - set(catalog.asks)
+        if unknown:
+            raise ValueError(f"ask_topics not in catalog: {sorted(unknown)}")
+        self._valid_topics = set(topics)
+        self._topics = [t for t in catalog.asks if t in self._valid_topics]
 
     @property
     def system_prompt(self) -> str:
-        return system_prompt(self.catalog, self.cfg.max_steps, self.cfg.allow_defer, self.cfg.open_world)
+        return system_prompt(self.catalog, self.cfg.max_steps, self.cfg.allow_defer, self.cfg.open_world,
+                             topics=self._topics)
 
     def reset(self, case: Case) -> str:
         self.case = case
@@ -103,7 +115,8 @@ class DiagnosticEnv:
         self.revealed: set[str] = set()
         self.n_investigations = 0
         self.result = EpisodeResult(case_id=case.case_id, label=case.label, terminal="timeout", source=case.source)
-        return initial_observation(case.hpi)
+        history = case.history if self.cfg.history_at_reset else {}
+        return initial_observation(case.hpi, history)
 
     def step_text(self, text: str) -> StepOutput:
         return self.step(parse_action(text, self._valid_tests, self._valid_topics))

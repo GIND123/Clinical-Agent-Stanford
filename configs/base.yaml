@@ -8,6 +8,8 @@ env:
   open_world: true        # offer OTHER as a COMMIT diagnosis
   charge_unavailable: true
   max_obs_chars: 6000
+  history_at_reset: true  # full history at reset, as in MIMIC-CDM / LA-CDM / LDTL
+  ask_topics: [physical_exam]
 
 reward:
   severity_matrix: configs/severity_matrix.yaml

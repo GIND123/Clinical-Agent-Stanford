@@ -140,23 +140,28 @@ def test_openworld_builder(tmp_path):
     hosp.mkdir(parents=True)
     note.mkdir(parents=True)
     pd.DataFrame({
-        "subject_id": [1, 2, 3, 3, 4, 5],
-        "hadm_id": [101, 102, 103, 103, 104, 105],
-        "seq_num": [1, 1, 1, 2, 1, 1],
-        "icd_code": ["K5660", "N200", "K5660", "K3580", "K3580", "I10"],
-        "icd_version": [10, 10, 10, 10, 10, 10],
+        "subject_id": [1, 2, 3, 3, 4, 5, 6],
+        "hadm_id": [101, 102, 103, 103, 104, 105, 106],
+        "seq_num": [1, 1, 1, 2, 1, 1, 1],
+        "icd_code": ["K5660", "N200", "K5660", "K3580", "K3580", "I10", "K5660"],
+        "icd_version": [10, 10, 10, 10, 10, 10, 10],
     }).to_csv(hosp / "diagnoses_icd.csv", index=False)
+    tail = "\nPertinent Results:\nlabs\nDischarge Diagnosis:\nSBO"
     notes = {
-        101: "Chief Complaint:\nabdominal pain\nHistory of Present Illness:\ncrampy pain, distension\nPhysical Exam:\ndistended\nDischarge Diagnosis:\nSBO",
-        102: "Chief Complaint:\nleft flank pain\nHistory of Present Illness:\ncolicky flank pain\nPhysical Exam:\nCVA tenderness",
-        103: "Chief Complaint:\nabdominal pain\nHistory of Present Illness:\nRLQ pain\nPhysical Exam:\ntender",
-        104: "Chief Complaint:\nabd pain\nHistory of Present Illness:\nRLQ pain\nPhysical Exam:\ntender",
-        105: "Chief Complaint:\nheadache\nHistory of Present Illness:\nheadache",
+        101: "Chief Complaint:\nabdominal pain\nMajor Surgical or Invasive Procedure:\nnone\n"
+             "History of Present Illness:\ncrampy pain,\ndistension\nPast Medical History:\nHTN\n"
+             "Physical Exam:\ndistended, concern for SBO\nDischarge exam: soft" + tail,
+        102: "Chief Complaint:\nleft flank pain\nHistory of Present Illness:\ncolicky flank pain\nPhysical Exam:\nCVA tenderness" + tail,
+        103: "Chief Complaint:\nabdominal pain\nHistory of Present Illness:\nRLQ pain\nPhysical Exam:\ntender" + tail,
+        104: "Chief Complaint:\nabd pain\nHistory of Present Illness:\nRLQ pain\nPhysical Exam:\ntender" + tail,
+        105: "Chief Complaint:\nheadache\nHistory of Present Illness:\nheadache\nPhysical Exam:\nok" + tail,
+        106: "Chief Complaint:\nabdominal pain\nHistory of Present Illness:\nknown small bowel obstruction\nPhysical Exam:\nok" + tail,
     }
-    pd.DataFrame({"note_id": list(range(5)), "subject_id": [1, 2, 3, 4, 5], "hadm_id": list(notes),
+    pd.DataFrame({"note_id": list(range(6)), "subject_id": [1, 2, 3, 4, 5, 6], "hadm_id": list(notes),
                   "text": list(notes.values())}).to_csv(note / "discharge.csv", index=False)
     pd.DataFrame({"note_id": [9], "subject_id": [1], "hadm_id": [101], "charttime": ["2150-01-01"],
-                  "text": ["EXAMINATION: CT ABD & PELVIS\nFINDINGS: dilated small bowel"]}).to_csv(note / "radiology.csv", index=False)
+                  "text": ["EXAMINATION: CT ABD & PELVIS\nINDICATION: eval for SBO\nFINDINGS: dilated loops, SBO pattern\n"
+                           "IMPRESSION: small bowel obstruction"]}).to_csv(note / "radiology.csv", index=False)
     pd.DataFrame({"subject_id": [1, 1], "hadm_id": [101, 101], "itemid": [50956, 50956], "charttime": ["2150-01-02", "2150-01-01"],
                   "value": ["50", "30"], "valuenum": [50, 30], "valueuom": ["IU/L", "IU/L"], "ref_range_lower": [0, 0],
                   "ref_range_upper": [60, 60], "flag": ["", ""]}).to_csv(hosp / "labevents.csv", index=False)
@@ -167,10 +172,16 @@ def test_openworld_builder(tmp_path):
     icd = load_yaml("configs/openworld_icd.yaml")
     cases = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
     by = {c.case_id: c for c in cases}
-    assert set(by) == {"101", "102", "104"}  # 103 has an appendicitis code; 105 not abdominal
-    assert by["101"].label == "other" and by["101"].meta["group"] == "bowel_obstruction"
+    # 103: carries an appendicitis code; 105: not abdominal; 106: history names its own dx (CDM drop rule)
+    assert set(by) == {"101", "102", "104"}
+    c = by["101"]
+    assert c.label == "other" and c.meta["group"] == "bowel_obstruction"
     assert by["102"].meta["group"] == "urolithiasis"
     assert by["104"].label == "appendicitis" and by["104"].source == "openworld_control"
-    assert [x.value for x in by["101"].labs] == ["30"]
-    assert by["101"].imaging[0].modality == "CT"
-    assert "SBO" not in by["101"].hpi + by["101"].physical_exam
+    # CDM-style history blob: HPI through PMH, newlines flattened, PE excluded
+    assert c.hpi == "crampy pain, distension Past Medical History: HTN" and c.history == {}
+    assert c.physical_exam == "distended, concern for ____"  # masked; discharge exam cut
+    rad = c.imaging[0]
+    assert rad.modality == "CT" and "IMPRESSION" not in rad.text and "INDICATION" not in rad.text
+    assert "____ pattern" in rad.text and "SBO" not in rad.text
+    assert [(x.value, x.itemid) for x in c.labs] == [("30", "50956")]

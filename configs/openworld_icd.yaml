@@ -51,6 +51,21 @@ other_groups:
 # Chief-complaint filter applied to the discharge summary ("Chief Complaint: ...").
 complaint_regex: "abd|abdominal|belly|epigastr|flank|RLQ|RUQ|LLQ|LUQ|pelvic pain"
 
+# Literal disease terms per OTHER group, handled exactly like CDM's own sanitize lists
+# (CreateDataset.py): an admission whose history mentions one is dropped; in physical
+# exam and radiology each mention is replaced by "____". Keep these to diagnosis names
+# (not symptoms), mirroring CDM, so masking density is comparable across sources.
+sanitize_terms:
+  bowel_obstruction: ["small bowel obstruction", "large bowel obstruction", "bowel obstruction", "SBO", "LBO"]
+  peptic_ulcer_perforation_or_bleed: ["perforated ulcer", "perforated duodenal ulcer", "perforated gastric ulcer", "peptic ulcer"]
+  mesenteric_ischemia: ["mesenteric ischemia", "bowel ischemia", "ischemic bowel"]
+  urolithiasis: ["nephrolithiasis", "ureterolithiasis", "urolithiasis", "kidney stone", "ureteral stone"]
+  gi_bleed: ["gastrointestinal bleed", "GI bleed", "GIB"]
+  abdominal_aortic_aneurysm: ["abdominal aortic aneurysm", "AAA"]
+  ectopic_pregnancy: ["ectopic pregnancy"]
+  diabetic_ketoacidosis: ["diabetic ketoacidosis", "DKA"]
+  gastroenteritis_colitis: ["gastroenteritis", "colitis"]
+
 # Regexes that, if found in the extracted HPI, flag a possible label leak
 # (meta.possible_label_leak). Review flagged cases manually; do not silently drop.
 leak_terms:

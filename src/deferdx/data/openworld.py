@@ -4,10 +4,10 @@ the four CDM conditions (label = OTHER), extracted from MIMIC-IV v2.2 + MIMIC-IV
 Deterministic ICD filtering in DuckDB over the local csv.gz files; no model, no API.
 
 Methodological guard: if OTHER cases are extracted by a different pipeline than the
-in-set CDM cases, the agent can learn to spot the *pipeline* (formatting, section
-lengths) instead of the disease. Use ``include_controls=True`` to extract in-set
-controls with this same pipeline and check that a source classifier cannot separate
-them (see docs/DATA.md).
+in-set CDM cases, the agent can learn to spot the *pipeline* (formatting, "____" masks,
+missing IMPRESSION sections) instead of the disease. Text is therefore processed exactly
+as CDM's own pipeline does (parity.py), and ``include_controls=True`` extracts in-set
+controls through this same code so a source classifier can be checked against them.
 """
 
 from __future__ import annotations
@@ -20,7 +20,8 @@ from typing import Any
 
 from ..labels import OTHER
 from .schema import Case, ImagingReport, LabResult, MicroResult, dedup_earliest
-from .text import admission_physical_exam, chief_complaint, classify_radiology, split_history, split_sections
+from .parity import CDM_SANITIZE_TERMS, cdm_history, cdm_physical_exam, cdm_radiology, mask, mentions
+from .text import chief_complaint, classify_radiology
 
 log = logging.getLogger(__name__)
 
@@ -61,6 +62,7 @@ def build_openworld(
     include_controls: bool = False,
     controls_per_label: int = 100,
     complaint_regex: str | None = None,
+    hpi_leak_policy: str = "drop",
 ) -> list[Case]:
     """Return OTHER cases (and optionally same-pipeline in-set controls).
 
@@ -137,7 +139,7 @@ def build_openworld(
     con.register("sel_df", __import__("pandas").DataFrame({"hadm_id": ids}))
     labs = con.execute(
         f"""
-        SELECT l.hadm_id, l.charttime, l.value, l.valuenum, l.valueuom, l.ref_range_lower,
+        SELECT l.hadm_id, l.itemid, l.charttime, l.value, l.valuenum, l.valueuom, l.ref_range_lower,
                l.ref_range_upper, l.flag, i.label, i.fluid
         FROM read_csv_auto('{hosp('labevents')}', all_varchar=true) l
         JOIN sel_df s ON l.hadm_id = s.hadm_id
@@ -159,36 +161,44 @@ def build_openworld(
     labs_by = _group(labs)
     micro_by = _group(micro)
     rad_by = _group(rad)
+    sanitize_terms = {**CDM_SANITIZE_TERMS, **icd_cfg.get("sanitize_terms", {})}
     leak_terms = icd_cfg.get("leak_terms", {})
 
-    cases = []
+    cases, dropped_leak = [], 0
     for r in selected:
         hadm = str(r["hadm_id"])
         text = note_by_hadm[hadm]
-        sections = split_sections(text)
-        hpi, history = split_history(
-            "\n".join(f"{k.replace('_', ' ').title()}: {v}" for k, v in sections.items()
-                      if k in {"hpi", "past_medical_history", "past_surgical_history", "medications",
-                               "allergies", "family_history", "social_history"})
-        )
-        if not hpi:
-            continue
         label = OTHER if r["other_group"] and not r["cdm_group"] else r["cdm_group"]
         group = r["other_group"] or r["cdm_group"]
-        terms = leak_terms.get(group, [])
-        leak = any(re.search(t, hpi, re.IGNORECASE) for t in terms)
+        # Same extraction + sanitisation as MIMIC-IV-Ext-CDM itself (see parity.py).
+        hpi = cdm_history(text)
+        if not hpi:
+            continue
+        terms = sanitize_terms.get(group, [])
+        if mentions(hpi, terms) and hpi_leak_policy == "drop":
+            dropped_leak += 1
+            continue
+        soft_leak = any(re.search(t, hpi, re.IGNORECASE) for t in leak_terms.get(group, []))
+        imaging = []
+        for x in rad_by.get(hadm, []):
+            raw = _s(x["text"])
+            modality, region, exam_name = classify_radiology(raw)
+            body = mask(cdm_radiology(raw), terms)
+            if body and modality != "Other" and region != "Other":  # CDM sanitize_rad
+                imaging.append(ImagingReport(modality, region, exam_name, body, _s(x["charttime"]) or None))
         case = Case(
             case_id=hadm,
             subject_id=str(r["subject_id"]),
             label=label,
             hpi=hpi,
-            history=history,
-            physical_exam=admission_physical_exam(text),
+            history={},  # CDM keeps PMH/social/family inside the history blob
+            physical_exam=mask(cdm_physical_exam(text), terms),
             labs=[
                 LabResult(
                     name=_s(x["label"]), value=_s(x["value"]) or _s(x["valuenum"]), unit=_s(x["valueuom"]) or None,
                     ref_low=_f(x["ref_range_lower"]), ref_high=_f(x["ref_range_upper"]),
                     flag=_s(x["flag"]) or None, fluid=_s(x["fluid"]) or None, charttime=_s(x["charttime"]) or None,
+                    itemid=_s(x["itemid"]) or None,
                 )
                 for x in labs_by.get(hadm, [])
             ],
@@ -201,15 +211,14 @@ def build_openworld(
                 )
                 for x in micro_by.get(hadm, [])
             ],
-            imaging=[
-                ImagingReport(*classify_radiology(_s(x["text"])), text=_s(x["text"]), charttime=_s(x["charttime"]) or None)
-                for x in rad_by.get(hadm, [])
-            ],
+            imaging=imaging,
             source="openworld" if label == OTHER else "openworld_control",
             meta={"group": group, "icd_code": r["icd_code"], "icd_version": int(r["icd_version"]),
-                  "possible_label_leak": leak},
+                  "possible_label_leak": bool(soft_leak or mentions(hpi, terms))},
         )
         cases.append(dedup_earliest(case))
+    if dropped_leak:
+        log.info("dropped %d admissions whose history names their own diagnosis (CDM policy)", dropped_leak)
     return cases
 
 

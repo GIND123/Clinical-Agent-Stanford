@@ -94,3 +94,15 @@ def test_auto_cost_scale(catalog):
     assert abs(rc.cost_scale * catalog.total_test_cost - 1.0) < 1e-9
     with pytest.raises(ValueError):
         RewardConfig.from_dict({"cost_scale": "auto"})
+
+
+def test_history_at_reset_and_ask_topics(catalog):
+    env = DiagnosticEnv(catalog, EnvConfig(ask_topics=["physical_exam"], max_invalid=3))
+    obs = env.reset(make_case())
+    assert "Social history: Non-smoker." in obs
+    assert "topics: physical_exam\n" in env.system_prompt
+    assert env.step_text('<action>{"type":"ASK","topic":"social_history"}</action>').action.type == "INVALID"
+    hidden = DiagnosticEnv(catalog, EnvConfig(history_at_reset=False))
+    assert "Non-smoker" not in hidden.reset(make_case())
+    with pytest.raises(ValueError):
+        DiagnosticEnv(catalog, EnvConfig(ask_topics=["x_ray_vision"]))

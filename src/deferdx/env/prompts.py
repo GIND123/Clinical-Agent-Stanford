@@ -28,7 +28,8 @@ DEFER_BLOCK = """- DEFER the case to a clinician with a ranked differential and 
 """
 
 
-def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True, open_world: bool = True) -> str:
+def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True, open_world: bool = True,
+                  topics: list[str] | None = None) -> str:
     diagnoses = list(IN_SET_LABELS) + ([OTHER] if open_world else [])
     open_world_line = (
         f'The true diagnosis may be none of the four listed conditions; "{OTHER}" means a different diagnosis.\n'
@@ -36,7 +37,7 @@ def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True
         else ""
     )
     return SYSTEM_TEMPLATE.format(
-        topics=", ".join(catalog.asks),
+        topics=", ".join(topics if topics is not None else catalog.asks),
         tests=", ".join(catalog.tests),
         diagnoses=", ".join(diagnoses),
         defer_block=DEFER_BLOCK if allow_defer else "",
@@ -45,8 +46,9 @@ def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True
     )
 
 
-def initial_observation(hpi: str) -> str:
-    return f"PATIENT PRESENTATION\n{hpi.strip()}\n\nChoose your next action."
+def initial_observation(hpi: str, history: dict[str, str] | None = None) -> str:
+    extra = "".join(f"\n{k.replace('_', ' ').capitalize()}: {v.strip()}" for k, v in (history or {}).items() if v)
+    return f"PATIENT PRESENTATION\n{hpi.strip()}{extra}\n\nChoose your next action."
 
 
 def truncate(text: str, max_chars: int) -> str:
