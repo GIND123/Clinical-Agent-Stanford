@@ -67,8 +67,9 @@ def cmd_data_inspect(args):
 def cmd_data_build_cdm(args):
     from collections import Counter
 
-    from .data.cdm_loader import load_cdm
+    from .data.cdm_loader import _find, load_cdm, load_pathology_ids
     from .data.io import assign_splits, load_split_file, save_cases, write_splits
+    from .data.splits import lacdm_split, split_counts, stratified_split, subject_leakage
 
     fmt = load_yaml(args.format)
     icd = load_yaml(args.icd)["cdm_conditions"] if args.icd else None
@@ -77,15 +78,24 @@ def cmd_data_build_cdm(args):
     save_cases(out / "all.jsonl", cases)
     if args.split_file:
         splits = load_split_file(args.split_file)
-        missing = sum(c.case_id not in splits for c in cases)
-        if missing:
-            print(f"WARNING: {missing} cases are not in the split file and were left out of train/val/test")
+    elif args.split == "lacdm":
+        ids_path = _find(Path(args.cdm_dir), fmt.get("pathology_ids_file", "pathology_ids.json"))
+        if ids_path is None:
+            raise SystemExit("--split lacdm needs pathology_ids.json (CDM v1.1); use --split stratified instead")
+        splits = lacdm_split(load_pathology_ids(ids_path))
+    elif args.split == "stratified":
+        splits = stratified_split([c.case_id for c in cases], [c.label for c in cases], tuple(args.ratios), args.seed)
     else:
-        print("WARNING: no --split-file given; generating a deterministic patient-level 70/10/20 split. "
-              "For leaderboard comparability use the official split.")
-        splits = assign_splits(cases, seed=args.seed)
+        splits = assign_splits(cases, tuple(args.ratios), seed=args.seed)
+    missing = sum(c.case_id not in splits for c in cases)
+    if missing:
+        print(f"WARNING: {missing} cases have no split assignment and were left out of train/val/test")
+    leaks = subject_leakage(splits, {c.case_id: c.subject_id for c in cases})
+    if leaks:
+        print(f"NOTE: {leaks} subjects have admissions in more than one split (admission-level split)")
     counts = write_splits(out, cases, splits)
     print(f"{len(cases)} cases {dict(Counter(c.label for c in cases))} -> {out} {counts}")
+    print("per split:", split_counts(splits, {c.case_id: c.label for c in cases}))
 
 
 def cmd_data_build_ow(args):
@@ -293,7 +303,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--cdm-dir", required=True)
     sp.add_argument("--format", default="configs/cdm_format.yaml")
     sp.add_argument("--icd", default="configs/openworld_icd.yaml")
-    sp.add_argument("--split-file")
+    sp.add_argument("--split", choices=["lacdm", "stratified", "hash"], default="lacdm",
+                    help="lacdm: exact LA-CDM 80/10/10 (default, comparable to LA-CDM/ReAct numbers); "
+                         "stratified/hash use --ratios (e.g. 0.7 0.1 0.2 as LDTL reports)")
+    sp.add_argument("--ratios", type=float, nargs=3, default=[0.7, 0.1, 0.2])
+    sp.add_argument("--split-file", help="explicit {case_id: split} file; overrides --split")
     sp.add_argument("--out", default="data/cdm")
     sp.add_argument("--seed", type=int, default=0)
     sp.set_defaults(fn=cmd_data_build_cdm)
