@@ -33,6 +33,9 @@ generation:
   top_p: 1.0
   batch_size: 32
 
+# Periodic validation sampling (Qwen3 thinking-mode recommendation; never greedy)
+eval_generation: {temperature: 0.6, top_p: 0.95, top_k: 20}
+
 # tau curriculum (§5.4): start permissive (deferral cheap), anneal to the target.
 tau_schedule: {start: 0.95, end: 0.85, steps: 150}
 # terminal-action entropy bonus for the first steps (cold-start DEFER exploration)

@@ -1,6 +1,6 @@
 # Experiment runbook (stanford_idea §6)
 
-All commands assume `data/cdm/{train,val,test}.jsonl` and `data/openworld/other.jsonl` exist. `M=Qwen/Qwen3-8B`. Evaluation rollouts are greedy (`--temperature 0`, the default).
+All commands assume `data/cdm/{train,val,test}.jsonl` and `data/openworld/other.jsonl` exist. `M=Qwen/Qwen3-8B`. Evaluation rollouts sample with Qwen3's recommended thinking-mode settings (T=0.6, top-p 0.95, top-k 20; the CLI defaults), because Qwen3's model card warns against greedy decoding. Report mean ± sd over 3 `--seed` values.
 
 ## §6.1 Baselines
 
@@ -8,10 +8,11 @@ All commands assume `data/cdm/{train,val,test}.jsonl` and `data/openworld/other.
 |---|---|---|
 | 1 | Zero-shot sequential (ReAct-style) | `deferdx rollout --policy vllm --model $M --no-defer --cases data/cdm/test.jsonl --out outputs/eval/zs.jsonl` |
 | 2 | SFT, forced commit (**primary control**) | SFT data built with `--no-defer`, then `deferdx rollout --policy vllm --model $M --adapter outputs/sft_nodefer/final --no-defer ...` |
-| 3 | GRPO accuracy + cost only, no defer | `deferdx train grpo --set env.allow_defer=false reward.brier_lambda=0 output_dir=outputs/grpo_nodefer` |
+| 3 | GRPO accuracy + cost only, no defer | `deferdx train grpo --set env.allow_defer=false reward.calib_lambda=0 output_dir=outputs/grpo_nodefer` |
+| 3b | GRPO accuracy + cost + calibration, no defer | as #3 with `reward.calib_lambda=1`. Thresholding #3 is a strawman because its probabilities were never trained; **#6 should threshold #3b** |
 | 4 | LA-CDM | external: github.com/dharouni/LA-CDM (report its own numbers on the same split) |
 | 5 | DiagAgent-14B | external weights; can also run inside this env with `--policy vllm --model <path>` once prompts are aligned |
-| 6 | **Post-hoc threshold on #3** (critical ablation) | rollouts of #3 on val and test, then `deferdx baseline --method coverage --target 0.8 --val ... --test ...` (also `--method risk --target 0.05`) |
+| 6 | **Post-hoc threshold on #3b** (critical ablation) | rollouts of #3b on val and test, then `deferdx baseline --method coverage --target 0.8 --val ... --test ...` (also `--method risk --target 0.05`) |
 | 7 | Conformal-style (SGR) | `deferdx baseline --method sgr --target 0.05 --delta 0.05 --val ... --test ...` |
 | — | Random planner floor | `deferdx rollout --policy random --samples 5 ...` |
 

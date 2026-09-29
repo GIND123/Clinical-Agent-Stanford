@@ -12,7 +12,8 @@ env:
 reward:
   severity_matrix: configs/severity_matrix.yaml
   alpha: 1.0              # accuracy
-  brier_lambda: 1.0       # Brier (proper scoring rule) on stated probability
+  calib_lambda: 1.0       # weight of the proper scoring rule on the stated probability
+  scoring_rule: brier     # brier | log (LA-CDM / Rewarding Doubt use log)
   severity_kappa: 0.5     # asymmetric clinical severity C[y, d]
   cost_scale: auto        # alpha / total catalog cost (LA-CDM convention); or a number per US$
   gamma: 2.0              # group-consensus deferral slope

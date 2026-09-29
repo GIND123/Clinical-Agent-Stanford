@@ -26,6 +26,14 @@ def macro_f1(y_true: list[str], y_pred: list[str | None], labels: tuple[str, ...
     return float(np.mean(f1s)) if f1s else float("nan")
 
 
+def micro_f1(y_true: list[str], y_pred: list[str | None], labels: tuple[str, ...]) -> float:
+    """Micro-F1 over `labels` (predictions outside `labels`, e.g. None/OTHER, count as FN)."""
+    tp = sum(t == p and t in labels for t, p in zip(y_true, y_pred))
+    fp = sum(p in labels and p != t for t, p in zip(y_true, y_pred))
+    fn = sum(t in labels and p != t for t, p in zip(y_true, y_pred))
+    return float(2 * tp / (2 * tp + fp + fn)) if tp + fp + fn else float("nan")
+
+
 def risk_coverage_curve(scores: np.ndarray, correct: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Sort by descending confidence; point k = accept the top-k cases.
 

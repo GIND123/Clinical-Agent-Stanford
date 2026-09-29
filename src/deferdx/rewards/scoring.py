@@ -2,7 +2,11 @@
 deferral reward computed from GRPO's own rollout group.
 
 COMMIT(d, p):
-    R = alpha * 1[d = y] - lambda * (p - 1[d = y])^2 - kappa * C[y, d] - cost_scale * sum cost(a_t)
+    R = alpha * 1[d = y] + lambda * S(p, 1[d = y]) - kappa * C[y, d] - cost_scale * sum cost(a_t)
+    S = -(p - 1[d = y])^2                     (scoring_rule: brier, default)
+    S = log(q) / -log(eps), q = p or 1 - p    (scoring_rule: log; LA-CDM / Rewarding Doubt,
+                                               affinely rescaled to [-1, 0])
+    Both are strictly proper: the expected reward is maximised by the true P(correct).
 
 DEFER, in-set case:
     p_hat = fraction of the group's COMMIT rollouts on this case that were correct
@@ -52,7 +56,9 @@ class SeverityMatrix:
 @dataclass
 class RewardConfig:
     alpha: float = 1.0
-    brier_lambda: float = 1.0
+    calib_lambda: float = 1.0
+    scoring_rule: str = "brier"  # brier | log
+    log_eps: float = 0.001  # probability floor for the log rule
     severity_kappa: float = 0.5
     # reward units per $ of investigation cost. Config value "auto" = alpha / (sum of all
     # catalog test costs): ordering every test costs one correct diagnosis (LA-CDM, App. C).
@@ -75,6 +81,8 @@ class RewardConfig:
                   total_test_cost: float | None = None) -> "RewardConfig":
         d = dict(d or {})
         d.pop("severity_matrix", None)
+        if "brier_lambda" in d:  # backwards-compatible name
+            d.setdefault("calib_lambda", d.pop("brier_lambda"))
         if d.get("cost_scale") == "auto":
             if not total_test_cost:
                 raise ValueError("cost_scale: auto needs the catalog's total test cost")
@@ -89,7 +97,7 @@ class RewardConfig:
 class RewardBreakdown:
     total: float
     accuracy: float = 0.0
-    brier: float = 0.0
+    calibration: float = 0.0
     severity: float = 0.0
     cost: float = 0.0
     consensus: float = 0.0
@@ -103,14 +111,24 @@ class RewardBreakdown:
         return dict(self.__dict__)
 
 
+def calibration_score(p: float, correct: float, cfg: RewardConfig) -> float:
+    """Proper scoring rule in [-1, 0] (0 = perfect)."""
+    if cfg.scoring_rule == "brier":
+        return -((p - correct) ** 2)
+    if cfg.scoring_rule == "log":
+        q = p if correct else 1.0 - p
+        return math.log(max(q, cfg.log_eps)) / -math.log(cfg.log_eps)
+    raise ValueError(f"unknown scoring_rule {cfg.scoring_rule!r}")
+
+
 def commit_reward(res: EpisodeResult, cfg: RewardConfig) -> RewardBreakdown:
     correct = float(res.diagnosis == res.label)
     p = float(res.probability if res.probability is not None else 0.0)
     acc = cfg.alpha * correct
-    brier = -cfg.brier_lambda * (p - correct) ** 2
+    calib = cfg.calib_lambda * calibration_score(p, correct, cfg)
     sev = 0.0 if correct else -cfg.severity_kappa * cfg.severity(res.label, res.diagnosis)
     cost = -cfg.cost_scale * res.total_cost
-    return RewardBreakdown(total=acc + brier + sev + cost, accuracy=acc, brier=brier, severity=sev, cost=cost)
+    return RewardBreakdown(total=acc + calib + sev + cost, accuracy=acc, calibration=calib, severity=sev, cost=cost)
 
 
 def defer_reward(res: EpisodeResult, p_hat: float, cfg: RewardConfig) -> RewardBreakdown:
@@ -176,8 +194,8 @@ def crossover_p_hat(cfg: RewardConfig, severity_cost: float | None = None, grid:
         m = cfg.severity.m[:4, :4]
         severity_cost = float(m[~np.eye(4, dtype=bool)].mean())
     for q in np.linspace(0, 1, grid):
-        commit = q * (cfg.alpha - cfg.brier_lambda * (1 - q) ** 2) + (1 - q) * (
-            -cfg.brier_lambda * q**2 - cfg.severity_kappa * severity_cost
+        commit = q * (cfg.alpha + cfg.calib_lambda * calibration_score(q, 1.0, cfg)) + (1 - q) * (
+            cfg.calib_lambda * calibration_score(q, 0.0, cfg) - cfg.severity_kappa * severity_cost
         )
         defer = cfg.gamma * (cfg.tau - q) - cfg.handoff_mu
         if commit >= defer:

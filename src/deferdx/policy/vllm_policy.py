@@ -11,13 +11,17 @@ from .hf import encode_chat
 
 class VLLMPolicy:
     def __init__(self, model_path: str, adapter_path: str | None = None, max_new_tokens: int = 768,
-                 temperature: float = 1.0, top_p: float = 1.0, chat_template_kwargs: dict | None = None,
+                 temperature: float = 1.0, top_p: float = 1.0, top_k: int | None = None,
+                 chat_template_kwargs: dict | None = None,
                  seed: int = 0, **llm_kwargs):
         from vllm import LLM, SamplingParams
 
         self.llm = LLM(model=model_path, enable_lora=adapter_path is not None, seed=seed, **llm_kwargs)
         self.tokenizer = self.llm.get_tokenizer()
-        self.params = SamplingParams(max_tokens=max_new_tokens, temperature=temperature, top_p=top_p)
+        # No per-request seed: it would make every sample of the same prompt identical
+        # (breaking --samples N). The engine-level seed above gives run reproducibility.
+        self.params = SamplingParams(max_tokens=max_new_tokens, temperature=temperature, top_p=top_p,
+                                     top_k=top_k or -1)
         self.chat_template_kwargs = chat_template_kwargs or {}
         self.lora = None
         if adapter_path:

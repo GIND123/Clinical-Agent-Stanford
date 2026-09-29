@@ -15,16 +15,18 @@ def defer(label, cost=0.0):
 def test_commit_reward_components(reward_cfg):
     rb = commit_reward(commit("appendicitis", "appendicitis", 0.9, cost=300), reward_cfg)
     assert rb.accuracy == 1.0
-    assert rb.brier == pytest.approx(-0.01)
+    assert rb.calibration == pytest.approx(-0.01)
     assert rb.cost == pytest.approx(-0.15)
     assert rb.severity == 0.0
     wrong = commit_reward(commit("appendicitis", "cholecystitis", 0.9), reward_cfg)
-    assert wrong.brier == pytest.approx(-0.81)
+    assert wrong.calibration == pytest.approx(-0.81)
     assert wrong.severity == pytest.approx(-0.5 * 0.8)  # kappa * C[app, chole]
 
 
-def test_brier_is_proper(reward_cfg):
+@pytest.mark.parametrize("rule", ["brier", "log"])
+def test_scoring_rules_are_proper(reward_cfg, rule):
     """Expected commit reward is maximised by reporting the true correctness rate."""
+    reward_cfg.scoring_rule = rule
     q = 0.7
     def expected(p):
         return q * commit_reward(commit("pancreatitis", "pancreatitis", p), reward_cfg).total + \
@@ -91,3 +93,14 @@ def test_crossover_below_tau(reward_cfg):
     assert q is not None and 0.3 < q < reward_cfg.tau
     reward_cfg.tau = 0.95
     assert crossover_p_hat(reward_cfg) > q  # raising tau defers more
+
+
+def test_log_rule_range_and_alias(reward_cfg):
+    from deferdx.rewards import RewardConfig
+
+    reward_cfg.scoring_rule = "log"
+    perfect = commit_reward(commit("appendicitis", "appendicitis", 1.0), reward_cfg)
+    worst = commit_reward(commit("appendicitis", "cholecystitis", 1.0), reward_cfg)
+    assert perfect.calibration == pytest.approx(0.0) and worst.calibration == pytest.approx(-1.0)
+    assert RewardConfig.from_dict({"brier_lambda": 0.3}).calib_lambda == 0.3
+    assert crossover_p_hat(reward_cfg) is not None

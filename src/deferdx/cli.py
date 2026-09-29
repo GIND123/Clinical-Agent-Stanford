@@ -156,12 +156,14 @@ def _make_policy(args, cfg):
 
         return HFPolicy.from_pretrained(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
                                         temperature=args.temperature, do_sample=args.temperature > 0,
+                                        top_p=args.top_p, top_k=args.top_k,
                                         batch_size=args.batch_size, chat_template_kwargs=kw)
     if args.policy == "vllm":
         from .policy.vllm_policy import VLLMPolicy
 
         return VLLMPolicy(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
-                          temperature=args.temperature, chat_template_kwargs=kw, seed=args.seed)
+                          temperature=args.temperature, top_p=args.top_p, top_k=args.top_k,
+                          chat_template_kwargs=kw, seed=args.seed)
     raise ValueError(args.policy)
 
 
@@ -335,7 +337,11 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--model")
     sp.add_argument("--adapter")
     sp.add_argument("--samples", type=int, default=1)
-    sp.add_argument("--temperature", type=float, default=0.0)
+    # Defaults = Qwen3 thinking-mode recommendation (model card: do NOT decode greedily).
+    # Report mean +/- sd over several --seed values rather than a single sampled run.
+    sp.add_argument("--temperature", type=float, default=0.6)
+    sp.add_argument("--top-p", type=float, default=0.95)
+    sp.add_argument("--top-k", type=int, default=20)
     sp.add_argument("--max-new-tokens", type=int, default=768)
     sp.add_argument("--batch-size", type=int, default=16)
     sp.add_argument("--limit", type=int)

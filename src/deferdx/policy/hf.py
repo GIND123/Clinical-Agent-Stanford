@@ -37,12 +37,14 @@ def stop_token_ids(tokenizer, model=None) -> set[int]:
 
 class HFPolicy:
     def __init__(self, model, tokenizer, max_new_tokens: int = 768, temperature: float = 1.0, top_p: float = 1.0,
-                 do_sample: bool = True, batch_size: int = 16, chat_template_kwargs: dict | None = None):
+                 do_sample: bool = True, batch_size: int = 16, chat_template_kwargs: dict | None = None,
+                 top_k: int | None = None):
         self.model = model
         self.tokenizer = tokenizer
         self.max_new_tokens = max_new_tokens
         self.temperature = temperature
         self.top_p = top_p
+        self.top_k = top_k
         self.do_sample = do_sample
         self.batch_size = batch_size
         self.chat_template_kwargs = chat_template_kwargs or {}
@@ -82,6 +84,8 @@ class HFPolicy:
                               pad_token_id=self.pad_id, eos_token_id=sorted(self.stop_ids) or None)
             if self.do_sample:
                 gen_kwargs.update(temperature=self.temperature, top_p=self.top_p)
+                if self.top_k:
+                    gen_kwargs["top_k"] = self.top_k
             with torch.no_grad():
                 seqs = self.model.generate(input_ids=input_ids.to(device), attention_mask=attn.to(device), **gen_kwargs)
             for i, p in enumerate(chunk):

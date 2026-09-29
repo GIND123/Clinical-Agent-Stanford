@@ -58,10 +58,13 @@ def summarize(
         pcs = M.per_class_accuracy(y, forced, IN_SET_LABELS)
         rep["closed_world"] = {
             "n": len(ins),
-            # "Mean Acc" on the MIMIC-CDM leaderboard is overall (case-weighted) accuracy.
+            # Two "Mean Acc" conventions coexist in the MIMIC-CDM literature:
+            #   accuracy_full_coverage = case-weighted (reproduces LDTL's own rows, e.g. 93.4)
+            #   mean_class_accuracy    = unweighted mean of per-class accuracy (LA-CDM, ReAct)
             "accuracy_full_coverage": float(np.mean([f == t for f, t in zip(forced, y)])),
-            "balanced_accuracy": float(np.mean(list(pcs.values()))),
+            "mean_class_accuracy": float(np.mean(list(pcs.values()))),
             "macro_f1": M.macro_f1(y, forced, IN_SET_LABELS),
+            "micro_f1": M.micro_f1(y, forced, IN_SET_LABELS),
             "per_class_accuracy": pcs,
             "coverage": len(committed) / len(ins),
             "selective_accuracy": float(np.mean([r.correct for r in committed])) if committed else float("nan"),

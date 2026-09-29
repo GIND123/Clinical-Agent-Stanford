@@ -122,8 +122,11 @@ def train_grpo(cfg: dict[str, Any], model=None, tokenizer=None, train_cases: lis
     gen = dict(cfg.get("generation", {}))
     kw = cfg.get("chat_template_kwargs")
     policy = HFPolicy(model, tokenizer, chat_template_kwargs=kw, do_sample=True, **gen)
-    greedy = HFPolicy(model, tokenizer, chat_template_kwargs=kw, do_sample=False,
-                      **{k: v for k, v in gen.items() if k not in ("temperature", "top_p")})
+    # Evaluation sampling: Qwen3's model card warns against greedy decoding in thinking
+    # mode (repetition / degraded quality), so eval uses its recommended T/top-p/top-k.
+    eval_gen = {**gen, **cfg.get("eval_generation", {"temperature": 0.6, "top_p": 0.95, "top_k": 20})}
+    evaluator = HFPolicy(model, tokenizer, chat_template_kwargs=kw, do_sample=eval_gen.get("temperature", 0) > 0,
+                         **eval_gen)
     constraint = CoverageConstraint.from_dict(cfg.get("constraint"))
     G = int(cfg.get("group_size", 16))
     B = int(cfg.get("cases_per_step", 8))
@@ -248,7 +251,7 @@ def train_grpo(cfg: dict[str, Any], model=None, tokenizer=None, train_cases: lis
         if val_cases and cfg.get("eval_every") and step % cfg["eval_every"] == 0:
             model.eval()
             subset = val_cases[: cfg.get("eval_cases", len(val_cases))]
-            rep, _ = evaluate_policy(greedy, catalog, env_cfg, subset, severity)
+            rep, _ = evaluate_policy(evaluator, catalog, env_cfg, subset, severity)
             cw = rep.get("closed_world", {})
             logger.log({"step": step, "eval_acc_full": cw.get("accuracy_full_coverage", math.nan),
                         "eval_selective_acc": cw.get("selective_accuracy", math.nan),
