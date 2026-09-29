@@ -120,6 +120,20 @@ def cmd_data_build_ow(args):
           f"possible label leaks flagged: {leaks} -> {out}")
 
 
+def cmd_data_leakage(args):
+    from .data.leakage import source_classifier
+
+    a, b = _load_many(args.a), _load_many(args.b)
+    if args.label:
+        a = [c for c in a if c.label == args.label]
+        b = [c for c in b if c.label == args.label]
+    rep = source_classifier(a, b, tuple(args.fields), folds=args.folds, seed=args.seed)
+    print(f"A={rep.n_a} cases vs B={rep.n_b} cases; source-classifier AUROC {rep.auroc_mean:.3f} +/- {rep.auroc_std:.3f}")
+    print(rep.verdict())
+    print("features pointing to A:", rep.top_features_a)
+    print("features pointing to B:", rep.top_features_b)
+
+
 def cmd_data_coverage(args):
     from collections import Counter
 
@@ -325,6 +339,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--out", default="data/openworld")
     sp.add_argument("--seed", type=int, default=0)
     sp.set_defaults(fn=cmd_data_build_ow)
+
+    sp = data.add_parser("leakage-check", help="can a text classifier tell two case sources apart?")
+    sp.add_argument("--a", nargs="+", required=True, help="e.g. data/openworld/controls.jsonl")
+    sp.add_argument("--b", nargs="+", required=True, help="e.g. data/cdm/all.jsonl")
+    sp.add_argument("--label", help="restrict both sides to one label (recommended)")
+    sp.add_argument("--fields", nargs="+", default=["hpi", "physical_exam", "imaging"])
+    sp.add_argument("--folds", type=int, default=5)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.set_defaults(fn=cmd_data_leakage)
 
     sp = with_config(data.add_parser("coverage", help="catalog coverage audit on a case file"))
     sp.add_argument("--cases", nargs="+", required=True)
