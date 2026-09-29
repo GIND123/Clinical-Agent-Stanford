@@ -10,24 +10,25 @@ The research plan is in [stanford_idea_md.md](stanford_idea_md.md). This repo is
 
 ```bash
 pip install -e ".[train,data,dev]"   # add ,vllm for fast evaluation rollouts
-pytest                               # 47 tests; CPU-only; no downloads
+pytest                               # CPU-only; no downloads, no MIMIC data
 ```
 
 ## Quickstart (synthetic data, no GPU)
 
 ```bash
 bash scripts/smoke_synthetic.sh
+python scripts/check_model.py --model Qwen/Qwen3-0.6B   # real model in the loop, CPU is fine
 ```
 
-This generates fabricated cases, runs the oracle and random policies, builds SFT data and evaluates. Synthetic numbers mean nothing; they only show the pipeline works.
+The smoke test generates fabricated cases, runs the oracle and random policies, builds SFT data and evaluates. `check_model.py` runs a real local model on synthetic cases. It reports action-format compliance, whether `<think>` tags survive decoding, and whether SFT prompts are token-identical to generation prompts. Synthetic numbers mean nothing; they only show the pipeline works.
 
 ## Real-data pipeline
 
 ```bash
-# 1. MIMIC-IV-Ext-CDM -> canonical cases. FIRST check file/column names:
-deferdx data inspect-cdm --cdm-dir /path/to/mimic-iv-ext-cdm
-#    ...fix configs/cdm_format.yaml if needed, then:
-deferdx data build-cdm --cdm-dir /path/to/mimic-iv-ext-cdm --split-file <official_split.csv> --out data/cdm
+# 1. MIMIC-IV-Ext-CDM v1.1 -> canonical cases. Confirm file/column names once:
+deferdx data inspect-cdm --cdm-dir /path/to/mimic-iv-ext-cdm/1.1
+#    Default split = exact LA-CDM 80/10/10 (there is no official split; see docs/RESEARCH.md)
+deferdx data build-cdm --cdm-dir /path/to/mimic-iv-ext-cdm/1.1 --out data/cdm
 
 # 2. Check that the test catalog actually reaches your lab names
 deferdx data coverage --cases data/cdm/train.jsonl
@@ -46,7 +47,7 @@ deferdx train sft --config configs/sft.yaml
 # 5. Stage 2 GRPO
 deferdx train grpo --config configs/grpo.yaml
 
-# 6. Evaluate (greedy) on test + OTHER
+# 6. Evaluate on test + OTHER (Qwen3 sampling defaults; repeat over --seed 0 1 2)
 deferdx rollout --cases data/cdm/test.jsonl data/openworld/other.jsonl --policy vllm \
     --model Qwen/Qwen3-8B --adapter outputs/grpo/final --out outputs/eval/deferdx_test.jsonl
 deferdx evaluate --rollouts outputs/eval/deferdx_test.jsonl --out outputs/eval/deferdx_test.json
@@ -59,10 +60,12 @@ The full §6.1 baseline grid is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 | Path | What it does | Plan section |
 |---|---|---|
 | [src/deferdx/data/cdm_loader.py](src/deferdx/data/cdm_loader.py) | MIMIC-IV-Ext-CDM (PhysioNet CSV or Hager-framework pickles) to `Case`; earliest value per repeated test | §4.1 |
-| [src/deferdx/data/openworld.py](src/deferdx/data/openworld.py) | MIMIC-CDM-OW: ICD filtering in DuckDB, discharge-note section extraction, stratified sampling, leak flags | §4.2 |
+| [src/deferdx/data/openworld.py](src/deferdx/data/openworld.py) | MIMIC-CDM-OW: ICD filtering in DuckDB, stratified sampling, same-pipeline controls | §4.2 |
+| [src/deferdx/data/parity.py](src/deferdx/data/parity.py) | CDM's own text rules (history blob, PE window, radiology section filter, `____` masking) applied to OTHER cases | §4.2 |
+| [src/deferdx/data/splits.py](src/deferdx/data/splits.py) | Exact LA-CDM split; stratified ratio splits | §4.1 |
 | [src/deferdx/data/synthetic.py](src/deferdx/data/synthetic.py) | Fabricated cases for tests | — |
-| [src/deferdx/env/](src/deferdx/env/) | Reveal-on-request POMDP, 19 tests and 7 ASK topics with costs, action parser | §3.1 |
-| [src/deferdx/rewards/scoring.py](src/deferdx/rewards/scoring.py) | Commit reward (accuracy, Brier, severity, cost) and the group-consensus DEFER reward | §3.2 |
+| [src/deferdx/env/](src/deferdx/env/) | Reveal-on-request POMDP; 22 tests (a superset of LA-CDM's) matched by MIMIC itemid; action parser | §3.1 |
+| [src/deferdx/rewards/scoring.py](src/deferdx/rewards/scoring.py) | Commit reward (accuracy, Brier or log score, severity, cost) and the group-consensus DEFER reward | §3.2 |
 | [src/deferdx/rewards/constraint.py](src/deferdx/rewards/constraint.py) | Adaptive-Lagrangian coverage floor | §3.2 |
 | [src/deferdx/rollout.py](src/deferdx/rollout.py) | Batched multi-turn rollouts | — |
 | [src/deferdx/policy/](src/deferdx/policy/) | Local HF / vLLM policies; oracle and random scripted policies | §6.1 |
@@ -77,19 +80,27 @@ The full §6.1 baseline grid is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 2. **The open-world DEFER reward defaults to 1.2, not 1.1.** After the handoff cost μ = 0.1, a value of 1.1 exactly ties a perfect COMMIT(OTHER). The plan wants DEFER slightly higher.
 3. **τ is not the effective threshold.** With the §3.2 weights, τ = 0.85 makes the agent defer only when p̂ < ~0.645 (for a calibrated committer). Run `deferdx crossover` to see the τ → threshold table. Report both numbers, and pick γ, μ and τ from this table.
 4. **p̂ with no commits in the group** defaults to "neutral" (p̂ = τ), so deferral costs only μ. Setting it to "zero" would reward all-defer groups and speed up collapse.
-5. **"Mean Acc" means case-weighted accuracy.** LDTL's 93.4 matches the case-weighted mean of its per-class numbers; the unweighted mean would be 90.25. `accuracy_full_coverage` reproduces 93.4. Balanced accuracy is reported separately.
+5. **There are two "Mean Acc" conventions.** LA-CDM (and the LA-CDM and ReAct rows that LDTL copies) average the per-class accuracies. LDTL's own rows are case-weighted (93.4, not 90.25). Both are reported: `accuracy_full_coverage` and `mean_class_accuracy`. The plan's "93.4 vs 81.3" crosses both metrics and splits; see [docs/RESEARCH.md](docs/RESEARCH.md).
 6. **Full-coverage accuracy for DEFER** uses the top of the deferral differential, so a deferring agent still gets a leaderboard-comparable number. Deferral precision/recall can use a real no-defer run as the counterfactual (`--counterfactual`).
-7. **RL samples are per turn, not per conversation.** Qwen3's chat template strips earlier `<think>` blocks, so the policy gradient uses the exact prompt and completion tokens of each generation call.
+7. **RL samples are per turn, not per conversation.** Qwen3's chat template strips earlier `<think>` blocks (confirmed on the real tokenizer), so the policy gradient uses the exact prompt and completion tokens of each generation call.
+8. **ASK covers the physical exam only by default, and the full history is shown at reset.** CDM stores past, social and family history inside one flattened blob, and LA-CDM and LDTL both show it up front. `env.history_at_reset` / `env.ask_topics` change this.
+9. **Evaluation samples; it doesn't decode greedily.** Qwen3's model card warns against greedy decoding in thinking mode, so evaluation uses T=0.6, top-p 0.95, top-k 20. Report mean ± sd over seeds.
 
-## Guesses to verify before trusting any number
+## Checked vs. still to verify
 
-- **[configs/cdm_format.yaml](configs/cdm_format.yaml): the CDM file and column names are best guesses.** Run `deferdx data inspect-cdm` first. The loader drops admissions without an unambiguous label and logs how many.
-- **Official 70/10/20 split.** Without `--split-file`, a deterministic patient-level split is generated with a warning. That split is *not* LDTL's.
-- **Catalog lab names and costs** ([configs/test_catalog.yaml](configs/test_catalog.yaml)): costs are approximate CMS-scale placeholders. `deferdx data coverage` shows which catalog tests resolve on your data and which lab names nothing reaches.
+Resolved from primary sources ([docs/RESEARCH.md](docs/RESEARCH.md)):
+- CDM v1.1 file and column names, the `pathology_ids.json` label file, and the modality/region vocabulary.
+- The split: there is no official one. The default reproduces LA-CDM's exactly.
+- How CDM's text was processed; the open-world cases now match it.
+- Costs for panels and imaging: the 2025 BIDMC standard charges from LA-CDM.
+
+Still to verify:
+- **Run `deferdx data inspect-cdm` once on the real download** to confirm the columns.
+- **Run `deferdx data coverage`** to see which catalog tests resolve on real data. Tests marked `cost_source: placeholder` (lipase, CRP, lactate, cultures, HIDA, …) need real prices.
 - **The severity matrix** is a time-to-harm proxy. Replace it with the clinician-built version.
-- **ICD lists** ([configs/openworld_icd.yaml](configs/openworld_icd.yaml)) need clinician review. Cases flagged `meta.possible_label_leak` should be reviewed by hand.
-- **Pipeline-shift leakage in the open-world data.** OTHER cases come from discharge summaries via this repo's pipeline, while CDM cases come from Hager et al.'s pipeline. Build `--controls` and check that a simple classifier cannot tell `openworld_control` from `cdm` cases. If it can, the agent can learn to detect the source instead of the disease.
-- **Test availability is informative.** For example, a HIDA scan implies someone already suspected cholecystitis. `charge_unavailable: true` charges for tests that were never performed. Consider reporting an ablation.
+- **ICD lists and sanitize terms** ([configs/openworld_icd.yaml](configs/openworld_icd.yaml)) need clinician review.
+- **The source-classifier check.** Build `--controls` and confirm a simple classifier can't tell `openworld_control` from `cdm` cases, even with the parity rules.
+- **Test availability is informative.** For example, a HIDA scan implies someone already suspected cholecystitis. `charge_unavailable: true` charges for tests that were never performed; LA-CDM doesn't. Report both.
 
 ## Not built yet
 
