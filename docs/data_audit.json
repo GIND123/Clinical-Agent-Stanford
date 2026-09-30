@@ -1,0 +1,2625 @@
+{
+ "inventory": [
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "LICENSE.txt",
+   "MB": 0.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "discharge_diagnosis.csv",
+   "MB": 0.1,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "discharge_procedures.csv",
+   "MB": 0.1,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "history_of_present_illness.csv",
+   "MB": 2.6,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "icd_diagnosis.csv",
+   "MB": 0.9,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "icd_procedures.csv",
+   "MB": 0.2,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "lab_test_mapping.csv",
+   "MB": 0.1,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "laboratory_tests.csv",
+   "MB": 5.5,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "microbiology.csv",
+   "MB": 0.3,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "pathology_ids.json",
+   "MB": 0.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "physical_examination.csv",
+   "MB": 1.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-ext-cdm/1.1",
+   "file": "radiology_reports.csv",
+   "MB": 7.2,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-note/2.2",
+   "file": "LICENSE.txt",
+   "MB": 0.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-note/2.2",
+   "file": "note/discharge.csv.gz",
+   "MB": 1139.2,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-note/2.2",
+   "file": "note/radiology.csv.gz",
+   "MB": 781.8,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/admissions.csv.gz",
+   "MB": 15.5,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/d_icd_diagnoses.csv.gz",
+   "MB": 0.9,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/d_labitems.csv.gz",
+   "MB": 0.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/diagnoses_icd.csv.gz",
+   "MB": 25.1,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/labevents.csv.gz",
+   "MB": 1939.1,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/microbiologyevents.csv.gz",
+   "MB": 96.7,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/patients.csv.gz",
+   "MB": 2.3,
+   "sha256": "ok"
+  }
+ ],
+ "cdm_schema": {
+  "discharge_diagnosis": {
+   "rows": 2400,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "discharge_diagnosis",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "free text (length only)",
+     "summary": "chars p5/p50/p95 = 12/22/144"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 1.0,
+   "rows_per_hadm_p95": 1.0,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  },
+  "discharge_procedures": {
+   "rows": 2122,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "1,810 distinct"
+    },
+    {
+     "column": "discharge_procedure",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "free text (length only)",
+     "summary": "chars p5/p50/p95 = 9/28/66"
+    }
+   ],
+   "distinct_hadm": 1810,
+   "rows_per_hadm_p50": 1.0,
+   "rows_per_hadm_p95": 2.0,
+   "labelled_coverage_pct": 75.4,
+   "unlabelled_hadm": 0
+  },
+  "history_of_present_illness": {
+   "rows": 2400,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "hpi",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "free text (length only)",
+     "summary": "chars p5/p50/p95 = 365/832/2,586"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 1.0,
+   "rows_per_hadm_p95": 1.0,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  },
+  "icd_diagnosis": {
+   "rows": 17357,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "icd_diagnosis",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "2,352 distinct; top: Unspecified essential hypertension (507), Acute appendicitis without mention of peritonitis (488), Acute pancreatitis (415), Calculus of gallbladder with acute cholecystitis, without mention of obstruction (295), Other and unspecified hyperlipidemia (291), Esophageal reflux (273), Essential (primary) hypertension (214), Unspecified acute appendicitis (207)"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 5.0,
+   "rows_per_hadm_p95": 20.0,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  },
+  "icd_procedures": {
+   "rows": 2917,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "1,660 distinct"
+    },
+    {
+     "column": "icd_code",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "395 distinct"
+    },
+    {
+     "column": "icd_title",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "395 distinct; top: Laparoscopic appendectomy (520), Laparoscopic cholecystectomy (343), Endoscopic sphincterotomy and papillotomy (145), Resection of Gallbladder, Percutaneous Endoscopic Approach (137), Endoscopic removal of stone(s) from biliary tract (75), Percutaneous aspiration of gallbladder (73), Venous catheterization, not elsewhere classified (65), Resection of Appendix, Percutaneous Endoscopic Approach (60)"
+    },
+    {
+     "column": "icd_version",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "2 distinct; top: 9 (2,112), 10 (805)"
+    }
+   ],
+   "distinct_hadm": 1660,
+   "rows_per_hadm_p50": 1.0,
+   "rows_per_hadm_p95": 5.0,
+   "labelled_coverage_pct": 69.2,
+   "unlabelled_hadm": 0
+  },
+  "lab_test_mapping": {
+   "rows": 1209,
+   "columns": [
+    {
+     "column": "itemid",
+     "dtype": "float64",
+     "null_pct": 9.8,
+     "kind": "identifier",
+     "summary": "1,091 distinct"
+    },
+    {
+     "column": "label",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "other",
+     "summary": "983 distinct"
+    },
+    {
+     "column": "fluid",
+     "dtype": "str",
+     "null_pct": 22.2,
+     "kind": "category",
+     "summary": "9 distinct; top: Blood (493), Urine (137), Other Body Fluid (107), Bone Marrow (44), Ascites (40), Pleural (38), Joint Fluid (34), Cerebrospinal Fluid (33)"
+    },
+    {
+     "column": "category",
+     "dtype": "str",
+     "null_pct": 24.3,
+     "kind": "category",
+     "summary": "3 distinct; top: Hematology (462), Chemistry (416), Blood Gas (37)"
+    },
+    {
+     "column": "count",
+     "dtype": "float64",
+     "null_pct": 24.3,
+     "kind": "other",
+     "summary": "699 distinct"
+    },
+    {
+     "column": "corresponding_ids",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "other",
+     "summary": "889 distinct"
+    }
+   ]
+  },
+  "laboratory_tests": {
+   "rows": 138788,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "itemid",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "480 distinct"
+    },
+    {
+     "column": "valuestr",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "result value",
+     "summary": "4.0% parse as numbers"
+    },
+    {
+     "column": "ref_range_lower",
+     "dtype": "float64",
+     "null_pct": 29.0,
+     "kind": "other",
+     "summary": "98 distinct"
+    },
+    {
+     "column": "ref_range_upper",
+     "dtype": "float64",
+     "null_pct": 29.0,
+     "kind": "other",
+     "summary": "140 distinct"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 56.0,
+   "rows_per_hadm_p95": 87.04999999999973,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  },
+  "microbiology": {
+   "rows": 4403,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "1,856 distinct"
+    },
+    {
+     "column": "test_itemid",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "74 distinct"
+    },
+    {
+     "column": "valuestr",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "result value",
+     "summary": "0.0% parse as numbers"
+    },
+    {
+     "column": "spec_itemid",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "40 distinct"
+    }
+   ],
+   "distinct_hadm": 1856,
+   "rows_per_hadm_p50": 2.0,
+   "rows_per_hadm_p95": 7.0,
+   "labelled_coverage_pct": 77.3,
+   "unlabelled_hadm": 0
+  },
+  "physical_examination": {
+   "rows": 2400,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "pe",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "free text (length only)",
+     "summary": "chars p5/p50/p95 = 147/347/832"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 1.0,
+   "rows_per_hadm_p95": 1.0,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  },
+  "radiology_reports": {
+   "rows": 5960,
+   "columns": [
+    {
+     "column": "hadm_id",
+     "dtype": "int64",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "2,400 distinct"
+    },
+    {
+     "column": "note_id",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "identifier",
+     "summary": "5,960 distinct"
+    },
+    {
+     "column": "modality",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "14 distinct; top: Radiograph (2,076), CT (2,064), Ultrasound (1,380), MRCP (227), ERCP (98), MRI (67), CTU (21), Drainage (19)"
+    },
+    {
+     "column": "region",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "11 distinct; top: Abdomen (3,920), Chest (1,870), Head (87), Venous (45), Spine (16)"
+    },
+    {
+     "column": "exam_name",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "category",
+     "summary": "129 distinct; top: CT ABD & PELVIS WITH CONTRAST (1,221), LIVER OR GALLBLADDER US (SINGLE ORGAN) (925), CHEST (PORTABLE AP) (907), CHEST (PA & LAT) (526), CT ABDOMEN W/CONTRAST (296), MRCP (MR ABD W&W/OC) (213), CHEST PORT. LINE PLACEMENT (178), ABDOMEN (SUPINE & ERECT) (155)"
+    },
+    {
+     "column": "text",
+     "dtype": "str",
+     "null_pct": 0.0,
+     "kind": "free text (length only)",
+     "summary": "chars p5/p50/p95 = 67/769/2,952"
+    }
+   ],
+   "distinct_hadm": 2400,
+   "rows_per_hadm_p50": 2.0,
+   "rows_per_hadm_p95": 6.049999999999727,
+   "labelled_coverage_pct": 100.0,
+   "unlabelled_hadm": 0
+  }
+ },
+ "config_mismatches": [
+  {
+   "table": "history",
+   "file": "history_of_present_illness.csv",
+   "missing": "subject_id -> subject_id"
+  },
+  {
+   "table": "labs",
+   "file": "laboratory_tests.csv",
+   "missing": "charttime -> charttime"
+  },
+  {
+   "table": "microbiology",
+   "file": "microbiology.csv",
+   "missing": "charttime -> charttime"
+  }
+ ],
+ "label_distribution": {
+  "appendicitis": 957,
+  "cholecystitis": 648,
+  "pancreatitis": 538,
+  "diverticulitis": 257
+ },
+ "icd_diagnosis_code_like_pct": 0.0,
+ "label_agreement": {
+  "CDM icd_diagnosis: appendicitis": {
+   "agrees": "98.9%",
+   "names another condition": "0.0%",
+   "none or ambiguous": "1.1%"
+  },
+  "CDM icd_diagnosis: cholecystitis": {
+   "agrees": "95.7%",
+   "names another condition": "0.0%",
+   "none or ambiguous": "4.3%"
+  },
+  "CDM icd_diagnosis: diverticulitis": {
+   "agrees": "all but <10",
+   "names another condition": "0.0%",
+   "none or ambiguous": "<10 cases"
+  },
+  "CDM icd_diagnosis: pancreatitis": {
+   "agrees": "52.6%",
+   "names another condition": "0.0%",
+   "none or ambiguous": "47.4%"
+  },
+  "CDM discharge_diagnosis text: appendicitis": {
+   "agrees": "all but <10",
+   "names another condition": "0.0%",
+   "none or ambiguous": "<10 cases"
+  },
+  "CDM discharge_diagnosis text: cholecystitis": {
+   "agrees": "98.3%",
+   "names another condition": "0.0%",
+   "none or ambiguous": "1.7%"
+  },
+  "CDM discharge_diagnosis text: diverticulitis": {
+   "agrees": "all but <10",
+   "names another condition": "0.0%",
+   "none or ambiguous": "<10 cases"
+  },
+  "CDM discharge_diagnosis text: pancreatitis": {
+   "agrees": "93.7%",
+   "names another condition": "0.0%",
+   "none or ambiguous": "6.3%"
+  }
+ },
+ "availability_by_label": {
+  "appendicitis": {
+   "n": 957,
+   "physical exam": "100.0%",
+   "CT": "93.8%",
+   "Ultrasound": "23.5%",
+   "Radiograph": "18.1%",
+   "MRI": "2.1%",
+   "any imaging": "100.0%",
+   "microbiology": "76.8%",
+   "lab items (median)": 52.0,
+   "HPI chars (median)": 603.0
+  },
+  "cholecystitis": {
+   "n": 648,
+   "physical exam": "100.0%",
+   "CT": "42.0%",
+   "Ultrasound": "87.2%",
+   "Radiograph": "49.7%",
+   "MRI": "1.5%",
+   "any imaging": "100.0%",
+   "microbiology": "77.5%",
+   "lab items (median)": 58.0,
+   "HPI chars (median)": 884.0
+  },
+  "diverticulitis": {
+   "n": 257,
+   "physical exam": "100.0%",
+   "CT": "91.4%",
+   "Ultrasound": "19.1%",
+   "Radiograph": "49.8%",
+   "MRI": "<10 cases",
+   "any imaging": "100.0%",
+   "microbiology": "88.7%",
+   "lab items (median)": 59.0,
+   "HPI chars (median)": 1060.0
+  },
+  "pancreatitis": {
+   "n": 538,
+   "physical exam": "100.0%",
+   "CT": "51.1%",
+   "Ultrasound": "72.9%",
+   "Radiograph": "59.1%",
+   "MRI": "4.3%",
+   "any imaging": "100.0%",
+   "microbiology": "72.7%",
+   "lab items (median)": 60.0,
+   "HPI chars (median)": 1540.0
+  }
+ },
+ "dedup": {
+  "reports_total": 5960,
+  "reports_dropped": 1337,
+  "cases_affected": 412
+ },
+ "mask_by_label": {
+  "appendicitis": {
+   "n": 957,
+   "physical exam contains ____": "<10 cases",
+   "radiology contains ____": "42.1%"
+  },
+  "cholecystitis": {
+   "n": 648,
+   "physical exam contains ____": "<10 cases",
+   "radiology contains ____": "26.9%"
+  },
+  "diverticulitis": {
+   "n": 257,
+   "physical exam contains ____": "<10 cases",
+   "radiology contains ____": "51.0%"
+  },
+  "pancreatitis": {
+   "n": 538,
+   "physical exam contains ____": "<10 cases",
+   "radiology contains ____": "33.5%"
+  }
+ },
+ "own_term_mentions": {
+  "appendicitis": {
+   "HPI": 0,
+   "physical exam": 0,
+   "radiology": 0
+  },
+  "cholecystitis": {
+   "HPI": 0,
+   "physical exam": 0,
+   "radiology": 0
+  },
+  "diverticulitis": {
+   "HPI": 0,
+   "physical exam": 0,
+   "radiology": 0
+  },
+  "pancreatitis": {
+   "HPI": 0,
+   "physical exam": 0,
+   "radiology": 0
+  }
+ },
+ "cross_mentions_radiology": {
+  "appendicitis": {
+   "mentions appendicitis": "0.0%",
+   "mentions cholecystitis": "2.5%",
+   "mentions diverticulitis": "5.9%",
+   "mentions pancreatitis": "<10 cases"
+  },
+  "cholecystitis": {
+   "mentions appendicitis": "3.9%",
+   "mentions cholecystitis": "0.0%",
+   "mentions diverticulitis": "11.0%",
+   "mentions pancreatitis": "2.3%"
+  },
+  "diverticulitis": {
+   "mentions appendicitis": "5.4%",
+   "mentions cholecystitis": "5.4%",
+   "mentions diverticulitis": "0.0%",
+   "mentions pancreatitis": "<10 cases"
+  },
+  "pancreatitis": {
+   "mentions appendicitis": "5.0%",
+   "mentions cholecystitis": "15.1%",
+   "mentions diverticulitis": "8.0%",
+   "mentions pancreatitis": "0.0%"
+  }
+ },
+ "procedure_terms_by_label": {
+  "appendicitis": {
+   "appendectomy": "83.9%",
+   "cholecystectomy": "<10 cases",
+   "colectomy": "<10 cases",
+   "ERCP": "0.0%"
+  },
+  "cholecystitis": {
+   "appendectomy": "<10 cases",
+   "cholecystectomy": "71.1%",
+   "colectomy": "0.0%",
+   "ERCP": "11.1%"
+  },
+  "diverticulitis": {
+   "appendectomy": "<10 cases",
+   "cholecystectomy": "0.0%",
+   "colectomy": "10.5%",
+   "ERCP": "<10 cases"
+  },
+  "pancreatitis": {
+   "appendectomy": "0.0%",
+   "cholecystectomy": "21.0%",
+   "colectomy": "0.0%",
+   "ERCP": "30.5%"
+  }
+ },
+ "mimic_schema": {
+  "admissions.csv.gz": {
+   "rows": 431231,
+   "columns": [
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "admittime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "dischtime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "deathtime",
+     "type": "TIMESTAMP",
+     "null_pct": 98.0
+    },
+    {
+     "column": "admission_type",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "admit_provider_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "admission_location",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "discharge_location",
+     "type": "VARCHAR",
+     "null_pct": 27.6
+    },
+    {
+     "column": "insurance",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "language",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "marital_status",
+     "type": "VARCHAR",
+     "null_pct": 2.1
+    },
+    {
+     "column": "race",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "edregtime",
+     "type": "TIMESTAMP",
+     "null_pct": 30.6
+    },
+    {
+     "column": "edouttime",
+     "type": "TIMESTAMP",
+     "null_pct": 30.6
+    },
+    {
+     "column": "hospital_expire_flag",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    }
+   ],
+   "distinct_hadm_approx": 384578,
+   "cdm_admissions_present": 2400,
+   "distinct_subject_approx": 149377,
+   "seconds": 0.5
+  },
+  "patients.csv.gz": {
+   "rows": 299712,
+   "columns": [
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "gender",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "anchor_age",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "anchor_year",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "anchor_year_group",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "dod",
+     "type": "DATE",
+     "null_pct": 90.3
+    }
+   ],
+   "distinct_subject_approx": 266612,
+   "seconds": 0.1
+  },
+  "diagnoses_icd.csv.gz": {
+   "rows": 4756326,
+   "columns": [
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "seq_num",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "icd_code",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "icd_version",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    }
+   ],
+   "distinct_hadm_approx": 384578,
+   "cdm_admissions_present": 2400,
+   "distinct_subject_approx": 149377,
+   "seconds": 0.6
+  },
+  "d_icd_diagnoses.csv.gz": {
+   "rows": 109775,
+   "columns": [
+    {
+     "column": "icd_code",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "icd_version",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "long_title",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    }
+   ],
+   "seconds": 0.1
+  },
+  "d_labitems.csv.gz": {
+   "rows": 1622,
+   "columns": [
+    {
+     "column": "itemid",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "label",
+     "type": "VARCHAR",
+     "null_pct": 0.2
+    },
+    {
+     "column": "fluid",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "category",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    }
+   ],
+   "seconds": 0.0
+  },
+  "microbiologyevents.csv.gz": {
+   "rows": 3228713,
+   "columns": [
+    {
+     "column": "microevent_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 56.7
+    },
+    {
+     "column": "micro_specimen_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "order_provider_id",
+     "type": "VARCHAR",
+     "null_pct": 70.4
+    },
+    {
+     "column": "chartdate",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "charttime",
+     "type": "TIMESTAMP",
+     "null_pct": 8.0
+    },
+    {
+     "column": "spec_itemid",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "spec_type_desc",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "test_seq",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "storedate",
+     "type": "TIMESTAMP",
+     "null_pct": 0.4
+    },
+    {
+     "column": "storetime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.8
+    },
+    {
+     "column": "test_itemid",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "test_name",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "org_itemid",
+     "type": "BIGINT",
+     "null_pct": 60.1
+    },
+    {
+     "column": "org_name",
+     "type": "VARCHAR",
+     "null_pct": 60.1
+    },
+    {
+     "column": "isolate_num",
+     "type": "BIGINT",
+     "null_pct": 60.1
+    },
+    {
+     "column": "quantity",
+     "type": "VARCHAR",
+     "null_pct": 100.0
+    },
+    {
+     "column": "ab_itemid",
+     "type": "BIGINT",
+     "null_pct": 65.7
+    },
+    {
+     "column": "ab_name",
+     "type": "VARCHAR",
+     "null_pct": 65.7
+    },
+    {
+     "column": "dilution_text",
+     "type": "VARCHAR",
+     "null_pct": 66.6
+    },
+    {
+     "column": "dilution_comparison",
+     "type": "VARCHAR",
+     "null_pct": 66.6
+    },
+    {
+     "column": "dilution_value",
+     "type": "DOUBLE",
+     "null_pct": 66.6
+    },
+    {
+     "column": "interpretation",
+     "type": "VARCHAR",
+     "null_pct": 65.7
+    },
+    {
+     "column": "comments",
+     "type": "VARCHAR",
+     "null_pct": 30.7
+    }
+   ],
+   "distinct_hadm_approx": 184766,
+   "cdm_admissions_present": 765,
+   "distinct_subject_approx": 170712,
+   "seconds": 1.1
+  },
+  "labevents.csv.gz": {
+   "rows": 118171367,
+   "columns": [
+    {
+     "column": "labevent_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 48.7
+    },
+    {
+     "column": "specimen_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "itemid",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "order_provider_id",
+     "type": "VARCHAR",
+     "null_pct": 71.4
+    },
+    {
+     "column": "charttime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "storetime",
+     "type": "TIMESTAMP",
+     "null_pct": 1.7
+    },
+    {
+     "column": "value",
+     "type": "VARCHAR",
+     "null_pct": 10.6
+    },
+    {
+     "column": "valuenum",
+     "type": "DOUBLE",
+     "null_pct": 14.4
+    },
+    {
+     "column": "valueuom",
+     "type": "VARCHAR",
+     "null_pct": 14.6
+    },
+    {
+     "column": "ref_range_lower",
+     "type": "DOUBLE",
+     "null_pct": 19.5
+    },
+    {
+     "column": "ref_range_upper",
+     "type": "DOUBLE",
+     "null_pct": 19.5
+    },
+    {
+     "column": "flag",
+     "type": "VARCHAR",
+     "null_pct": 71.6
+    },
+    {
+     "column": "priority",
+     "type": "VARCHAR",
+     "null_pct": 4.8
+    },
+    {
+     "column": "comments",
+     "type": "VARCHAR",
+     "null_pct": 81.6
+    }
+   ],
+   "distinct_hadm_approx": 313516,
+   "cdm_admissions_present": 1948,
+   "distinct_subject_approx": 227731,
+   "seconds": 17.0
+  },
+  "discharge.csv.gz": {
+   "rows": 331793,
+   "columns": [
+    {
+     "column": "note_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "note_type",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "note_seq",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "charttime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "storetime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "text",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    }
+   ],
+   "distinct_hadm_approx": 323669,
+   "cdm_admissions_present": 2400,
+   "distinct_subject_approx": 111716,
+   "text_chars_p5_p50_p95": [
+    4771,
+    9847,
+    18619
+   ],
+   "seconds": 9.0
+  },
+  "radiology.csv.gz": {
+   "rows": 2321355,
+   "columns": [
+    {
+     "column": "note_id",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "subject_id",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "hadm_id",
+     "type": "BIGINT",
+     "null_pct": 50.7
+    },
+    {
+     "column": "note_type",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    },
+    {
+     "column": "note_seq",
+     "type": "BIGINT",
+     "null_pct": 0.0
+    },
+    {
+     "column": "charttime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "storetime",
+     "type": "TIMESTAMP",
+     "null_pct": 0.0
+    },
+    {
+     "column": "text",
+     "type": "VARCHAR",
+     "null_pct": 0.0
+    }
+   ],
+   "distinct_hadm_approx": 315303,
+   "cdm_admissions_present": 2179,
+   "distinct_subject_approx": 208820,
+   "text_chars_p5_p50_p95": [
+    313,
+    781,
+    3280
+   ],
+   "seconds": 5.8
+  }
+ },
+ "openworld_join_coverage": {
+  "labs": {
+   "CDM's own tables": "100.0%",
+   "hadm_id join (build_openworld)": "81.2%"
+  },
+  "microbiology": {
+   "CDM's own tables": "77.3%",
+   "hadm_id join (build_openworld)": "31.9%"
+  },
+  "radiology": {
+   "CDM's own tables": "100.0%",
+   "hadm_id join (build_openworld)": "90.8%"
+  }
+ },
+ "admission_location_by_label": {
+  "AMBULATORY SURGERY TRANSFER": {
+   "appendicitis": "0",
+   "cholecystitis": "0",
+   "diverticulitis": "0",
+   "pancreatitis": "<10"
+  },
+  "CLINIC REFERRAL": {
+   "appendicitis": "<10",
+   "cholecystitis": "<10",
+   "diverticulitis": "<10",
+   "pancreatitis": "<10"
+  },
+  "EMERGENCY ROOM": {
+   "appendicitis": "775",
+   "cholecystitis": "507",
+   "diverticulitis": "198",
+   "pancreatitis": "435"
+  },
+  "PACU": {
+   "appendicitis": "18",
+   "cholecystitis": "0",
+   "diverticulitis": "<10",
+   "pancreatitis": "<10"
+  },
+  "PHYSICIAN REFERRAL": {
+   "appendicitis": "72",
+   "cholecystitis": "52",
+   "diverticulitis": "20",
+   "pancreatitis": "20"
+  },
+  "PROCEDURE SITE": {
+   "appendicitis": "<10",
+   "cholecystitis": "0",
+   "diverticulitis": "0",
+   "pancreatitis": "\u00b7"
+  },
+  "TRANSFER FROM HOSPITAL": {
+   "appendicitis": "<10",
+   "cholecystitis": "46",
+   "diverticulitis": "\u00b7",
+   "pancreatitis": "41"
+  },
+  "TRANSFER FROM SKILLED NURSING FACILITY": {
+   "appendicitis": "<10",
+   "cholecystitis": "<10",
+   "diverticulitis": "0",
+   "pancreatitis": "<10"
+  },
+  "WALK-IN/SELF REFERRAL": {
+   "appendicitis": "72",
+   "cholecystitis": "34",
+   "diverticulitis": "19",
+   "pancreatitis": "19"
+  }
+ },
+ "cohort_profiles": {
+  "CDM (all)": {
+   "n": 2400,
+   "female": "53.2%",
+   "age median (IQR)": "51 (33\u201366)",
+   "White": "65.5%",
+   "Black": "12.8%",
+   "Hispanic/Latino": "8.8%",
+   "Asian": "5.8%",
+   "Unknown": "1.4%",
+   "Medicaid": "7.3%",
+   "non-English/unknown": "10.9%"
+  },
+  "appendicitis": {
+   "n": 957,
+   "female": "48.8%",
+   "age median (IQR)": "36 (26\u201351)",
+   "White": "65.0%",
+   "Black": "10.3%",
+   "Hispanic/Latino": "8.8%",
+   "Asian": "8.0%",
+   "Unknown": "<10 cases",
+   "Medicaid": "5.4%",
+   "non-English/unknown": "9.4%"
+  },
+  "cholecystitis": {
+   "n": 648,
+   "female": "55.7%",
+   "age median (IQR)": "59 (44\u201372)",
+   "White": "64.0%",
+   "Black": "15.1%",
+   "Hispanic/Latino": "9.6%",
+   "Asian": "5.4%",
+   "Unknown": "1.7%",
+   "Medicaid": "9.1%",
+   "non-English/unknown": "13.1%"
+  },
+  "diverticulitis": {
+   "n": 257,
+   "female": "58.8%",
+   "age median (IQR)": "60 (49\u201372)",
+   "White": "72.8%",
+   "Black": "10.5%",
+   "Hispanic/Latino": "5.8%",
+   "Asian": "4.7%",
+   "Unknown": "<10 cases",
+   "Medicaid": "5.4%",
+   "non-English/unknown": "7.8%"
+  },
+  "pancreatitis": {
+   "n": 538,
+   "female": "55.2%",
+   "age median (IQR)": "59 (45\u201372)",
+   "White": "64.9%",
+   "Black": "15.6%",
+   "Hispanic/Latino": "9.3%",
+   "Asian": "2.6%",
+   "Unknown": "2.4%",
+   "Medicaid": "9.3%",
+   "non-English/unknown": "12.3%"
+  },
+  "Baseline: ED admissions": {
+   "n": 232595,
+   "female": "50.8%",
+   "age median (IQR)": "60 (45\u201375)",
+   "White": "66.8%",
+   "Black": "18.2%",
+   "Hispanic/Latino": "6.5%",
+   "Asian": "3.2%",
+   "Unknown": "1.9%",
+   "Medicaid": "11.3%",
+   "non-English/unknown": "10.1%"
+  },
+  "Baseline: all admissions": {
+   "n": 431231,
+   "female": "52.2%",
+   "age median (IQR)": "60 (45\u201374)",
+   "White": "67.2%",
+   "Black": "16.2%",
+   "Hispanic/Latino": "6.0%",
+   "Asian": "3.5%",
+   "Unknown": "3.3%",
+   "Medicaid": "9.6%",
+   "non-English/unknown": "9.9%"
+  }
+ },
+ "representation": {
+  "sex": {
+   "Female": {
+    "CDM n": "1,276",
+    "CDM %": "53.2",
+    "ED admissions %": "50.8%",
+    "all admissions %": "52.2%",
+    "SMD vs ED": 0.046
+   },
+   "Male": {
+    "CDM n": "1,124",
+    "CDM %": "46.8",
+    "ED admissions %": "49.2%",
+    "all admissions %": "47.8%",
+    "SMD vs ED": -0.046
+   }
+  },
+  "age_group": {
+   "18-29": {
+    "CDM n": "438",
+    "CDM %": "18.2",
+    "ED admissions %": "9.7%",
+    "all admissions %": "9.0%",
+    "SMD vs ED": 0.248
+   },
+   "30-44": {
+    "CDM n": "534",
+    "CDM %": "22.2",
+    "ED admissions %": "14.2%",
+    "all admissions %": "15.4%",
+    "SMD vs ED": 0.209
+   },
+   "45-64": {
+    "CDM n": "780",
+    "CDM %": "32.5",
+    "ED admissions %": "34.5%",
+    "all admissions %": "33.9%",
+    "SMD vs ED": -0.042
+   },
+   "65-79": {
+    "CDM n": "418",
+    "CDM %": "17.4",
+    "ED admissions %": "23.2%",
+    "all admissions %": "25.5%",
+    "SMD vs ED": -0.145
+   },
+   "80+": {
+    "CDM n": "230",
+    "CDM %": "9.6",
+    "ED admissions %": "18.3%",
+    "all admissions %": "16.1%",
+    "SMD vs ED": -0.254
+   }
+  },
+  "race_group": {
+   "Asian": {
+    "CDM n": "138",
+    "CDM %": "5.8",
+    "ED admissions %": "3.2%",
+    "all admissions %": "3.5%",
+    "SMD vs ED": 0.124
+   },
+   "Black": {
+    "CDM n": "308",
+    "CDM %": "12.8",
+    "ED admissions %": "18.2%",
+    "all admissions %": "16.2%",
+    "SMD vs ED": -0.149
+   },
+   "Hispanic/Latino": {
+    "CDM n": "211",
+    "CDM %": "8.8",
+    "ED admissions %": "6.5%",
+    "all admissions %": "6.0%",
+    "SMD vs ED": 0.085
+   },
+   "Other": {
+    "CDM n": "136",
+    "CDM %": "5.7",
+    "ED admissions %": "3.4%",
+    "all admissions %": "3.9%",
+    "SMD vs ED": 0.111
+   },
+   "White": {
+    "CDM n": "1,573",
+    "CDM %": "65.5",
+    "ED admissions %": "66.8%",
+    "all admissions %": "67.2%",
+    "SMD vs ED": -0.026
+   },
+   "Unknown": {
+    "CDM n": "34",
+    "CDM %": "1.4",
+    "ED admissions %": "1.9%",
+    "all admissions %": "3.3%",
+    "SMD vs ED": -0.04
+   }
+  },
+  "insurance": {
+   "Medicaid": {
+    "CDM n": "175",
+    "CDM %": "7.3",
+    "ED admissions %": "11.3%",
+    "all admissions %": "9.6%",
+    "SMD vs ED": -0.138
+   },
+   "Medicare": {
+    "CDM n": "507",
+    "CDM %": "21.1",
+    "ED admissions %": "39.2%",
+    "all admissions %": "37.2%",
+    "SMD vs ED": -0.402
+   },
+   "Other": {
+    "CDM n": "1,718",
+    "CDM %": "71.6",
+    "ED admissions %": "49.5%",
+    "all admissions %": "53.2%",
+    "SMD vs ED": 0.464
+   }
+  },
+  "language": {
+   "English": {
+    "CDM n": "2,139",
+    "CDM %": "89.1",
+    "ED admissions %": "89.9%",
+    "all admissions %": "90.1%",
+    "SMD vs ED": -0.026
+   },
+   "Non-English/unknown": {
+    "CDM n": "261",
+    "CDM %": "10.9",
+    "ED admissions %": "10.1%",
+    "all admissions %": "9.9%",
+    "SMD vs ED": 0.026
+   }
+  },
+  "marital_status": {
+   "DIVORCED": {
+    "CDM n": "125",
+    "CDM %": "5.2",
+    "ED admissions %": "7.5%",
+    "all admissions %": "7.3%",
+    "SMD vs ED": -0.095
+   },
+   "MARRIED": {
+    "CDM n": "1,052",
+    "CDM %": "43.8",
+    "ED admissions %": "37.3%",
+    "all admissions %": "42.0%",
+    "SMD vs ED": 0.133
+   },
+   "SINGLE": {
+    "CDM n": "1,046",
+    "CDM %": "43.6",
+    "ED admissions %": "41.2%",
+    "all admissions %": "37.8%",
+    "SMD vs ED": 0.049
+   },
+   "WIDOWED": {
+    "CDM n": "153",
+    "CDM %": "6.4",
+    "ED admissions %": "12.1%",
+    "all admissions %": "10.6%",
+    "SMD vs ED": -0.198
+   },
+   "Unknown": {
+    "CDM n": "24",
+    "CDM %": "1.0",
+    "ED admissions %": "1.9%",
+    "all admissions %": "2.1%",
+    "SMD vs ED": -0.078
+   }
+  }
+ },
+ "label_by_group": {
+  "sex": {
+   "table": {
+    "Female": {
+     "appendicitis": "467 (36.6%)",
+     "cholecystitis": "361 (28.3%)",
+     "diverticulitis": "151 (11.8%)",
+     "pancreatitis": "297 (23.3%)"
+    },
+    "Male": {
+     "appendicitis": "490 (43.6%)",
+     "cholecystitis": "287 (25.5%)",
+     "diverticulitis": "106 (9.4%)",
+     "pancreatitis": "241 (21.4%)"
+    }
+   },
+   "chi2": 13.14,
+   "dof": 3,
+   "p": 0.004347905562669717,
+   "cramers_v": 0.074
+  },
+  "age_group": {
+   "table": {
+    "18-29": {
+     "appendicitis": "339 (77.4%)",
+     "cholecystitis": "53 (12.1%)",
+     "diverticulitis": "<10",
+     "pancreatitis": "\u00b7"
+    },
+    "30-44": {
+     "appendicitis": "282 (52.8%)",
+     "cholecystitis": "122 (22.8%)",
+     "diverticulitis": "44 (8.2%)",
+     "pancreatitis": "86 (16.1%)"
+    },
+    "45-64": {
+     "appendicitis": "251 (32.2%)",
+     "cholecystitis": "221 (28.3%)",
+     "diverticulitis": "99 (12.7%)",
+     "pancreatitis": "209 (26.8%)"
+    },
+    "65-79": {
+     "appendicitis": "61 (14.6%)",
+     "cholecystitis": "157 (37.6%)",
+     "diverticulitis": "72 (17.2%)",
+     "pancreatitis": "128 (30.6%)"
+    },
+    "80+": {
+     "appendicitis": "24 (10.4%)",
+     "cholecystitis": "95 (41.3%)",
+     "diverticulitis": "\u00b7",
+     "pancreatitis": "\u00b7"
+    }
+   },
+   "chi2": 517.04,
+   "dof": 12,
+   "p": 5.226144891188559e-103,
+   "cramers_v": 0.268
+  },
+  "race_group": {
+   "table": {
+    "Asian": {
+     "appendicitis": "77 (55.8%)",
+     "cholecystitis": "35 (25.4%)",
+     "diverticulitis": "\u00b7",
+     "pancreatitis": "\u00b7"
+    },
+    "Black": {
+     "appendicitis": "99 (32.1%)",
+     "cholecystitis": "98 (31.8%)",
+     "diverticulitis": "27 (8.8%)",
+     "pancreatitis": "84 (27.3%)"
+    },
+    "Hispanic/Latino": {
+     "appendicitis": "84 (39.8%)",
+     "cholecystitis": "62 (29.4%)",
+     "diverticulitis": "15 (7.1%)",
+     "pancreatitis": "50 (23.7%)"
+    },
+    "Other": {
+     "appendicitis": "\u00b7",
+     "cholecystitis": "27 (19.9%)",
+     "diverticulitis": "\u00b7",
+     "pancreatitis": "28 (20.6%)"
+    },
+    "White": {
+     "appendicitis": "622 (39.5%)",
+     "cholecystitis": "415 (26.4%)",
+     "diverticulitis": "187 (11.9%)",
+     "pancreatitis": "349 (22.2%)"
+    },
+    "Unknown": {
+     "appendicitis": "<10",
+     "cholecystitis": "11 (32.4%)",
+     "diverticulitis": "<10",
+     "pancreatitis": "\u00b7"
+    }
+   },
+   "chi2": 48.77,
+   "dof": 15,
+   "p": 1.908049286903313e-05,
+   "cramers_v": 0.082
+  },
+  "insurance": {
+   "table": {
+    "Medicaid": {
+     "appendicitis": "52 (29.7%)",
+     "cholecystitis": "59 (33.7%)",
+     "diverticulitis": "14 (8.0%)",
+     "pancreatitis": "50 (28.6%)"
+    },
+    "Medicare": {
+     "appendicitis": "59 (11.6%)",
+     "cholecystitis": "176 (34.7%)",
+     "diverticulitis": "89 (17.6%)",
+     "pancreatitis": "183 (36.1%)"
+    },
+    "Other": {
+     "appendicitis": "846 (49.2%)",
+     "cholecystitis": "413 (24.0%)",
+     "diverticulitis": "154 (9.0%)",
+     "pancreatitis": "305 (17.8%)"
+    }
+   },
+   "chi2": 253.61,
+   "dof": 6,
+   "p": 6.939402407299414e-52,
+   "cramers_v": 0.23
+  },
+  "language": {
+   "table": {
+    "English": {
+     "appendicitis": "867 (40.5%)",
+     "cholecystitis": "563 (26.3%)",
+     "diverticulitis": "237 (11.1%)",
+     "pancreatitis": "472 (22.1%)"
+    },
+    "Non-English/unknown": {
+     "appendicitis": "90 (34.5%)",
+     "cholecystitis": "85 (32.6%)",
+     "diverticulitis": "20 (7.7%)",
+     "pancreatitis": "66 (25.3%)"
+    }
+   },
+   "chi2": 9.11,
+   "dof": 3,
+   "p": 0.02786445772798678,
+   "cramers_v": 0.062
+  },
+  "marital_status": {
+   "table": {
+    "DIVORCED": {
+     "appendicitis": "25 (20.0%)",
+     "cholecystitis": "\u00b7",
+     "diverticulitis": "\u00b7",
+     "pancreatitis": "\u00b7"
+    },
+    "MARRIED": {
+     "appendicitis": "366 (34.8%)",
+     "cholecystitis": "311 (29.6%)",
+     "diverticulitis": "137 (13.0%)",
+     "pancreatitis": "238 (22.6%)"
+    },
+    "SINGLE": {
+     "appendicitis": "540 (51.6%)",
+     "cholecystitis": "224 (21.4%)",
+     "diverticulitis": "76 (7.3%)",
+     "pancreatitis": "206 (19.7%)"
+    },
+    "WIDOWED": {
+     "appendicitis": "\u00b7",
+     "cholecystitis": "58 (37.9%)",
+     "diverticulitis": "\u00b7",
+     "pancreatitis": "53 (34.6%)"
+    },
+    "Unknown": {
+     "appendicitis": "<10",
+     "cholecystitis": "<10",
+     "diverticulitis": "<10",
+     "pancreatitis": "<10"
+    }
+   },
+   "chi2": 152.81,
+   "dof": 12,
+   "p": 1.5233982405867035e-26,
+   "cramers_v": 0.146
+  },
+  "year_group": {
+   "table": {
+    "2008 - 2010": {
+     "appendicitis": "246 (27.7%)",
+     "cholecystitis": "241 (27.2%)",
+     "diverticulitis": "128 (14.4%)",
+     "pancreatitis": "272 (30.7%)"
+    },
+    "2011 - 2013": {
+     "appendicitis": "315 (44.1%)",
+     "cholecystitis": "210 (29.4%)",
+     "diverticulitis": "60 (8.4%)",
+     "pancreatitis": "129 (18.1%)"
+    },
+    "2014 - 2016": {
+     "appendicitis": "248 (49.5%)",
+     "cholecystitis": "129 (25.7%)",
+     "diverticulitis": "41 (8.2%)",
+     "pancreatitis": "83 (16.6%)"
+    },
+    "2017 - 2019": {
+     "appendicitis": "148 (49.7%)",
+     "cholecystitis": "68 (22.8%)",
+     "diverticulitis": "28 (9.4%)",
+     "pancreatitis": "54 (18.1%)"
+    }
+   },
+   "chi2": 120.11,
+   "dof": 9,
+   "p": 1.2662157358826363e-21,
+   "cramers_v": 0.129
+  }
+ },
+ "demographic_shortcut": {
+  "all": {
+   "features": [
+    "sex",
+    "age_group",
+    "race_group",
+    "insurance",
+    "language",
+    "marital_status"
+   ],
+   "n": 2400,
+   "accuracy": 0.478,
+   "macro_f1": 0.323,
+   "majority_accuracy": 0.399,
+   "macro_auroc_ovr": 0.676,
+   "per_class_auroc": {
+    "appendicitis": 0.779,
+    "cholecystitis": 0.632,
+    "diverticulitis": 0.639,
+    "pancreatitis": 0.655
+   }
+  },
+  "sex_age": {
+   "features": [
+    "sex",
+    "age_group"
+   ],
+   "n": 2400,
+   "accuracy": 0.456,
+   "macro_f1": 0.276,
+   "majority_accuracy": 0.399,
+   "macro_auroc_ovr": 0.664,
+   "per_class_auroc": {
+    "appendicitis": 0.763,
+    "cholecystitis": 0.627,
+    "diverticulitis": 0.645,
+    "pancreatitis": 0.621
+   }
+  }
+ },
+ "information_by_group": {
+  "sex": {
+   "table": {
+    "Female": {
+     "n": 1276,
+     "CT": "64.5%",
+     "CT (adj.)": 65.7,
+     "Ultrasound": "55.2%",
+     "Ultrasound (adj.)": 54.1,
+     "MRI": "3.3%",
+     "MRI (adj.)": 3.3,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "75.8%",
+     "microbiology (adj.)": 75.9,
+     "lab items (median)": 57.0,
+     "HPI chars (median)": 843.5,
+     "PE chars (median)": 345.0,
+     "HPI \u00f7 class median (median)": 0.99
+    },
+    "Male": {
+     "n": 1124,
+     "CT": "76.2%",
+     "CT (adj.)": 75.2,
+     "Ultrasound": "46.9%",
+     "Ultrasound (adj.)": 48.4,
+     "MRI": "1.8%",
+     "MRI (adj.)": 1.9,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "79.1%",
+     "microbiology (adj.)": 79.5,
+     "lab items (median)": 55.0,
+     "HPI chars (median)": 822.0,
+     "PE chars (median)": 350.0,
+     "HPI \u00f7 class median (median)": 1.01
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 0.4267959876387707,
+    "lab items": 0.13189192428999175
+   }
+  },
+  "age_group": {
+   "table": {
+    "18-29": {
+     "n": 438,
+     "CT": "78.3%",
+     "CT (adj.)": 61.1,
+     "Ultrasound": "48.2%",
+     "Ultrasound (adj.)": 55.8,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 1.7,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "72.8%",
+     "microbiology (adj.)": 68.8,
+     "lab items (median)": 52.0,
+     "HPI chars (median)": 593.0,
+     "PE chars (median)": 319.0,
+     "HPI \u00f7 class median (median)": 0.88
+    },
+    "30-44": {
+     "n": 534,
+     "CT": "68.7%",
+     "CT (adj.)": 62.9,
+     "Ultrasound": "45.3%",
+     "Ultrasound (adj.)": 51.9,
+     "MRI": "3.2%",
+     "MRI (adj.)": 2.9,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "74.5%",
+     "microbiology (adj.)": 73.7,
+     "lab items (median)": 54.0,
+     "HPI chars (median)": 731.5,
+     "PE chars (median)": 329.0,
+     "HPI \u00f7 class median (median)": 0.93
+    },
+    "45-64": {
+     "n": 780,
+     "CT": "67.6%",
+     "CT (adj.)": 70.6,
+     "Ultrasound": "50.8%",
+     "Ultrasound (adj.)": 46.7,
+     "MRI": "2.6%",
+     "MRI (adj.)": 2.3,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "74.5%",
+     "microbiology (adj.)": 74.5,
+     "lab items (median)": 55.0,
+     "HPI chars (median)": 879.0,
+     "PE chars (median)": 360.5,
+     "HPI \u00f7 class median (median)": 1.02
+    },
+    "65-79": {
+     "n": 418,
+     "CT": "71.1%",
+     "CT (adj.)": 78.1,
+     "Ultrasound": "57.4%",
+     "Ultrasound (adj.)": 44.6,
+     "MRI": "2.9%",
+     "MRI (adj.)": 2.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "84.2%",
+     "microbiology (adj.)": 83.8,
+     "lab items (median)": 61.0,
+     "HPI chars (median)": 1185.0,
+     "PE chars (median)": 376.5,
+     "HPI \u00f7 class median (median)": 1.14
+    },
+    "80+": {
+     "n": 230,
+     "CT": "63.5%",
+     "CT (adj.)": 75.6,
+     "Ultrasound": "61.7%",
+     "Ultrasound (adj.)": 43.9,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 1.8,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "89.6%",
+     "microbiology (adj.)": 93.0,
+     "lab items (median)": 65.0,
+     "HPI chars (median)": 1238.5,
+     "PE chars (median)": 412.5,
+     "HPI \u00f7 class median (median)": 1.15
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 6.70882550581384e-17,
+    "lab items": 3.3688779455869353e-47
+   }
+  },
+  "race_group": {
+   "table": {
+    "Asian": {
+     "n": 138,
+     "CT": "81.9%",
+     "CT (adj.)": 77.3,
+     "Ultrasound": "38.4%",
+     "Ultrasound (adj.)": 45.8,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 2.1,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "78.3%",
+     "microbiology (adj.)": 78.9,
+     "lab items (median)": 57.0,
+     "HPI chars (median)": 660.5,
+     "PE chars (median)": 340.0,
+     "HPI \u00f7 class median (median)": 0.92
+    },
+    "Black": {
+     "n": 308,
+     "CT": "65.3%",
+     "CT (adj.)": 69.7,
+     "Ultrasound": "59.1%",
+     "Ultrasound (adj.)": 53.5,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 1.3,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "74.7%",
+     "microbiology (adj.)": 75.6,
+     "lab items (median)": 57.5,
+     "HPI chars (median)": 838.5,
+     "PE chars (median)": 353.0,
+     "HPI \u00f7 class median (median)": 0.96
+    },
+    "Hispanic/Latino": {
+     "n": 211,
+     "CT": "62.1%",
+     "CT (adj.)": 63.9,
+     "Ultrasound": "63.0%",
+     "Ultrasound (adj.)": 60.1,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 4.1,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "73.5%",
+     "microbiology (adj.)": 73.9,
+     "lab items (median)": 54.0,
+     "HPI chars (median)": 786.0,
+     "PE chars (median)": 345.0,
+     "HPI \u00f7 class median (median)": 0.91
+    },
+    "Other": {
+     "n": 136,
+     "CT": "74.3%",
+     "CT (adj.)": 69.3,
+     "Ultrasound": "48.5%",
+     "Ultrasound (adj.)": 54.7,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 3.2,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "80.9%",
+     "microbiology (adj.)": 80.1,
+     "lab items (median)": 58.0,
+     "HPI chars (median)": 798.0,
+     "PE chars (median)": 347.0,
+     "HPI \u00f7 class median (median)": 1.0
+    },
+    "White": {
+     "n": 1573,
+     "CT": "70.7%",
+     "CT (adj.)": 70.3,
+     "Ultrasound": "49.7%",
+     "Ultrasound (adj.)": 50.2,
+     "MRI": "2.7%",
+     "MRI (adj.)": 2.7,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "77.6%",
+     "microbiology (adj.)": 77.4,
+     "lab items (median)": 56.0,
+     "HPI chars (median)": 853.0,
+     "PE chars (median)": 346.0,
+     "HPI \u00f7 class median (median)": 1.02
+    },
+    "Unknown": {
+     "n": 34,
+     "CT": "64.7%",
+     "CT (adj.)": 72.4,
+     "Ultrasound": "47.1%",
+     "Ultrasound (adj.)": 39.6,
+     "MRI": "0.0%",
+     "MRI (adj.)": 0.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "all but <10",
+     "microbiology (adj.)": 98.3,
+     "lab items (median)": 58.0,
+     "HPI chars (median)": 1251.0,
+     "PE chars (median)": 371.0,
+     "HPI \u00f7 class median (median)": 1.24
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 0.004078741450607627,
+    "lab items": 0.024859123116860688
+   }
+  },
+  "insurance": {
+   "table": {
+    "Medicaid": {
+     "n": 175,
+     "CT": "60.6%",
+     "CT (adj.)": 67.4,
+     "Ultrasound": "57.1%",
+     "Ultrasound (adj.)": 49.2,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 3.8,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "73.7%",
+     "microbiology (adj.)": 74.5,
+     "lab items (median)": 54.0,
+     "HPI chars (median)": 806.0,
+     "PE chars (median)": 353.0,
+     "HPI \u00f7 class median (median)": 0.95
+    },
+    "Medicare": {
+     "n": 507,
+     "CT": "65.3%",
+     "CT (adj.)": 75.4,
+     "Ultrasound": "59.4%",
+     "Ultrasound (adj.)": 46.7,
+     "MRI": "3.0%",
+     "MRI (adj.)": 2.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "83.6%",
+     "microbiology (adj.)": 84.7,
+     "lab items (median)": 61.0,
+     "HPI chars (median)": 1248.0,
+     "PE chars (median)": 419.0,
+     "HPI \u00f7 class median (median)": 1.16
+    },
+    "Other": {
+     "n": 1718,
+     "CT": "72.4%",
+     "CT (adj.)": 68.6,
+     "Ultrasound": "48.3%",
+     "Ultrasound (adj.)": 52.4,
+     "MRI": "2.3%",
+     "MRI (adj.)": 2.4,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "75.8%",
+     "microbiology (adj.)": 75.7,
+     "lab items (median)": 55.0,
+     "HPI chars (median)": 746.0,
+     "PE chars (median)": 334.5,
+     "HPI \u00f7 class median (median)": 0.96
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 2.00396259717774e-12,
+    "lab items": 2.6735800101857443e-19
+   }
+  },
+  "language": {
+   "table": {
+    "English": {
+     "n": 2139,
+     "CT": "70.2%",
+     "CT (adj.)": 69.7,
+     "Ultrasound": "51.1%",
+     "Ultrasound (adj.)": 51.8,
+     "MRI": "2.8%",
+     "MRI (adj.)": 2.8,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "77.4%",
+     "microbiology (adj.)": 77.3,
+     "lab items (median)": 56.0,
+     "HPI chars (median)": 832.0,
+     "PE chars (median)": 346.0,
+     "HPI \u00f7 class median (median)": 1.01
+    },
+    "Non-English/unknown": {
+     "n": 261,
+     "CT": "68.6%",
+     "CT (adj.)": 72.8,
+     "Ultrasound": "52.5%",
+     "Ultrasound (adj.)": 46.4,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 1.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "77.0%",
+     "microbiology (adj.)": 77.1,
+     "lab items (median)": 59.0,
+     "HPI chars (median)": 829.0,
+     "PE chars (median)": 354.0,
+     "HPI \u00f7 class median (median)": 0.93
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 0.09245769616425448,
+    "lab items": 0.0011419273358627604
+   }
+  },
+  "marital_status": {
+   "table": {
+    "DIVORCED": {
+     "n": 125,
+     "CT": "65.6%",
+     "CT (adj.)": 74.7,
+     "Ultrasound": "61.6%",
+     "Ultrasound (adj.)": 53.2,
+     "MRI": "0.0%",
+     "MRI (adj.)": 0.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "85.6%",
+     "microbiology (adj.)": 86.1,
+     "lab items (median)": 57.0,
+     "HPI chars (median)": 1022.0,
+     "PE chars (median)": 352.0,
+     "HPI \u00f7 class median (median)": 1.14
+    },
+    "MARRIED": {
+     "n": 1052,
+     "CT": "68.8%",
+     "CT (adj.)": 70.2,
+     "Ultrasound": "48.4%",
+     "Ultrasound (adj.)": 46.3,
+     "MRI": "2.7%",
+     "MRI (adj.)": 2.7,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "78.3%",
+     "microbiology (adj.)": 78.1,
+     "lab items (median)": 57.0,
+     "HPI chars (median)": 872.0,
+     "PE chars (median)": 347.0,
+     "HPI \u00f7 class median (median)": 1.02
+    },
+    "SINGLE": {
+     "n": 1046,
+     "CT": "72.6%",
+     "CT (adj.)": 68.1,
+     "Ultrasound": "51.1%",
+     "Ultrasound (adj.)": 55.2,
+     "MRI": "2.7%",
+     "MRI (adj.)": 3.0,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "74.1%",
+     "microbiology (adj.)": 74.4,
+     "lab items (median)": 54.0,
+     "HPI chars (median)": 725.5,
+     "PE chars (median)": 340.0,
+     "HPI \u00f7 class median (median)": 0.95
+    },
+    "WIDOWED": {
+     "n": 153,
+     "CT": "63.4%",
+     "CT (adj.)": 73.3,
+     "Ultrasound": "62.7%",
+     "Ultrasound (adj.)": 44.6,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 1.7,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "84.3%",
+     "microbiology (adj.)": 87.7,
+     "lab items (median)": 63.0,
+     "HPI chars (median)": 1160.0,
+     "PE chars (median)": 397.0,
+     "HPI \u00f7 class median (median)": 1.12
+    },
+    "Unknown": {
+     "n": 24,
+     "CT": "all but <10",
+     "CT (adj.)": 75.8,
+     "Ultrasound": "58.3%",
+     "Ultrasound (adj.)": 54.8,
+     "MRI": "<10 cases",
+     "MRI (adj.)": 10.8,
+     "any imaging": "100.0%",
+     "any imaging (adj.)": 100.0,
+     "microbiology": "all but <10",
+     "microbiology (adj.)": 91.6,
+     "lab items (median)": 69.5,
+     "HPI chars (median)": 1106.0,
+     "PE chars (median)": 390.0,
+     "HPI \u00f7 class median (median)": 1.05
+    }
+   },
+   "kruskal_p": {
+    "HPI chars": 0.0013102997572057567,
+    "lab items": 7.866945373657367e-12
+   }
+  }
+ },
+ "split": {
+  "profiles": {
+   "train": {
+    "n": 1920,
+    "female": "52.0%",
+    "age median (IQR)": "51 (33\u201366)",
+    "White": "65.4%",
+    "Black": "13.1%",
+    "Hispanic/Latino": "8.8%",
+    "Asian": "5.6%",
+    "Unknown": "1.4%",
+    "Medicaid": "6.5%",
+    "non-English/unknown": "10.3%"
+   },
+   "val": {
+    "n": 240,
+    "female": "55.4%",
+    "age median (IQR)": "46 (34\u201363)",
+    "White": "64.6%",
+    "Black": "11.7%",
+    "Hispanic/Latino": "10.4%",
+    "Asian": "7.1%",
+    "Unknown": "<10 cases",
+    "Medicaid": "12.5%",
+    "non-English/unknown": "15.0%"
+   },
+   "test": {
+    "n": 240,
+    "female": "60.4%",
+    "age median (IQR)": "52 (33\u201367)",
+    "White": "67.5%",
+    "Black": "12.1%",
+    "Hispanic/Latino": "7.5%",
+    "Asian": "5.8%",
+    "Unknown": "<10 cases",
+    "Medicaid": "8.3%",
+    "non-English/unknown": "11.2%"
+   }
+  },
+  "tests": {
+   "sex": {
+    "chi2": 6.64,
+    "dof": 2,
+    "p": 0.03612319212744477,
+    "cramers_v": 0.053
+   },
+   "race_group": {
+    "chi2": 3.54,
+    "dof": 10,
+    "p": 0.9658499789297411,
+    "cramers_v": 0.027
+   },
+   "insurance": {
+    "chi2": 13.57,
+    "dof": 4,
+    "p": 0.008812900289649067,
+    "cramers_v": 0.053
+   },
+   "language": {
+    "chi2": 4.87,
+    "dof": 2,
+    "p": 0.08737981855609629,
+    "cramers_v": 0.045
+   }
+  },
+  "patients_repeat": 17,
+  "patients_mixed_labels": 10,
+  "patients_across_splits": "<10"
+ },
+ "icd_vs_label": {
+  "primary": {
+   "appendicitis": {
+    "primary dx = this condition": "96.0%",
+    "primary dx = another CDM condition": "0.0%",
+    "primary dx = an OTHER group": "0.0%",
+    "any code for this condition": "100.0%"
+   },
+   "cholecystitis": {
+    "primary dx = this condition": "91.0%",
+    "primary dx = another CDM condition": "<10 cases",
+    "primary dx = an OTHER group": "0.0%",
+    "any code for this condition": "100.0%"
+   },
+   "diverticulitis": {
+    "primary dx = this condition": "89.1%",
+    "primary dx = another CDM condition": "0.0%",
+    "primary dx = an OTHER group": "<10 cases",
+    "any code for this condition": "100.0%"
+   },
+   "pancreatitis": {
+    "primary dx = this condition": "74.3%",
+    "primary dx = another CDM condition": "6.5%",
+    "primary dx = an OTHER group": "<10 cases",
+    "any code for this condition": "100.0%"
+   }
+  },
+  "co_coded": {
+   "appendicitis": {
+    "also coded appendicitis": "\u2013",
+    "also coded cholecystitis": "0.0%",
+    "also coded diverticulitis": "<10 cases",
+    "also coded pancreatitis": "0.0%"
+   },
+   "cholecystitis": {
+    "also coded appendicitis": "<10 cases",
+    "also coded cholecystitis": "\u2013",
+    "also coded diverticulitis": "<10 cases",
+    "also coded pancreatitis": "3.9%"
+   },
+   "diverticulitis": {
+    "also coded appendicitis": "<10 cases",
+    "also coded cholecystitis": "0.0%",
+    "also coded diverticulitis": "\u2013",
+    "also coded pancreatitis": "0.0%"
+   },
+   "pancreatitis": {
+    "also coded appendicitis": "0.0%",
+    "also coded cholecystitis": "20.1%",
+    "also coded diverticulitis": "0.0%",
+    "also coded pancreatitis": "\u2013"
+   }
+  }
+ },
+ "openworld_pool": {
+  "abdominal_aortic_aneurysm": {
+   "icd_candidates": "750",
+   "with_discharge_note": "714",
+   "abdominal_chief_complaint": "377"
+  },
+  "bowel_obstruction": {
+   "icd_candidates": "3,411",
+   "with_discharge_note": "3,243",
+   "abdominal_chief_complaint": "2,224"
+  },
+  "diabetic_ketoacidosis": {
+   "icd_candidates": "1,160",
+   "with_discharge_note": "1,034",
+   "abdominal_chief_complaint": "137"
+  },
+  "ectopic_pregnancy": {
+   "icd_candidates": "228",
+   "with_discharge_note": "157",
+   "abdominal_chief_complaint": "66"
+  },
+  "gastroenteritis_colitis": {
+   "icd_candidates": "4,211",
+   "with_discharge_note": "3,915",
+   "abdominal_chief_complaint": "1,385"
+  },
+  "gi_bleed": {
+   "icd_candidates": "2,810",
+   "with_discharge_note": "2,661",
+   "abdominal_chief_complaint": "173"
+  },
+  "mesenteric_ischemia": {
+   "icd_candidates": "248",
+   "with_discharge_note": "241",
+   "abdominal_chief_complaint": "148"
+  },
+  "peptic_ulcer_perforation_or_bleed": {
+   "icd_candidates": "162",
+   "with_discharge_note": "159",
+   "abdominal_chief_complaint": "114"
+  },
+  "urolithiasis": {
+   "icd_candidates": "1,333",
+   "with_discharge_note": "1,046",
+   "abdominal_chief_complaint": "465"
+  }
+ },
+ "openworld_demographics": {
+  "profiles": {
+   "CDM (in-set)": {
+    "n": 2400,
+    "female": "53.2%",
+    "age median (IQR)": "51 (33\u201366)",
+    "White": "65.5%",
+    "Black": "12.8%",
+    "Hispanic/Latino": "8.8%",
+    "Asian": "5.8%",
+    "Unknown": "1.4%",
+    "Medicaid": "7.3%",
+    "non-English/unknown": "10.9%"
+   },
+   "OTHER sample": {
+    "n": 800,
+    "female": "59.4%",
+    "age median (IQR)": "57 (40\u201373)",
+    "White": "63.5%",
+    "Black": "18.2%",
+    "Hispanic/Latino": "6.9%",
+    "Asian": "3.5%",
+    "Unknown": "2.8%",
+    "Medicaid": "10.5%",
+    "non-English/unknown": "8.1%"
+   },
+   "abdominal_aortic_aneurysm": {
+    "n": 92,
+    "female": "38.0%",
+    "age median (IQR)": "75 (70\u201381)",
+    "White": "77.2%",
+    "Black": "<10 cases",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "0.0%",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "<10 cases"
+   },
+   "bowel_obstruction": {
+    "n": 92,
+    "female": "63.0%",
+    "age median (IQR)": "60 (50\u201373)",
+    "White": "67.4%",
+    "Black": "19.6%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "<10 cases"
+   },
+   "diabetic_ketoacidosis": {
+    "n": 92,
+    "female": "60.9%",
+    "age median (IQR)": "35 (28\u201346)",
+    "White": "34.8%",
+    "Black": "45.7%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "22.8%",
+    "non-English/unknown": "<10 cases"
+   },
+   "ectopic_pregnancy": {
+    "n": 66,
+    "female": "100.0%",
+    "age median (IQR)": "33 (30\u201337)",
+    "White": "42.4%",
+    "Black": "18.2%",
+    "Hispanic/Latino": "16.7%",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "16.7%",
+    "non-English/unknown": "<10 cases"
+   },
+   "gastroenteritis_colitis": {
+    "n": 92,
+    "female": "69.6%",
+    "age median (IQR)": "56 (44\u201366)",
+    "White": "60.9%",
+    "Black": "17.4%",
+    "Hispanic/Latino": "12.0%",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "15.2%",
+    "non-English/unknown": "12.0%"
+   },
+   "gi_bleed": {
+    "n": 92,
+    "female": "51.1%",
+    "age median (IQR)": "50 (36\u201370)",
+    "White": "65.2%",
+    "Black": "21.7%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "<10 cases"
+   },
+   "mesenteric_ischemia": {
+    "n": 92,
+    "female": "64.1%",
+    "age median (IQR)": "73 (59\u201381)",
+    "White": "76.1%",
+    "Black": "12.0%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "10.9%"
+   },
+   "peptic_ulcer_perforation_or_bleed": {
+    "n": 91,
+    "female": "49.5%",
+    "age median (IQR)": "66 (52\u201378)",
+    "White": "71.4%",
+    "Black": "13.2%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "11.0%"
+   },
+   "urolithiasis": {
+    "n": 91,
+    "female": "49.5%",
+    "age median (IQR)": "53 (46\u201365)",
+    "White": "70.3%",
+    "Black": "11.0%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "0.0%",
+    "Medicaid": "12.1%",
+    "non-English/unknown": "<10 cases"
+   }
+  },
+  "shortcut": {
+   "features": [
+    "sex",
+    "age_group",
+    "race_group",
+    "insurance",
+    "language",
+    "marital_status"
+   ],
+   "n": 3200,
+   "accuracy": 0.749,
+   "macro_f1": 0.442,
+   "majority_accuracy": 0.75,
+   "auroc": 0.622
+  }
+ },
+ "openworld_cohort_order_stable": false,
+ "findings": [
+  "`configs/cdm_format.yaml` maps `history` columns that `history_of_present_illness.csv` does not have: subject_id -> subject_id.",
+  "`configs/cdm_format.yaml` maps `labs` columns that `laboratory_tests.csv` does not have: charttime -> charttime.",
+  "`configs/cdm_format.yaml` maps `microbiology` columns that `microbiology.csv` does not have: charttime -> charttime.",
+  "Class imbalance: appendicitis 957 vs diverticulitis 257 cases (3.7x). Report per-class accuracy, not only case-weighted accuracy.",
+  "Fallback label source 'CDM icd_diagnosis' agrees with pathology_ids.json on only 53% of pancreatitis cases (the rest are ambiguous or unmapped); CDM v1.0, which lacks pathology_ids.json, would lose or mislabel these.",
+  "Imaging dedup drops 1,337 radiology reports (412 cases). Without `charttime` the 'earliest' report is simply the first row in the file.",
+  "The `____` mask in radiology text ranges 27\u201351% across classes; mask presence is itself a label cue (chi-square p <0.001).",
+  "Radiology names other CDM conditions in up to 15% of a class's cases (mostly negations). This is a legitimate but strong exclusion cue; the open-world cases must keep the same kind of mentions, or the agent learns the source instead of the disease.",
+  "Open-world cases will carry less data than CDM cases: joined on `hadm_id` as `build_openworld` does, CDM's own admissions have labs 81.2% vs 100.0%; microbiology 31.9% vs 77.3%; radiology 90.8% vs 100.0% (join vs CDM). MIMIC leaves `hadm_id` empty on many ED-era lab and microbiology rows, which CDM evidently includes. An agent can learn 'sparse data \u2192 OTHER'. Fetch by `subject_id` and a time window around the admission instead, and re-run the source-classifier check.",
+  "Representation vs. ED admissions, age (CDM vs ED): 18-29 18.2% vs 9.7% (SMD +0.25); 30-44 22.2% vs 14.2% (SMD +0.21); 65-79 17.4% vs 23.2% (SMD -0.14); 80+ 9.6% vs 18.3% (SMD -0.25).",
+  "Representation vs. ED admissions, race (CDM vs ED): Asian 5.8% vs 3.2% (SMD +0.12); Black 12.8% vs 18.2% (SMD -0.15); Other 5.7% vs 3.4% (SMD +0.11).",
+  "Representation vs. ED admissions, insurance (CDM vs ED): Medicaid 7.3% vs 11.3% (SMD -0.14); Medicare 21.1% vs 39.2% (SMD -0.40); Other 71.6% vs 49.5% (SMD +0.46).",
+  "Representation vs. ED admissions, marital status (CDM vs ED): MARRIED 43.8% vs 37.3% (SMD +0.13); WIDOWED 6.4% vs 12.1% (SMD -0.20).",
+  "Label depends on age (Cram\u00e9r's V 0.268, p <0.001).",
+  "Label depends on insurance (Cram\u00e9r's V 0.23, p <0.001).",
+  "Label depends on marital status (Cram\u00e9r's V 0.146, p <0.001).",
+  "Demographics alone predict the label with macro-AUROC 0.68 (appendicitis 0.78). An agent can score above chance before ordering any test; compare against this floor.",
+  "CT availability (label-adjusted) differs by age: 65-79 78% vs 18-29 61%.",
+  "Ultrasound availability (label-adjusted) differs by age: 18-29 56% vs 80+ 44%.",
+  "microbiology availability (label-adjusted) differs by age: 80+ 93% vs 18-29 69%.",
+  "HPI length differs by age even within class: 80+ 1.15\u00d7 vs 18-29 0.88\u00d7 the class median; the agent sees less history for some groups.",
+  "CT availability (label-adjusted) differs by race: Asian 77% vs Hispanic/Latino 64%.",
+  "Ultrasound availability (label-adjusted) differs by race: Hispanic/Latino 60% vs Asian 46%.",
+  "microbiology availability (label-adjusted) differs by insurance: Medicare 85% vs Medicaid 74%.",
+  "HPI length differs by insurance even within class: Medicare 1.16\u00d7 vs Medicaid 0.95\u00d7 the class median; the agent sees less history for some groups.",
+  "Ultrasound availability (label-adjusted) differs by marital status: SINGLE 55% vs WIDOWED 45%.",
+  "microbiology availability (label-adjusted) differs by marital status: WIDOWED 88% vs SINGLE 74%.",
+  "Patient-level leakage in the LA-CDM split: <10 patients have admissions in more than one split. `deferdx data build-cdm` reports 0 because CDM's CSVs carry no `subject_id` (see \u00a72).",
+  "Only 89% of diverticulitis cases have it as the primary (seq 1) ICD diagnosis.",
+  "Only 74% of pancreatitis cases have it as the primary (seq 1) ICD diagnosis.",
+  "Open-world groups with fewer than 100 abdominal-complaint candidates (they cap the stratified sample): ectopic_pregnancy.",
+  "OTHER cases differ demographically from CDM: demographics alone separate them with AUROC 0.62. Match or report this, or DEFER/OTHER can be learned from who the patient is.",
+  "The open-world sample is not reproducible: `build_openworld`'s cohort query has no `ORDER BY` and DuckDB returned its rows in a different order on each of 3 runs, so the same seed draws a different OTHER cohort. Add `ORDER BY hadm_id` before sampling."
+ ],
+ "min_cell": 10
+}
