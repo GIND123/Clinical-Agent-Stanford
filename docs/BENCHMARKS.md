@@ -108,7 +108,7 @@ Severity-aware conformal planning (arXiv 2608.27847, Aug 2026, Llama-3.1-8B, inf
 
 | Benchmark | Data access | Runs in this repo? | Models (open weights) | Priority |
 |---|---|---|---|---|
-| MIMIC-CDM, LA-CDM split (240 val + 240 test) | credentialed (have it) | yes: `deferdx rollout --policy vllm --model <m> --no-defer` | Qwen3-8B, Qwen3-14B, DiagAgent-14B, MedGemma-27B-text-it, gpt-oss-20b | **1** |
+| MIMIC-CDM: all 2,400 cases, plus the LA-CDM split (240 val / 240 test) for comparability | credentialed (have it) | yes: `deferdx rollout --policy vllm --model <m> --no-defer`, then `scripts/subgroup_eval.py` | Qwen3-8B, Qwen3-14B, DiagAgent-14B, MedGemma-27B-text-it, gpt-oss-20b | **1** |
 | Post-hoc threshold (#6) and SGR conformal (#7) on those rollouts | same | yes: `deferdx baseline` (CPU only) | — | **1** |
 | DiagBench (to check our harness reproduces DiagAgent-14B's published numbers) | Hugging Face, public; MIMIC subset treated as credentialed | no (DiagGym repo) | DiagAgent-14B | 2 |
 | MediQ, DDXPlus (external check on ASK-style behaviour) | public | no (their repos) | same open models | 3 |
@@ -117,7 +117,47 @@ Severity-aware conformal planning (arXiv 2608.27847, Aug 2026, Llama-3.1-8B, inf
 Rules for these runs:
 - Frontier API models (GPT-4o, Claude, DeepSeek) may be run only on the public benchmarks, never on MIMIC text, unless the team uses a PhysioNet-approved route.
 - Before MIMIC data goes onto a Lambda Cloud VM, check that the institution's DUA terms allow third-party cloud compute (listed as open in `stanford_idea_md.md`).
-- Report mean ± sd over 3 seeds with Qwen3's sampling settings (`docs/EXPERIMENTS.md`). Read every MIMIC-CDM number against the demographics-only floor of macro-AUROC 0.68 (`DATA_AUDIT.md` §7.3).
+- Report mean ± sd over 3 seeds with Qwen3's sampling settings (`docs/EXPERIMENTS.md`). Read every MIMIC-CDM accuracy against the demographics-only floor of **47.8%** accuracy (majority class 39.9%; macro-AUROC 0.68). That floor is from `DATA_AUDIT.md` §7.3.
+
+### 3.1 Data readiness (checked 2026-09-30)
+
+| Data | Status | Where (git-ignored) | Notes |
+|---|---|---|---|
+| MIMIC-IV-Ext-CDM 1.1 | ✅ checksums match | `data/physionet/mimic-iv-ext-cdm/1.1/` | built into `data/cdm/{all,train,val,test}.jsonl` (LA-CDM split 1,920 / 240 / 240) |
+| MIMIC-IV 2.2 hosp (admissions, patients, diagnoses_icd, labevents, microbiologyevents, dictionaries) | ✅ checksums match | `data/physionet/mimiciv/2.2/hosp/` | demographics for per-group evaluation; open-world cohort |
+| MIMIC-IV-Note 2.2 (discharge, radiology) | ✅ checksums match | `data/physionet/mimic-iv-note/2.2/note/` | open-world cohort |
+| MIMIC-CDM-OW (OTHER cases) | ❌ not built | — | blocked: fix `build_openworld` first (§3.2) |
+| DiagBench (4 subsets, 2,257 cases) | ✅ | `data/public/diagbench/` | the MIMIC-IV subset is MIMIC text; treat it as credentialed |
+| MediQ (iMedQA `all_dev_good`, iCraft-MD) | ✅ | `data/public/mediq/` | |
+| DDXPlus (test, validate, evidences, conditions) | ✅ | `data/public/ddxplus/` | training split not downloaded (no training) |
+| AgentClinic (MedQA, NEJM, extended) | ✅ | `data/public/agentclinic/` | **AgentClinic-MIMIC-IV is not public**; it needs a credentialed rebuild |
+| Model weights | ❌ not downloaded | — | 8B–27B don't fit this laptop (24 GB, already swapping); download them on the GPU machine |
+
+Checksums for the public files are in `data/public/MANIFEST.sha256`.
+
+### 3.2 Evaluation protocol required by the data audit
+These follow from [DATA_AUDIT.md](DATA_AUDIT.md) and from running the pipeline on the real data.
+
+1. **Score on all 2,400 cases, not only the 240-case test set.** Zero-shot baselines see no training data, so every case is a fair test case. The test split has 25 diverticulitis cases (±~16 points at 80% accuracy); all cases give 257 (±~5). Still report the LA-CDM test split so the numbers compare with LA-CDM.
+2. **Intervals and groups:** run `scripts/subgroup_eval.py` on every rollout file. It gives 95% bootstrap intervals and accuracy per class, sex, age, race, insurance and language, with small groups hidden. The audit found label-adjusted differences in what the environment reveals: CT 61% (age 18–29) vs 78% (65–79), and microbiology 69% vs 93%. Per-group accuracy shows whether models inherit these gaps.
+3. **The mask cue:** `subgroup_eval.py` also splits accuracy by whether a case's radiology contains CDM's `____` mask (present in 27–51% of cases depending on class). Higher accuracy with the mask, within a class, means the model reads the mask rather than the findings.
+4. **Environment limits, the same for every baseline; decide before the runs whether to change them, not midway:**
+   - `dedup_earliest` hides 1,337 radiology reports in 412 cases. CDM has no `charttime`, so it keeps the first in file order.
+   - `hida_scan` never returns a result: CDM has 0 HIDA or nuclear reports.
+   - Anion Gap (in 1,917 of 1,920 training cases), eGFR, Magnesium, LDH and Troponin exist but no catalog test reaches them.
+
+   Fixing these changes the action space relative to LA-CDM.
+5. **Baseline naming:** the repo's `random` policy also diagnoses at random. On the real test split it scores 25.8%, which is chance, not LDTL's 84.8% "random planner" (random tests plus an LLM diagnosis). Don't put them in the same row.
+6. **Contamination:**
+   - DiagAgent-14B was trained on 118k MIMIC-IV records. Its overlap with CDM's 2,400 admissions can't be checked; report its MIMIC-CDM numbers with that caveat.
+   - DiagBench's public MIMIC subset contains **19 CDM admissions** (matched through MIMIC-IV-Note `note_id`), and 62 of its 750 cases have a final diagnosis naming a CDM condition. It has been public since Oct 2025, so newer models may have seen those cases.
+7. **OTHER metrics:** false-commit and OOD AUROC need MIMIC-CDM-OW. `build_openworld` has two problems to fix before building it (`DATA_AUDIT.md` findings):
+   - Its `hadm_id`-only join finds microbiology for 32% of CDM admissions, against CDM's 77%.
+   - Its cohort query returns rows in a different order each run, so the sample isn't reproducible.
+8. **Pipeline checks already run on real data:**
+   - The oracle policy scores 100% (environment and scoring are consistent).
+   - Qwen3-0.6B completes episodes end to end (2 of 8 smoke-test episodes broke the action format, expected at that size).
+   - `coverage` resolves the core panels for ≥99.8% of cases.
 
 ## 4. Where DEFER-Dx still has open ground
 - **Learned deferral on MIMIC-CDM:** Safe-to-Stop does *inference-only* stopping with risk control on the same kind of data. Nobody *trains* a DEFER action with its own reward. Cite Safe-to-Stop as the closest prior work and compare at matched coverage.
