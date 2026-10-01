@@ -106,6 +106,8 @@ Severity-aware conformal planning (arXiv 2608.27847, Aug 2026, Llama-3.1-8B, inf
 
 ## 3. Inference-only runs (step 3, needs GPUs)
 
+**Run on 2026-10-01; results are in [BASELINES.md](BASELINES.md).** That run covered Qwen3-8B and DiagAgent-14B on MIMIC-CDM, the post-hoc baselines and DiagBench. Qwen3-14B, MedGemma-27B, gpt-oss-20b, MediQ, DDXPlus and AgentClinic are not run yet.
+
 | Benchmark | Data access | Runs in this repo? | Models (open weights) | Priority |
 |---|---|---|---|---|
 | MIMIC-CDM: all 2,400 cases, plus the LA-CDM split (240 val / 240 test) for comparability | credentialed (have it) | yes: `deferdx rollout --policy vllm --model <m> --no-defer`, then `scripts/subgroup_eval.py` | Qwen3-8B, Qwen3-14B, DiagAgent-14B, MedGemma-27B-text-it, gpt-oss-20b | **1** |
