@@ -175,9 +175,10 @@ def _make_policy(args, cfg):
     if args.policy == "vllm":
         from .policy.vllm_policy import VLLMPolicy
 
+        extra = {"max_model_len": args.max_model_len} if getattr(args, "max_model_len", None) else {}
         return VLLMPolicy(args.model, args.adapter, max_new_tokens=args.max_new_tokens,
                           temperature=args.temperature, top_p=args.top_p, top_k=args.top_k,
-                          chat_template_kwargs=kw, seed=args.seed)
+                          chat_template_kwargs=kw, seed=args.seed, **extra)
     raise ValueError(args.policy)
 
 
@@ -367,6 +368,7 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--top-k", type=int, default=20)
     sp.add_argument("--max-new-tokens", type=int, default=1024)
     sp.add_argument("--batch-size", type=int, default=16)
+    sp.add_argument("--max-model-len", type=int, help="vLLM context cap; lower it when weights leave little KV-cache room")
     sp.add_argument("--limit", type=int)
     sp.add_argument("--no-defer", action="store_true", help="forced-choice control")
     sp.add_argument("--closed-world", action="store_true", help="do not offer OTHER")

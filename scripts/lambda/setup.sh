@@ -15,7 +15,8 @@ git clone -q --depth 1 https://github.com/MAGIC-AI4Med/DiagGym.git ~/DiagGym
 uv pip install -q "vllm==0.11.0" "transformers>=4.56,<5" hf_transfer openai requests tqdm huggingface_hub
 uv pip install -q -e "$HOME/Clinical-Agent-Stanford[data]"
 export HF_HUB_ENABLE_HF_TRANSFER=1
-for m in Qwen/Qwen3-8B Henrychur/DiagAgent-14B; do
+MODELS=("$@"); [ ${#MODELS[@]} -eq 0 ] && MODELS=(Qwen/Qwen3-8B Henrychur/DiagAgent-14B)  # models to fetch, as args
+for m in "${MODELS[@]}"; do
   python -c "from huggingface_hub import snapshot_download; snapshot_download('$m')" > ~/runs/download_$(basename $m).log 2>&1 &
 done
 wait

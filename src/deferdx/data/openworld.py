@@ -100,6 +100,7 @@ def build_openworld(
             (t.other_group IS NOT NULL AND t.hadm_id NOT IN (SELECT hadm_id FROM cdm_any))
             OR ({'TRUE' if include_controls else 'FALSE'} AND t.cdm_group IS NOT NULL)
         )
+        ORDER BY t.hadm_id  -- without this DuckDB's row order varies by run, and so does the seeded sample
     """
     cohort = con.execute(cohort_sql).fetchdf()
     exclude = exclude_case_ids or set()
@@ -111,7 +112,7 @@ def build_openworld(
     con.register("cohort_df", cohort[["hadm_id"]].drop_duplicates())
     notes = con.execute(
         f"SELECT n.hadm_id, n.text FROM read_csv_auto('{note('discharge')}', all_varchar=true) n "
-        "JOIN cohort_df c ON n.hadm_id = c.hadm_id"
+        "JOIN cohort_df c ON n.hadm_id = c.hadm_id ORDER BY n.hadm_id, n.note_id"
     ).fetchdf()
     note_by_hadm = dict(zip(notes["hadm_id"].astype(str), notes["text"]))
 
@@ -137,25 +138,51 @@ def build_openworld(
 
     ids = sorted({str(r["hadm_id"]) for r in selected})
     con.register("sel_df", __import__("pandas").DataFrame({"hadm_id": ids}))
+    try:
+        transfers = hosp("transfers")
+    except FileNotFoundError:
+        transfers = None
+        log.warning("hosp/transfers not found: labs, microbiology and radiology are joined on hadm_id only, so "
+                    "OTHER cases will lack the ED-era rows MIMIC-IV-Ext-CDM includes")
+    if transfers:
+        con.execute(
+            f"""
+            CREATE TEMP TABLE win AS
+            SELECT t.hadm_id, any_value(t.subject_id) AS subject_id,
+                   min(TRY_CAST(t.intime AS TIMESTAMP)) - INTERVAL 1 DAY AS win_start,
+                   max(TRY_CAST(t.intime AS TIMESTAMP)) AS win_end
+            FROM read_csv_auto('{transfers}', all_varchar=true) t JOIN sel_df s ON t.hadm_id = s.hadm_id
+            GROUP BY t.hadm_id
+            """
+        )
+
+    def attached(table: str, cols: str, time_col: str) -> str:
+        """Rows of `table` that belong to the selected admissions: the same hadm_id, or, as MIMIC-IV-Ext-CDM
+        does (Hager et al.'s fill_nan_hadm), no hadm_id but the same patient between one day before the
+        admission's first transfer and its last transfer."""
+        q = f"SELECT s.hadm_id AS hadm_id, {cols} FROM {table} x JOIN sel_df s ON x.hadm_id = s.hadm_id"
+        if transfers:
+            q += (f" UNION ALL SELECT w.hadm_id AS hadm_id, {cols} FROM {table} x JOIN win w"
+                  f" ON x.hadm_id IS NULL AND x.subject_id = w.subject_id"
+                  f" AND TRY_CAST(x.{time_col} AS TIMESTAMP) BETWEEN w.win_start AND w.win_end")
+        return q
+
+    lab_rows = attached(f"read_csv_auto('{hosp('labevents')}', all_varchar=true)",
+                        "x.itemid, x.charttime, x.value, x.valuenum, x.valueuom, x.ref_range_lower, "
+                        "x.ref_range_upper, x.flag", "charttime")
     labs = con.execute(
-        f"""
-        SELECT l.hadm_id, l.itemid, l.charttime, l.value, l.valuenum, l.valueuom, l.ref_range_lower,
-               l.ref_range_upper, l.flag, i.label, i.fluid
-        FROM read_csv_auto('{hosp('labevents')}', all_varchar=true) l
-        JOIN sel_df s ON l.hadm_id = s.hadm_id
-        JOIN read_csv_auto('{hosp('d_labitems')}', all_varchar=true) i ON l.itemid = i.itemid
-        """
+        f"SELECT l.*, i.label, i.fluid FROM ({lab_rows}) l "
+        f"JOIN read_csv_auto('{hosp('d_labitems')}', all_varchar=true) i ON l.itemid = i.itemid "
+        "ORDER BY l.hadm_id, l.charttime, l.itemid"
     ).fetchdf()
     micro = con.execute(
-        f"""
-        SELECT m.hadm_id, m.charttime, m.spec_type_desc, m.test_name, m.org_name, m.interpretation, m.comments
-        FROM read_csv_auto('{hosp('microbiologyevents')}', all_varchar=true) m
-        JOIN sel_df s ON m.hadm_id = s.hadm_id
-        """
+        attached(f"read_csv_auto('{hosp('microbiologyevents')}', all_varchar=true)",
+                 "x.charttime, x.spec_type_desc, x.test_name, x.org_name, x.interpretation, x.comments", "charttime")
+        + " ORDER BY hadm_id, charttime, test_name"
     ).fetchdf()
     rad = con.execute(
-        f"SELECT r.hadm_id, r.charttime, r.text FROM read_csv_auto('{note('radiology')}', all_varchar=true) r "
-        "JOIN sel_df s ON r.hadm_id = s.hadm_id"
+        attached(f"read_csv_auto('{note('radiology')}', all_varchar=true)", "x.charttime, x.text", "charttime")
+        + " ORDER BY hadm_id, charttime"
     ).fetchdf()
 
     labs_by = _group(labs)

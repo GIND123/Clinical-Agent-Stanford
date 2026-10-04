@@ -131,11 +131,7 @@ def test_cdm_pickle_loader(tmp_path):
     assert cases[0].labs[0].name == "Lipase" and cases[0].labs[0].ref_high == 60
 
 
-def test_openworld_builder(tmp_path):
-    pytest.importorskip("duckdb")
-    from deferdx.config import load_yaml
-    from deferdx.data.openworld import build_openworld
-
+def _write_openworld_fixture(tmp_path):
     hosp, note = tmp_path / "mimic" / "hosp", tmp_path / "notes" / "note"
     hosp.mkdir(parents=True)
     note.mkdir(parents=True)
@@ -168,7 +164,15 @@ def test_openworld_builder(tmp_path):
     pd.DataFrame({"itemid": [50956], "label": ["Lipase"], "fluid": ["Blood"], "category": ["Chemistry"]}).to_csv(hosp / "d_labitems.csv", index=False)
     pd.DataFrame({"subject_id": [1], "hadm_id": [101], "charttime": ["2150-01-01"], "spec_type_desc": ["BLOOD CULTURE"],
                   "test_name": ["BLOOD CULTURE"], "org_name": [""], "interpretation": [""], "comments": [""]}).to_csv(hosp / "microbiologyevents.csv", index=False)
+    return hosp, note
 
+
+def test_openworld_builder(tmp_path):
+    pytest.importorskip("duckdb")
+    from deferdx.config import load_yaml
+    from deferdx.data.openworld import build_openworld
+
+    _write_openworld_fixture(tmp_path)
     icd = load_yaml("configs/openworld_icd.yaml")
     cases = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
     by = {c.case_id: c for c in cases}
@@ -185,3 +189,41 @@ def test_openworld_builder(tmp_path):
     assert rad.modality == "CT" and "IMPRESSION" not in rad.text and "INDICATION" not in rad.text
     assert "____ pattern" in rad.text and "SBO" not in rad.text
     assert [(x.value, x.itemid) for x in c.labs] == [("30", "50956")]
+
+
+def test_openworld_attaches_rows_without_hadm_id_like_cdm(tmp_path):
+    """With hosp/transfers present, rows lacking hadm_id are attached when they are the same patient between
+    one day before the first transfer and the last transfer (MIMIC-IV-Ext-CDM's fill_nan_hadm)."""
+    pytest.importorskip("duckdb")
+    from deferdx.config import load_yaml
+    from deferdx.data.openworld import build_openworld
+
+    hosp, note = _write_openworld_fixture(tmp_path)
+    pd.DataFrame({"subject_id": [1, 1], "hadm_id": [101, 101], "transfer_id": [1, 2], "eventtype": ["ED", "admit"],
+                  "careunit": ["ED", "Surgery"], "intime": ["2150-01-01 08:00:00", "2150-01-03 08:00:00"],
+                  "outtime": ["2150-01-01 12:00:00", "2150-01-05 08:00:00"]}).to_csv(hosp / "transfers.csv", index=False)
+    pd.DataFrame({
+        "subject_id": [1, 1, 1, 1, 2],
+        "hadm_id": pd.array([101, 101, None, None, None], dtype="Int64"),  # Int64 writes "101" and "", like MIMIC
+        "itemid": [50956, 50956, 50861, 50878, 50862],
+        "charttime": ["2150-01-02", "2150-01-01", "2149-12-31 20:00:00",  # ED-era, inside the window -> attached
+                      "2149-12-29 08:00:00",                              # before the window -> not attached
+                      "2150-01-01 09:00:00"],                             # another patient -> not attached
+        "value": ["50", "30", "40", "35", "4.0"], "valuenum": [50, 30, 40, 35, 4.0],
+        "valueuom": ["IU/L"] * 5, "ref_range_lower": [0] * 5, "ref_range_upper": [60] * 5, "flag": [""] * 5,
+    }).to_csv(hosp / "labevents.csv", index=False)
+    pd.DataFrame({"itemid": [50956, 50861, 50878, 50862], "label": ["Lipase", "ALT", "AST", "Albumin"],
+                  "fluid": ["Blood"] * 4, "category": ["Chemistry"] * 4}).to_csv(hosp / "d_labitems.csv", index=False)
+    pd.DataFrame({"note_id": [9, 10], "subject_id": [1, 1], "hadm_id": pd.array([101, None], dtype="Int64"),
+                  "charttime": ["2150-01-01", "2150-01-01 07:00:00"],
+                  "text": ["EXAMINATION: CT ABD & PELVIS\nFINDINGS: dilated loops\nIMPRESSION: obstruction",
+                           "EXAMINATION: CHEST (PA & LAT)\nFINDINGS: clear lungs\nIMPRESSION: normal"]}
+                 ).to_csv(note / "radiology.csv", index=False)
+
+    icd = load_yaml("configs/openworld_icd.yaml")
+    first = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    c = {x.case_id: x for x in first}["101"]
+    assert sorted(x.name for x in c.labs) == ["ALT", "Lipase"]  # AST before the window and Albumin (other patient) excluded
+    assert {(x.modality, x.region) for x in c.imaging} == {("CT", "Abdomen"), ("Radiograph", "Chest")}
+    again = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    assert [x.case_id for x in again] == [x.case_id for x in first]  # same seed, same cases, same order
