@@ -174,7 +174,9 @@ def test_openworld_builder(tmp_path):
 
     _write_openworld_fixture(tmp_path)
     icd = load_yaml("configs/openworld_icd.yaml")
-    cases = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    # the fixture's exams are shorter than CDM's 40-character minimum; inclusion is tested separately
+    cases = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True,
+                            require_cdm_inclusion=False)
     by = {c.case_id: c for c in cases}
     # 103: carries an appendicitis code; 105: not abdominal; 106: history names its own dx (CDM drop rule)
     assert set(by) == {"101", "102", "104"}
@@ -217,13 +219,37 @@ def test_openworld_attaches_rows_without_hadm_id_like_cdm(tmp_path):
     pd.DataFrame({"note_id": [9, 10], "subject_id": [1, 1], "hadm_id": pd.array([101, None], dtype="Int64"),
                   "charttime": ["2150-01-01", "2150-01-01 07:00:00"],
                   "text": ["EXAMINATION: CT ABD & PELVIS\nFINDINGS: dilated loops\nIMPRESSION: obstruction",
-                           "EXAMINATION: CHEST (PA & LAT)\nFINDINGS: clear lungs\nIMPRESSION: normal"]}
+                           # no EXAMINATION header: modality must come from radiology_detail, as in CDM
+                           "INDICATION: cough\nFINDINGS: clear lungs\nIMPRESSION: normal"]}
                  ).to_csv(note / "radiology.csv", index=False)
+    pd.DataFrame({"note_id": [10, 10], "subject_id": [1, 1], "field_name": ["exam_name", "exam_name"],
+                  "field_value": ["CHEST (PA & LAT)", "CT HEAD"], "field_ordinal": [1, 2]}
+                 ).to_csv(note / "radiology_detail.csv", index=False)
 
     icd = load_yaml("configs/openworld_icd.yaml")
-    first = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    first = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True,
+                            require_cdm_inclusion=False)
     c = {x.case_id: x for x in first}["101"]
     assert sorted(x.name for x in c.labs) == ["ALT", "Lipase"]  # AST before the window and Albumin (other patient) excluded
     assert {(x.modality, x.region) for x in c.imaging} == {("CT", "Abdomen"), ("Radiograph", "Chest")}
-    again = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    again = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True,
+                            require_cdm_inclusion=False)
     assert [x.case_id for x in again] == [x.case_id for x in first]  # same seed, same cases, same order
+
+
+def test_openworld_applies_cdm_inclusion_rule(tmp_path):
+    """CDM keeps an admission only with a physical exam of >= 40 characters, a lab and an abdominal study."""
+    pytest.importorskip("duckdb")
+    from deferdx.config import load_yaml
+    from deferdx.data.openworld import build_openworld
+
+    hosp, note = _write_openworld_fixture(tmp_path)
+    notes = pd.read_csv(note / "discharge.csv")
+    long_pe = "abdomen distended and tympanic, diffusely tender without rebound, hypoactive bowel sounds"
+    notes.loc[notes.hadm_id == 101, "text"] = notes.loc[notes.hadm_id == 101, "text"].str.replace(
+        "distended, concern for SBO", long_pe, regex=False)
+    notes.to_csv(note / "discharge.csv", index=False)
+    icd = load_yaml("configs/openworld_icd.yaml")
+    cases = build_openworld(tmp_path / "mimic", tmp_path / "notes", icd, target_n=10, include_controls=True)
+    # 101: long exam, a lab, a CT abdomen -> kept; 102 and 104: no labs or imaging -> dropped
+    assert [c.case_id for c in cases] == ["101"]

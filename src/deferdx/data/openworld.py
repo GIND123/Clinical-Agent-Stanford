@@ -63,12 +63,15 @@ def build_openworld(
     controls_per_label: int = 100,
     complaint_regex: str | None = None,
     hpi_leak_policy: str = "drop",
+    require_cdm_inclusion: bool = True,
 ) -> list[Case]:
     """Return OTHER cases (and optionally same-pipeline in-set controls).
 
     mimic_dir: MIMIC-IV root containing ``hosp/`` (admissions, diagnoses_icd, labevents,
                d_labitems, microbiologyevents as .csv or .csv.gz).
     note_dir:  MIMIC-IV-Note root containing ``note/discharge`` and ``note/radiology``.
+    require_cdm_inclusion: apply MIMIC-IV-Ext-CDM's own inclusion rule (Hager et al., check_missing):
+               physical exam of at least 40 characters, at least one lab, at least one abdominal study.
     """
     import duckdb
 
@@ -180,10 +183,20 @@ def build_openworld(
                  "x.charttime, x.spec_type_desc, x.test_name, x.org_name, x.interpretation, x.comments", "charttime")
         + " ORDER BY hadm_id, charttime, test_name"
     ).fetchdf()
-    rad = con.execute(
-        attached(f"read_csv_auto('{note('radiology')}', all_varchar=true)", "x.charttime, x.text", "charttime")
-        + " ORDER BY hadm_id, charttime"
-    ).fetchdf()
+    rad_rows = attached(f"read_csv_auto('{note('radiology')}', all_varchar=true)", "x.note_id, x.charttime, x.text",
+                        "charttime")
+    try:  # CDM takes each report's exam name from radiology_detail (field_ordinal 1), not from the report text
+        detail = note("radiology_detail")
+        rad = con.execute(
+            f"SELECT r.*, d.field_value AS exam_name FROM ({rad_rows}) r LEFT JOIN "
+            f"(SELECT note_id, field_value FROM read_csv_auto('{detail}', all_varchar=true) "
+            "WHERE field_name = 'exam_name' AND field_ordinal = '1') d ON r.note_id = d.note_id "
+            "ORDER BY r.hadm_id, r.charttime"
+        ).fetchdf()
+    except FileNotFoundError:
+        log.warning("note/radiology_detail not found: modality is read from report headers, which drops reports "
+                    "without an EXAMINATION line")
+        rad = con.execute(rad_rows + " ORDER BY hadm_id, charttime").fetchdf()
 
     labs_by = _group(labs)
     micro_by = _group(micro)
@@ -191,7 +204,7 @@ def build_openworld(
     sanitize_terms = {**CDM_SANITIZE_TERMS, **icd_cfg.get("sanitize_terms", {})}
     leak_terms = icd_cfg.get("leak_terms", {})
 
-    cases, dropped_leak = [], 0
+    cases, dropped_leak, dropped_inclusion = [], 0, 0
     for r in selected:
         hadm = str(r["hadm_id"])
         text = note_by_hadm[hadm]
@@ -209,7 +222,8 @@ def build_openworld(
         imaging = []
         for x in rad_by.get(hadm, []):
             raw = _s(x["text"])
-            modality, region, exam_name = classify_radiology(raw)
+            recorded = _s(x.get("exam_name"))
+            modality, region, exam_name = classify_radiology(f"EXAMINATION: {recorded}" if recorded else raw)
             body = mask(cdm_radiology(raw), terms)
             if body and modality != "Other" and region != "Other":  # CDM sanitize_rad
                 imaging.append(ImagingReport(modality, region, exam_name, body, _s(x["charttime"]) or None))
@@ -243,9 +257,16 @@ def build_openworld(
             meta={"group": group, "icd_code": r["icd_code"], "icd_version": int(r["icd_version"]),
                   "possible_label_leak": bool(soft_leak or mentions(hpi, terms))},
         )
+        if require_cdm_inclusion and (len(case.physical_exam) < 40 or not case.labs
+                                      or not any(im.region == "Abdomen" for im in case.imaging)):
+            dropped_inclusion += 1
+            continue
         cases.append(dedup_earliest(case))
     if dropped_leak:
         log.info("dropped %d admissions whose history names their own diagnosis (CDM policy)", dropped_leak)
+    if dropped_inclusion:
+        log.info("dropped %d admissions failing CDM's inclusion rule (PE >= 40 chars, a lab, an abdominal study)",
+                 dropped_inclusion)
     return cases
 
 
