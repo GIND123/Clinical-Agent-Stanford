@@ -100,7 +100,7 @@ Only the MIMIC-IV subset (750 cases) has single-turn tasks; DiagGym's loader ski
 2. **Per-class claims should use all 2,400 cases.** Twenty-five test cases moved diverticulitis by 24 points between seeds.
 3. **Check the mask cue before claiming reasoning gains,** especially for pancreatitis.
 4. **Track the age and Medicare gaps** (about 6–7 points after adjusting for class) through training.
-5. **Still open:** OTHER-class metrics (needs the `build_openworld` fixes from `DATA_AUDIT.md`), the mask ablation, a DiagAgent format adapter, and more seeds on all cases.
+5. **Still open:** the mask ablation and more seeds on all cases. The `build_openworld` fixes and a DiagAgent format adapter were added on 2026-10-04; their runs are in progress, and their results will be added here.
 
 ## Reproduce
 ```bash

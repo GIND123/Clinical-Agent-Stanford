@@ -91,6 +91,18 @@
    "sha256": "ok"
   },
   {
+   "dataset": "mimic-iv-note/2.2",
+   "file": "note/radiology_detail.csv.gz",
+   "MB": 39.0,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimic-iv-note/2.2",
+   "file": "wanted.sha256",
+   "MB": 0.0,
+   "sha256": "not listed"
+  },
+  {
    "dataset": "mimiciv/2.2",
    "file": "hosp/admissions.csv.gz",
    "MB": 15.5,
@@ -131,6 +143,18 @@
    "file": "hosp/patients.csv.gz",
    "MB": 2.3,
    "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "hosp/transfers.csv.gz",
+   "MB": 36.2,
+   "sha256": "ok"
+  },
+  {
+   "dataset": "mimiciv/2.2",
+   "file": "wanted.sha256",
+   "MB": 0.0,
+   "sha256": "not listed"
   }
  ],
  "cdm_schema": {
@@ -851,7 +875,7 @@
    "distinct_hadm_approx": 384578,
    "cdm_admissions_present": 2400,
    "distinct_subject_approx": 149377,
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "d_icd_diagnoses.csv.gz": {
    "rows": 109775,
@@ -1121,7 +1145,7 @@
    "distinct_hadm_approx": 313516,
    "cdm_admissions_present": 1948,
    "distinct_subject_approx": 227731,
-   "seconds": 17.0
+   "seconds": 16.6
   },
   "discharge.csv.gz": {
    "rows": 331793,
@@ -1175,7 +1199,7 @@
     9847,
     18619
    ],
-   "seconds": 9.0
+   "seconds": 9.2
   },
   "radiology.csv.gz": {
    "rows": 2321355,
@@ -1229,21 +1253,24 @@
     781,
     3280
    ],
-   "seconds": 5.8
+   "seconds": 5.9
   }
  },
  "openworld_join_coverage": {
   "labs": {
    "CDM's own tables": "100.0%",
-   "hadm_id join (build_openworld)": "81.2%"
+   "hadm_id only (old builder)": "81.2%",
+   "hadm_id + CDM window (builder now)": "100.0%"
   },
   "microbiology": {
    "CDM's own tables": "77.3%",
-   "hadm_id join (build_openworld)": "31.9%"
+   "hadm_id only (old builder)": "31.9%",
+   "hadm_id + CDM window (builder now)": "77.3%"
   },
   "radiology": {
    "CDM's own tables": "100.0%",
-   "hadm_id join (build_openworld)": "90.8%"
+   "hadm_id only (old builder)": "90.8%",
+   "hadm_id + CDM window (builder now)": "100.0%"
   }
  },
  "admission_location_by_label": {
@@ -2449,124 +2476,124 @@
     "non-English/unknown": "10.9%"
    },
    "OTHER sample": {
-    "n": 800,
-    "female": "59.4%",
-    "age median (IQR)": "57 (40\u201373)",
-    "White": "63.5%",
-    "Black": "18.2%",
-    "Hispanic/Latino": "6.9%",
-    "Asian": "3.5%",
-    "Unknown": "2.8%",
-    "Medicaid": "10.5%",
-    "non-English/unknown": "8.1%"
+    "n": 713,
+    "female": "59.5%",
+    "age median (IQR)": "59 (46\u201374)",
+    "White": "67.5%",
+    "Black": "16.5%",
+    "Hispanic/Latino": "8.0%",
+    "Asian": "3.4%",
+    "Unknown": "1.7%",
+    "Medicaid": "8.7%",
+    "non-English/unknown": "12.3%"
    },
    "abdominal_aortic_aneurysm": {
-    "n": 92,
-    "female": "38.0%",
-    "age median (IQR)": "75 (70\u201381)",
-    "White": "77.2%",
-    "Black": "<10 cases",
-    "Hispanic/Latino": "<10 cases",
-    "Asian": "0.0%",
-    "Unknown": "<10 cases",
-    "Medicaid": "<10 cases",
-    "non-English/unknown": "<10 cases"
+    "n": "<10",
+    "female": "\u2013",
+    "age median (IQR)": "\u2013",
+    "White": "\u2013",
+    "Black": "\u2013",
+    "Hispanic/Latino": "\u2013",
+    "Asian": "\u2013",
+    "Unknown": "\u2013",
+    "Medicaid": "\u2013",
+    "non-English/unknown": "\u2013"
    },
    "bowel_obstruction": {
-    "n": 92,
-    "female": "63.0%",
-    "age median (IQR)": "60 (50\u201373)",
-    "White": "67.4%",
-    "Black": "19.6%",
+    "n": 146,
+    "female": "55.5%",
+    "age median (IQR)": "66 (48\u201375)",
+    "White": "65.1%",
+    "Black": "19.9%",
     "Hispanic/Latino": "<10 cases",
     "Asian": "<10 cases",
     "Unknown": "<10 cases",
-    "Medicaid": "<10 cases",
-    "non-English/unknown": "<10 cases"
+    "Medicaid": "6.8%",
+    "non-English/unknown": "15.8%"
    },
    "diabetic_ketoacidosis": {
-    "n": 92,
-    "female": "60.9%",
-    "age median (IQR)": "35 (28\u201346)",
-    "White": "34.8%",
-    "Black": "45.7%",
-    "Hispanic/Latino": "<10 cases",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "22.8%",
-    "non-English/unknown": "<10 cases"
-   },
-   "ectopic_pregnancy": {
-    "n": 66,
-    "female": "100.0%",
-    "age median (IQR)": "33 (30\u201337)",
-    "White": "42.4%",
-    "Black": "18.2%",
-    "Hispanic/Latino": "16.7%",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "16.7%",
-    "non-English/unknown": "<10 cases"
-   },
-   "gastroenteritis_colitis": {
-    "n": 92,
-    "female": "69.6%",
-    "age median (IQR)": "56 (44\u201366)",
-    "White": "60.9%",
-    "Black": "17.4%",
-    "Hispanic/Latino": "12.0%",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "15.2%",
-    "non-English/unknown": "12.0%"
-   },
-   "gi_bleed": {
-    "n": 92,
-    "female": "51.1%",
-    "age median (IQR)": "50 (36\u201370)",
-    "White": "65.2%",
-    "Black": "21.7%",
-    "Hispanic/Latino": "<10 cases",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "<10 cases",
-    "non-English/unknown": "<10 cases"
-   },
-   "mesenteric_ischemia": {
-    "n": 92,
-    "female": "64.1%",
-    "age median (IQR)": "73 (59\u201381)",
-    "White": "76.1%",
-    "Black": "12.0%",
-    "Hispanic/Latino": "<10 cases",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "<10 cases",
-    "non-English/unknown": "10.9%"
-   },
-   "peptic_ulcer_perforation_or_bleed": {
-    "n": 91,
-    "female": "49.5%",
-    "age median (IQR)": "66 (52\u201378)",
-    "White": "71.4%",
-    "Black": "13.2%",
-    "Hispanic/Latino": "<10 cases",
-    "Asian": "<10 cases",
-    "Unknown": "<10 cases",
-    "Medicaid": "<10 cases",
-    "non-English/unknown": "11.0%"
-   },
-   "urolithiasis": {
-    "n": 91,
-    "female": "49.5%",
-    "age median (IQR)": "53 (46\u201365)",
-    "White": "70.3%",
-    "Black": "11.0%",
+    "n": 17,
+    "female": "all but <10",
+    "age median (IQR)": "39 (29\u201350)",
+    "White": "<10 cases",
+    "Black": "<10 cases",
     "Hispanic/Latino": "<10 cases",
     "Asian": "<10 cases",
     "Unknown": "0.0%",
-    "Medicaid": "12.1%",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "0.0%"
+   },
+   "ectopic_pregnancy": {
+    "n": "<10",
+    "female": "\u2013",
+    "age median (IQR)": "\u2013",
+    "White": "\u2013",
+    "Black": "\u2013",
+    "Hispanic/Latino": "\u2013",
+    "Asian": "\u2013",
+    "Unknown": "\u2013",
+    "Medicaid": "\u2013",
+    "non-English/unknown": "\u2013"
+   },
+   "gastroenteritis_colitis": {
+    "n": 219,
+    "female": "62.6%",
+    "age median (IQR)": "56 (41\u201369)",
+    "White": "65.8%",
+    "Black": "18.3%",
+    "Hispanic/Latino": "10.0%",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "9.6%",
+    "non-English/unknown": "11.4%"
+   },
+   "gi_bleed": {
+    "n": 79,
+    "female": "50.6%",
+    "age median (IQR)": "53 (41\u201378)",
+    "White": "60.8%",
+    "Black": "20.3%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "0.0%",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "17.7%"
+   },
+   "mesenteric_ischemia": {
+    "n": 94,
+    "female": "66.0%",
+    "age median (IQR)": "67 (58\u201380)",
+    "White": "80.9%",
+    "Black": "<10 cases",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
     "non-English/unknown": "<10 cases"
+   },
+   "peptic_ulcer_perforation_or_bleed": {
+    "n": 70,
+    "female": "51.4%",
+    "age median (IQR)": "64 (52\u201375)",
+    "White": "68.6%",
+    "Black": "14.3%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "<10 cases",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "<10 cases"
+   },
+   "urolithiasis": {
+    "n": 78,
+    "female": "60.3%",
+    "age median (IQR)": "58 (44\u201368)",
+    "White": "71.8%",
+    "Black": "12.8%",
+    "Hispanic/Latino": "<10 cases",
+    "Asian": "<10 cases",
+    "Unknown": "0.0%",
+    "Medicaid": "<10 cases",
+    "non-English/unknown": "15.4%"
    }
   },
   "shortcut": {
@@ -2578,14 +2605,14 @@
     "language",
     "marital_status"
    ],
-   "n": 3200,
-   "accuracy": 0.749,
-   "macro_f1": 0.442,
-   "majority_accuracy": 0.75,
-   "auroc": 0.622
+   "n": 3113,
+   "accuracy": 0.768,
+   "macro_f1": 0.436,
+   "majority_accuracy": 0.771,
+   "auroc": 0.634
   }
  },
- "openworld_cohort_order_stable": false,
+ "openworld_cohort_order_stable": true,
  "findings": [
   "`configs/cdm_format.yaml` maps `history` columns that `history_of_present_illness.csv` does not have: subject_id -> subject_id.",
   "`configs/cdm_format.yaml` maps `labs` columns that `laboratory_tests.csv` does not have: charttime -> charttime.",
@@ -2595,7 +2622,6 @@
   "Imaging dedup drops 1,337 radiology reports (412 cases). Without `charttime` the 'earliest' report is simply the first row in the file.",
   "The `____` mask in radiology text ranges 27\u201351% across classes; mask presence is itself a label cue (chi-square p <0.001).",
   "Radiology names other CDM conditions in up to 15% of a class's cases (mostly negations). This is a legitimate but strong exclusion cue; the open-world cases must keep the same kind of mentions, or the agent learns the source instead of the disease.",
-  "Open-world cases will carry less data than CDM cases: joined on `hadm_id` as `build_openworld` does, CDM's own admissions have labs 81.2% vs 100.0%; microbiology 31.9% vs 77.3%; radiology 90.8% vs 100.0% (join vs CDM). MIMIC leaves `hadm_id` empty on many ED-era lab and microbiology rows, which CDM evidently includes. An agent can learn 'sparse data \u2192 OTHER'. Fetch by `subject_id` and a time window around the admission instead, and re-run the source-classifier check.",
   "Representation vs. ED admissions, age (CDM vs ED): 18-29 18.2% vs 9.7% (SMD +0.25); 30-44 22.2% vs 14.2% (SMD +0.21); 65-79 17.4% vs 23.2% (SMD -0.14); 80+ 9.6% vs 18.3% (SMD -0.25).",
   "Representation vs. ED admissions, race (CDM vs ED): Asian 5.8% vs 3.2% (SMD +0.12); Black 12.8% vs 18.2% (SMD -0.15); Other 5.7% vs 3.4% (SMD +0.11).",
   "Representation vs. ED admissions, insurance (CDM vs ED): Medicaid 7.3% vs 11.3% (SMD -0.14); Medicare 21.1% vs 39.2% (SMD -0.40); Other 71.6% vs 49.5% (SMD +0.46).",
@@ -2618,8 +2644,7 @@
   "Only 89% of diverticulitis cases have it as the primary (seq 1) ICD diagnosis.",
   "Only 74% of pancreatitis cases have it as the primary (seq 1) ICD diagnosis.",
   "Open-world groups with fewer than 100 abdominal-complaint candidates (they cap the stratified sample): ectopic_pregnancy.",
-  "OTHER cases differ demographically from CDM: demographics alone separate them with AUROC 0.62. Match or report this, or DEFER/OTHER can be learned from who the patient is.",
-  "The open-world sample is not reproducible: `build_openworld`'s cohort query has no `ORDER BY` and DuckDB returned its rows in a different order on each of 3 runs, so the same seed draws a different OTHER cohort. Add `ORDER BY hadm_id` before sampling."
+  "OTHER cases differ demographically from CDM: demographics alone separate them with AUROC 0.63. Match or report this, or DEFER/OTHER can be learned from who the patient is."
  ],
  "min_cell": 10
 }

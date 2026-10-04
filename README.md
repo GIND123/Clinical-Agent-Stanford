@@ -25,6 +25,10 @@ The smoke test generates fabricated cases, runs the oracle and random policies, 
 ## Real-data pipeline
 
 ```bash
+# 0. Download (credentialed; resumes and checks PhysioNet's SHA256SUMS). --s3 uses PhysioNet's AWS
+#    access points and is far faster than physionet.org; see the script header for setup.
+bash scripts/download_data.sh --s3 cdm hosp note     # -> data/physionet/{mimic-iv-ext-cdm/1.1, mimiciv/2.2, mimic-iv-note/2.2}
+
 # 1. MIMIC-IV-Ext-CDM v1.1 -> canonical cases. Confirm file/column names once:
 deferdx data inspect-cdm --cdm-dir /path/to/mimic-iv-ext-cdm/1.1
 #    Default split = exact LA-CDM 80/10/10 (there is no official split; see docs/RESEARCH.md)
@@ -54,6 +58,16 @@ deferdx evaluate --rollouts outputs/eval/deferdx_test.jsonl --out outputs/eval/d
 ```
 
 The full §6.1 baseline grid is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
+
+## Data audit, benchmarks and baselines
+
+These docs hold aggregates only. MIMIC data and model outputs stay in git-ignored `data/` and `outputs/`.
+
+| Doc | What it holds | Produced by |
+|---|---|---|
+| [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory and checksums, column-level schema of every file, label checks, label-leakage checks, bias analysis, and the open-world pool | `python scripts/audit_data.py` (about 2 min) |
+| [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Which metrics and benchmarks evaluate each component, the best published result on each, and the evaluation protocol | literature review |
+| [docs/BASELINES.md](docs/BASELINES.md) | Inference-only results: models run as-is, plus post-hoc deferral baselines, open-world results, the DiagBench reproduction, and per-group scores | [`scripts/lambda/`](scripts/lambda/), `scripts/subgroup_eval.py` |
 
 ## Layout
 
@@ -92,18 +106,25 @@ Resolved from primary sources ([docs/RESEARCH.md](docs/RESEARCH.md)):
 - CDM v1.1 file and column names, the `pathology_ids.json` label file, and the modality/region vocabulary.
 - The split: there is no official one. The default reproduces LA-CDM's exactly.
 - How CDM's text was processed; the open-world cases now match it.
+- How CDM attached data and chose admissions (Hager et al., `fill_nan_hadm` and `check_missing`); `build_openworld` now does the same. That covers rows without a `hadm_id` timed from one day before the first transfer to the last, the exam name from `radiology_detail`, and the inclusion rule (exam of 40+ characters, a lab, an abdominal study). On CDM's own admissions the builder's join finds exactly what CDM holds ([docs/DATA_AUDIT.md](docs/DATA_AUDIT.md)).
 - Costs for panels and imaging: the 2025 BIDMC standard charges from LA-CDM.
 
+Checked on the real data (2026-09/10):
+- **The CDM columns** ([docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) §2). The CSVs have no `subject_id` and no lab or microbiology `charttime`, although `configs/cdm_format.yaml` maps them. So `build-cdm`'s patient-leakage count is always 0; joined to `admissions`, fewer than 10 patients span splits.
+- **Catalog coverage** (`deferdx data coverage`; [docs/BENCHMARKS.md](docs/BENCHMARKS.md) §3.2):
+  - The core panels resolve for ≥ 99.8% of cases.
+  - `hida_scan` never resolves, because CDM has no HIDA reports.
+  - Anion Gap, eGFR, Mg, LDH and troponin are present but no catalog test reaches them.
+- **The source-classifier check.** Same-pipeline controls vs label-matched CDM cases score AUROC 0.563 combined. The physical exam alone is still separable (0.673; 51 controls).
+
 Still to verify:
-- **Run `deferdx data inspect-cdm` once on the real download** to confirm the columns.
-- **Run `deferdx data coverage`** to see which catalog tests resolve on real data. Tests marked `cost_source: placeholder` (lipase, CRP, lactate, cultures, HIDA, …) need real prices.
+- **Placeholder costs.** Tests marked `cost_source: placeholder` (lipase, CRP, lactate, cultures, HIDA, …) need real prices.
 - **The severity matrix** is a time-to-harm proxy. Replace it with the clinician-built version.
 - **ICD lists and sanitize terms** ([configs/openworld_icd.yaml](configs/openworld_icd.yaml)) need clinician review.
-- **The source-classifier check.** Build `--controls` and confirm a simple classifier can't tell `openworld_control` from `cdm` cases, even with the parity rules.
 - **Test availability is informative.** For example, a HIDA scan implies someone already suspected cholecystitis. `charge_unavailable: true` charges for tests that were never performed; LA-CDM doesn't. Report both.
 
 ## Not built yet
 
 - A multi-GPU / verl port of the trainer. The reward functions are framework-agnostic; see [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
-- Runners for external baselines (LA-CDM, DiagAgent-14B / DiagGym), which live in their own repos.
+- A runner for LA-CDM (its repo has code but no trained weights). DiagAgent-14B runs here through [`scripts/lambda/diagagent_adapter.py`](scripts/lambda/diagagent_adapter.py) and on DiagBench through `scripts/lambda/diagbench_*.py`.
 - MIMIC-IV-ED triage variant (§4.3), clinician adjudication tooling (§6.3), and the Med-PRM verifier (stretch goal).

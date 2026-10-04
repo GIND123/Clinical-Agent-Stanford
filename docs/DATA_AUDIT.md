@@ -1,6 +1,6 @@
 # Data audit
 
-Generated 2026-09-29 by `scripts/audit_data.py` from the local PhysioNet files. Re-run it after any data change: `python scripts/audit_data.py --root data/physionet --out docs`.
+Generated 2026-10-04 by `scripts/audit_data.py` from the local PhysioNet files. Re-run it after any data change: `python scripts/audit_data.py --root data/physionet --out docs`.
 
 **What this file contains.** Aggregates only: counts, percentages, quantiles and test statistics. It holds no rows, identifiers, dates or note text. Patient-derived counts from 1 to 9 are shown as `<10`, and `·` marks a second cell hidden so the first cannot be recovered from a total. The underlying data stays under the PhysioNet Credentialed Health DUA and is never committed (`.gitignore` excludes `data/`).
 
@@ -14,7 +14,6 @@ Generated 2026-09-29 by `scripts/audit_data.py` from the local PhysioNet files. 
 - Imaging dedup drops 1,337 radiology reports (412 cases). Without `charttime` the 'earliest' report is simply the first row in the file.
 - The `____` mask in radiology text ranges 27–51% across classes; mask presence is itself a label cue (chi-square p <0.001).
 - Radiology names other CDM conditions in up to 15% of a class's cases (mostly negations). This is a legitimate but strong exclusion cue; the open-world cases must keep the same kind of mentions, or the agent learns the source instead of the disease.
-- Open-world cases will carry less data than CDM cases: joined on `hadm_id` as `build_openworld` does, CDM's own admissions have labs 81.2% vs 100.0%; microbiology 31.9% vs 77.3%; radiology 90.8% vs 100.0% (join vs CDM). MIMIC leaves `hadm_id` empty on many ED-era lab and microbiology rows, which CDM evidently includes. An agent can learn 'sparse data → OTHER'. Fetch by `subject_id` and a time window around the admission instead, and re-run the source-classifier check.
 - Representation vs. ED admissions, age (CDM vs ED): 18-29 18.2% vs 9.7% (SMD +0.25); 30-44 22.2% vs 14.2% (SMD +0.21); 65-79 17.4% vs 23.2% (SMD -0.14); 80+ 9.6% vs 18.3% (SMD -0.25).
 - Representation vs. ED admissions, race (CDM vs ED): Asian 5.8% vs 3.2% (SMD +0.12); Black 12.8% vs 18.2% (SMD -0.15); Other 5.7% vs 3.4% (SMD +0.11).
 - Representation vs. ED admissions, insurance (CDM vs ED): Medicaid 7.3% vs 11.3% (SMD -0.14); Medicare 21.1% vs 39.2% (SMD -0.40); Other 71.6% vs 49.5% (SMD +0.46).
@@ -37,8 +36,7 @@ Generated 2026-09-29 by `scripts/audit_data.py` from the local PhysioNet files. 
 - Only 89% of diverticulitis cases have it as the primary (seq 1) ICD diagnosis.
 - Only 74% of pancreatitis cases have it as the primary (seq 1) ICD diagnosis.
 - Open-world groups with fewer than 100 abdominal-complaint candidates (they cap the stratified sample): ectopic_pregnancy.
-- OTHER cases differ demographically from CDM: demographics alone separate them with AUROC 0.62. Match or report this, or DEFER/OTHER can be learned from who the patient is.
-- The open-world sample is not reproducible: `build_openworld`'s cohort query has no `ORDER BY` and DuckDB returned its rows in a different order on each of 3 runs, so the same seed draws a different OTHER cohort. Add `ORDER BY hadm_id` before sampling.
+- OTHER cases differ demographically from CDM: demographics alone separate them with AUROC 0.63. Match or report this, or DEFER/OTHER can be learned from who the patient is.
 
 ## 1. Inventory and provenance
 
@@ -67,6 +65,8 @@ Every file is checked against the SHA256SUMS.txt PhysioNet ships with it. Files 
 | LICENSE.txt | mimic-iv-note/2.2 | 0.0 | ok |
 | note/discharge.csv.gz | mimic-iv-note/2.2 | 1,139.2 | ok |
 | note/radiology.csv.gz | mimic-iv-note/2.2 | 781.8 | ok |
+| note/radiology_detail.csv.gz | mimic-iv-note/2.2 | 39.0 | ok |
+| wanted.sha256 | mimic-iv-note/2.2 | 0.0 | not listed |
 | hosp/admissions.csv.gz | mimiciv/2.2 | 15.5 | ok |
 | hosp/d_icd_diagnoses.csv.gz | mimiciv/2.2 | 0.9 | ok |
 | hosp/d_labitems.csv.gz | mimiciv/2.2 | 0.0 | ok |
@@ -74,6 +74,8 @@ Every file is checked against the SHA256SUMS.txt PhysioNet ships with it. Files 
 | hosp/labevents.csv.gz | mimiciv/2.2 | 1,939.1 | ok |
 | hosp/microbiologyevents.csv.gz | mimiciv/2.2 | 96.7 | ok |
 | hosp/patients.csv.gz | mimiciv/2.2 | 2.3 | ok |
+| hosp/transfers.csv.gz | mimiciv/2.2 | 36.2 | ok |
+| wanted.sha256 | mimiciv/2.2 | 0.0 | not listed |
 
 
 ## 2. MIMIC-IV-Ext-CDM: schema
@@ -391,13 +393,13 @@ Types are DuckDB's inference from a sample; counts are exact except distinct ids
 | storetime | TIMESTAMP | 0.0 |
 | text | VARCHAR | 0.0 |
 
-**Can the open-world builder reproduce CDM's data?** `build_openworld` joins labs, microbiology and radiology on `hadm_id` (`src/deferdx/data/openworld.py`). Run on CDM's own 2,400 admissions, that join finds this share of cases with any data, against what CDM itself holds:
+**Can the open-world builder reproduce CDM's data?** Share of CDM's own 2,400 admissions with any data of each kind: as CDM holds it, as the original `build_openworld` found it (`hadm_id` only), and as it finds it now (`hadm_id` plus CDM's window; needs `hosp/transfers`).
 
-| source | CDM's own tables | hadm_id join (build_openworld) |
-|---|---|---|
-| labs | 100.0% | 81.2% |
-| microbiology | 77.3% | 31.9% |
-| radiology | 100.0% | 90.8% |
+| source | CDM's own tables | hadm_id only (old builder) | hadm_id + CDM window (builder now) |
+|---|---|---|---|
+| labs | 100.0% | 81.2% | 100.0% |
+| microbiology | 77.3% | 31.9% | 77.3% |
+| radiology | 100.0% | 90.8% | 100.0% |
 
 
 ## 7. Bias analysis
@@ -658,7 +660,7 @@ Using the ICD prefixes in `configs/openworld_icd.yaml` (`cdm_conditions`, `other
 
 ## 9. Open-world (OTHER) candidate pool
 
-Same filters as `build_openworld`: primary diagnosis in an OTHER group, no CDM condition code at any position, not a CDM admission, a discharge note, and a chief complaint matching `complaint_regex`. The builder then drops HPIs that leak the diagnosis, so the final set is somewhat smaller.
+Same filters as `build_openworld`: primary diagnosis in an OTHER group, no CDM condition code at any position, not a CDM admission, a discharge note, and a chief complaint matching `complaint_regex`. The builder then drops histories that name their own diagnosis and admissions failing CDM's inclusion rule (exam of 40+ characters, a lab, an abdominal study), so the built set is much smaller.
 
 | OTHER group | icd_candidates | with_discharge_note | abdominal_chief_complaint |
 |---|---|---|---|
@@ -672,22 +674,22 @@ Same filters as `build_openworld`: primary diagnosis in an OTHER group, no CDM c
 | peptic_ulcer_perforation_or_bleed | 162 | 159 | 114 |
 | urolithiasis | 1,333 | 1,046 | 465 |
 
-Demographics of an 800-case stratified sample drawn the way `build_openworld` draws it (seed 0, input sorted by `hadm_id`), next to CDM (800 sampled):
+Demographics of the built open-world set (`data/openworld/other.jsonl`, 713 cases), next to CDM:
 
 | cohort | n | female | age median (IQR) | White | Black | Hispanic/Latino | Asian | Unknown | Medicaid | non-English/unknown |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CDM (in-set) | 2,400 | 53.2% | 51 (33–66) | 65.5% | 12.8% | 8.8% | 5.8% | 1.4% | 7.3% | 10.9% |
-| OTHER sample | 800 | 59.4% | 57 (40–73) | 63.5% | 18.2% | 6.9% | 3.5% | 2.8% | 10.5% | 8.1% |
-| abdominal_aortic_aneurysm | 92 | 38.0% | 75 (70–81) | 77.2% | <10 cases | <10 cases | 0.0% | <10 cases | <10 cases | <10 cases |
-| bowel_obstruction | 92 | 63.0% | 60 (50–73) | 67.4% | 19.6% | <10 cases | <10 cases | <10 cases | <10 cases | <10 cases |
-| diabetic_ketoacidosis | 92 | 60.9% | 35 (28–46) | 34.8% | 45.7% | <10 cases | <10 cases | <10 cases | 22.8% | <10 cases |
-| ectopic_pregnancy | 66 | 100.0% | 33 (30–37) | 42.4% | 18.2% | 16.7% | <10 cases | <10 cases | 16.7% | <10 cases |
-| gastroenteritis_colitis | 92 | 69.6% | 56 (44–66) | 60.9% | 17.4% | 12.0% | <10 cases | <10 cases | 15.2% | 12.0% |
-| gi_bleed | 92 | 51.1% | 50 (36–70) | 65.2% | 21.7% | <10 cases | <10 cases | <10 cases | <10 cases | <10 cases |
-| mesenteric_ischemia | 92 | 64.1% | 73 (59–81) | 76.1% | 12.0% | <10 cases | <10 cases | <10 cases | <10 cases | 10.9% |
-| peptic_ulcer_perforation_or_bleed | 91 | 49.5% | 66 (52–78) | 71.4% | 13.2% | <10 cases | <10 cases | <10 cases | <10 cases | 11.0% |
-| urolithiasis | 91 | 49.5% | 53 (46–65) | 70.3% | 11.0% | <10 cases | <10 cases | 0.0% | 12.1% | <10 cases |
+| OTHER sample | 713 | 59.5% | 59 (46–74) | 67.5% | 16.5% | 8.0% | 3.4% | 1.7% | 8.7% | 12.3% |
+| abdominal_aortic_aneurysm | <10 | – | – | – | – | – | – | – | – | – |
+| bowel_obstruction | 146 | 55.5% | 66 (48–75) | 65.1% | 19.9% | <10 cases | <10 cases | <10 cases | 6.8% | 15.8% |
+| diabetic_ketoacidosis | 17 | all but <10 | 39 (29–50) | <10 cases | <10 cases | <10 cases | <10 cases | 0.0% | <10 cases | 0.0% |
+| ectopic_pregnancy | <10 | – | – | – | – | – | – | – | – | – |
+| gastroenteritis_colitis | 219 | 62.6% | 56 (41–69) | 65.8% | 18.3% | 10.0% | <10 cases | <10 cases | 9.6% | 11.4% |
+| gi_bleed | 79 | 50.6% | 53 (41–78) | 60.8% | 20.3% | <10 cases | <10 cases | 0.0% | <10 cases | 17.7% |
+| mesenteric_ischemia | 94 | 66.0% | 67 (58–80) | 80.9% | <10 cases | <10 cases | <10 cases | <10 cases | <10 cases | <10 cases |
+| peptic_ulcer_perforation_or_bleed | 70 | 51.4% | 64 (52–75) | 68.6% | 14.3% | <10 cases | <10 cases | <10 cases | <10 cases | <10 cases |
+| urolithiasis | 78 | 60.3% | 58 (44–68) | 71.8% | 12.8% | <10 cases | <10 cases | 0.0% | <10 cases | 15.4% |
 
-Demographics-only classifier, in-set vs. OTHER: AUROC 0.622 (accuracy 0.749, majority 0.750).
+Demographics-only classifier, in-set vs. OTHER: AUROC 0.634 (accuracy 0.768, majority 0.771).
 
-`build_openworld` runs its cohort query without `ORDER BY`, then shuffles each group with a seeded RNG. Re-running that exact query 3 times returned rows in a different order. (The audit sorts by `hadm_id` before sampling, so its own numbers are deterministic.)
+`build_openworld` sorts its cohort query by `hadm_id` before the seeded per-group shuffle (added 2026-10-04; unsorted, DuckDB returned a different order on each of 4 runs). Re-running the sorted query 3 times returned rows in the same order.

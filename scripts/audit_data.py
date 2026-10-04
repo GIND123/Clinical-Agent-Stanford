@@ -634,7 +634,8 @@ def adjusted_rate(sub: pd.DataFrame, col: str, weights: pd.Series) -> float | No
 
 
 def cohort_order_is_stable(dx_path: Path, icd_cfg: dict[str, Any], runs: int = 3) -> bool:
-    """Re-run build_openworld's cohort query verbatim (no ORDER BY) and compare row order across runs."""
+    """Re-run build_openworld's cohort query as written now (sorted since 2026-10-04) and compare row order across
+    runs. Unsorted, DuckDB returned a different order on each of 4 runs."""
     import duckdb
 
     other_case, _ = _prefix_sql(icd_cfg["other_groups"])
@@ -651,12 +652,14 @@ def cohort_order_is_stable(dx_path: Path, icd_cfg: dict[str, Any], runs: int = 3
                  cdm_any AS (SELECT DISTINCT hadm_id FROM tagged WHERE cdm_group IS NOT NULL)
             SELECT t.hadm_id FROM tagged t
             WHERE t.seq_num = 1 AND t.other_group IS NOT NULL AND t.hadm_id NOT IN (SELECT hadm_id FROM cdm_any)
+            ORDER BY t.hadm_id
         """).fetchall()])
         con.close()
     return all(o == orders[0] for o in orders)
 
 
-def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep: Report) -> None:
+def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep: Report,
+                openworld_dir: Path | None = None) -> None:
     import duckdb
     from scipy.stats import kruskal
 
@@ -692,30 +695,43 @@ def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep
         rep.table(pd.DataFrame(info["columns"]).set_index("column"), "column")
     rep.data["mimic_schema"] = schema
 
-    # build_openworld fetches labs, micro and radiology by hadm_id; on CDM's own admissions, does that find
-    # what CDM has? (MIMIC leaves hadm_id empty on many ED-era rows.)
+    # Can build_openworld reproduce CDM's data on CDM's own admissions? MIMIC leaves hadm_id empty on many ED-era
+    # rows. Until 2026-10-04 the builder joined on hadm_id only; it now also attaches same-patient rows without a
+    # hadm_id from one day before the first transfer to the last, as CDM does (Hager et al., fill_nan_hadm).
     n_cdm = len(feats)
-    own_key, join_key = "CDM's own tables", "hadm_id join (build_openworld)"
+    own_key, old_key, new_key = "CDM's own tables", "hadm_id only (old builder)", "hadm_id + CDM window (builder now)"
+    tr = hosp / "transfers.csv.gz"
+    if tr.exists():
+        con.execute(f"CREATE TEMP TABLE win AS SELECT t.hadm_id, any_value(t.subject_id) AS subject_id, "
+                    f"min(TRY_CAST(t.intime AS TIMESTAMP)) - INTERVAL 1 DAY AS win_start, "
+                    f"max(TRY_CAST(t.intime AS TIMESTAMP)) AS win_end FROM {_src(tr)} t "
+                    f"JOIN cdm_ids c ON t.hadm_id = c.hadm_id GROUP BY t.hadm_id")
     join_cov = {}
-    for fname, feat, what in (("labevents.csv.gz", feats["n_lab_items"] > 0, "labs"),
-                              ("microbiologyevents.csv.gz", feats["has_micro"], "microbiology"),
-                              ("radiology.csv.gz", feats.get("has_imaging", pd.Series(False, index=feats.index)), "radiology")):
-        if fname in schema:
-            join_cov[what] = {own_key: rate(int(feat.sum()), n_cdm),
-                              join_key: rate(schema[fname]["cdm_admissions_present"], n_cdm)}
+    for fname, path, feat, what in (
+            ("labevents.csv.gz", hosp / "labevents.csv.gz", feats["n_lab_items"] > 0, "labs"),
+            ("microbiologyevents.csv.gz", hosp / "microbiologyevents.csv.gz", feats["has_micro"], "microbiology"),
+            ("radiology.csv.gz", note / "radiology.csv.gz",
+             feats.get("has_imaging", pd.Series(False, index=feats.index)), "radiology")):
+        if fname not in schema:
+            continue
+        row = {own_key: rate(int(feat.sum()), n_cdm), old_key: rate(schema[fname]["cdm_admissions_present"], n_cdm)}
+        if tr.exists():
+            found = con.execute(
+                f"SELECT count(DISTINCT h) FROM (SELECT x.hadm_id AS h FROM {_src(path)} x JOIN win w ON x.hadm_id = w.hadm_id "
+                f"UNION ALL SELECT w.hadm_id FROM {_src(path)} x JOIN win w ON x.subject_id = w.subject_id "
+                f"AND x.hadm_id IS NULL AND TRY_CAST(x.charttime AS TIMESTAMP) BETWEEN w.win_start AND w.win_end)"
+            ).fetchone()[0]
+            row[new_key] = rate(int(found), n_cdm)
+        join_cov[what] = row
     if join_cov:
         t = pd.DataFrame(join_cov).T
-        rep.p("**Can the open-world builder reproduce CDM's data?** `build_openworld` joins labs, microbiology and "
-              "radiology on `hadm_id` (`src/deferdx/data/openworld.py`). Run on CDM's own 2,400 admissions, that join "
-              "finds this share of cases with any data, against what CDM itself holds:")
+        rep.p("**Can the open-world builder reproduce CDM's data?** Share of CDM's own 2,400 admissions with any "
+              "data of each kind: as CDM holds it, as the original `build_openworld` found it (`hadm_id` only), and "
+              "as it finds it now (`hadm_id` plus CDM's window; needs `hosp/transfers`).")
         rep.table(t, "source")
         rep.data["openworld_join_coverage"] = t
-        gaps = [f"{w} {v[join_key]} vs {v[own_key]}" for w, v in join_cov.items()]
-        rep.flag("Open-world cases will carry less data than CDM cases: joined on `hadm_id` as `build_openworld` "
-                 "does, CDM's own admissions have " + "; ".join(gaps) + " (join vs CDM). MIMIC leaves `hadm_id` "
-                 "empty on many ED-era lab and microbiology rows, which CDM evidently includes. An agent can learn "
-                 "'sparse data → OTHER'. Fetch by `subject_id` and a time window around the admission instead, and "
-                 "re-run the source-classifier check.")
+        if new_key not in t.columns:
+            rep.flag("hosp/transfers is missing, so the open-world join cannot be checked against CDM's window.")
 
     # -- demographics
     adm = con.execute(f"SELECT subject_id, hadm_id, admittime, admission_type, admission_location, insurance, language, "
@@ -939,7 +955,8 @@ def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep
                                              abdominal_chief_complaint=("abdominal", "sum"))
     rep.p("Same filters as `build_openworld`: primary diagnosis in an OTHER group, no CDM condition code at any "
           "position, not a CDM admission, a discharge note, and a chief complaint matching `complaint_regex`. "
-          "The builder then drops HPIs that leak the diagnosis, so the final set is somewhat smaller.")
+          "The builder then drops histories that name their own diagnosis and admissions failing CDM's inclusion "
+          "rule (exam of 40+ characters, a lab, an abdominal study), so the built set is much smaller.")
     rep.table(suppress(counts), "OTHER group")
     rep.data["openworld_pool"] = suppress(counts)
     small = [g for g, v in counts.abdominal_chief_complaint.items() if v < 100]
@@ -947,14 +964,22 @@ def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep
         rep.flag("Open-world groups with fewer than 100 abdominal-complaint candidates (they cap the stratified "
                  f"sample): {', '.join(small)}.")
 
-    rows = pool[pool.abdominal].sort_values("hadm_id").to_dict("records")
-    sample = _stratified_sample(rows, "other_group", 800, random.Random(0))
-    if not sample:
-        rep.flag("No open-world candidates passed the filters; the OTHER class cannot be built from this data.")
-        return
-    ow = demo.merge(pd.DataFrame(sample)[["hadm_id", "other_group"]], on="hadm_id", how="inner")
-    rep.p(f"Demographics of an 800-case stratified sample drawn the way `build_openworld` draws it (seed 0, input "
-          f"sorted by `hadm_id`), next to CDM ({len(ow):,} sampled):")
+    built = openworld_dir / "other.jsonl" if openworld_dir is not None else None
+    if built is not None and built.exists():
+        recs = [json.loads(line) for line in built.open(encoding="utf-8")]
+        ow_ids = pd.DataFrame({"hadm_id": [str(r["case_id"]) for r in recs],
+                               "other_group": [(r.get("meta") or {}).get("group") for r in recs]})
+        source = f"the built open-world set (`{built.as_posix()}`, {len(ow_ids):,} cases)"
+    else:
+        rows = pool[pool.abdominal].sort_values("hadm_id").to_dict("records")
+        sample = _stratified_sample(rows, "other_group", 800, random.Random(0))
+        if not sample:
+            rep.flag("No open-world candidates passed the filters; the OTHER class cannot be built from this data.")
+            return
+        ow_ids = pd.DataFrame(sample)[["hadm_id", "other_group"]]
+        source = "an 800-case stratified sample drawn the way `build_openworld` draws it (seed 0), before its leak and inclusion filters"
+    ow = demo.merge(ow_ids, on="hadm_id", how="inner")
+    rep.p(f"Demographics of {source}, next to CDM:")
     ow_prof = pd.concat([_profile(cohort, {"CDM (in-set)": cohort.label.notna()}),
                          _profile(ow, {"OTHER sample": ow.other_group.notna()}),
                          _profile(ow, {g: ow.other_group == g for g in sorted(ow.other_group.unique())})])
@@ -969,19 +994,18 @@ def audit_mimic(root: Path, feats: pd.DataFrame, pids: dict[str, list[str]], rep
                  f"{sc_ow['auroc']:.2f}. Match or report this, or DEFER/OTHER can be learned from who the patient is.")
     stable = cohort_order_is_stable(hosp / "diagnoses_icd.csv.gz", icd_cfg)
     rep.data["openworld_cohort_order_stable"] = stable
-    rep.p(f"`build_openworld` runs its cohort query without `ORDER BY`, then shuffles each group with a seeded RNG. "
-          f"Re-running that exact query 3 times returned rows in {'the same' if stable else 'a different'} order. "
-          "(The audit sorts by `hadm_id` before sampling, so its own numbers are deterministic.)")
+    rep.p(f"`build_openworld` sorts its cohort query by `hadm_id` before the seeded per-group shuffle (added "
+          f"2026-10-04; unsorted, DuckDB returned a different order on each of 4 runs). Re-running the sorted query "
+          f"3 times returned rows in {'the same' if stable else 'a different'} order.")
     if not stable:
-        rep.flag("The open-world sample is not reproducible: `build_openworld`'s cohort query has no `ORDER BY` and "
-                 "DuckDB returned its rows in a different order on each of 3 runs, so the same seed draws a different "
-                 "OTHER cohort. Add `ORDER BY hadm_id` before sampling.")
+        rep.flag("The open-world sample is not reproducible: `build_openworld`'s cohort query returned rows in a "
+                 "different order across 3 runs, so the same seed can draw a different OTHER cohort.")
 
 
 # ---- driver -------------------------------------------------------------------------
 
 
-def run_audit(root: Path, skip_mimic: bool = False) -> Report:
+def run_audit(root: Path, skip_mimic: bool = False, openworld_dir: Path | None = None) -> Report:
     rep = Report()
     t0 = time.time()
     audit_inventory(root, rep)
@@ -994,7 +1018,7 @@ def run_audit(root: Path, skip_mimic: bool = False) -> Report:
         rep.h(2, "6-9. MIMIC-IV and MIMIC-IV-Note")
         rep.p("Skipped: " + ("--skip-mimic." if skip_mimic else "MIMIC-IV hosp admissions/patients not found."))
     else:
-        audit_mimic(root, feats, pids, rep)
+        audit_mimic(root, feats, pids, rep, openworld_dir)
         log.info("MIMIC audit done (%.0fs)", time.time() - t0)
     return rep
 
@@ -1026,10 +1050,11 @@ def main() -> None:
     ap.add_argument("--out", default="docs", help="where DATA_AUDIT.md and data_audit.json go")
     ap.add_argument("--min-cell", type=int, default=10, help="smallest patient-derived count shown")
     ap.add_argument("--skip-mimic", action="store_true", help="CDM only (no MIMIC-IV / Note scans)")
+    ap.add_argument("--openworld", default="data/openworld", help="built open-world set to describe, if present")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     MIN_CELL = args.min_cell
-    rep = run_audit(Path(args.root), skip_mimic=args.skip_mimic)
+    rep = run_audit(Path(args.root), skip_mimic=args.skip_mimic, openworld_dir=Path(args.openworld))
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     rep.data["findings"] = rep.flags

@@ -126,9 +126,9 @@ Rules for these runs:
 | Data | Status | Where (git-ignored) | Notes |
 |---|---|---|---|
 | MIMIC-IV-Ext-CDM 1.1 | ✅ checksums match | `data/physionet/mimic-iv-ext-cdm/1.1/` | built into `data/cdm/{all,train,val,test}.jsonl` (LA-CDM split 1,920 / 240 / 240) |
-| MIMIC-IV 2.2 hosp (admissions, patients, diagnoses_icd, labevents, microbiologyevents, dictionaries) | ✅ checksums match | `data/physionet/mimiciv/2.2/hosp/` | demographics for per-group evaluation; open-world cohort |
-| MIMIC-IV-Note 2.2 (discharge, radiology) | ✅ checksums match | `data/physionet/mimic-iv-note/2.2/note/` | open-world cohort |
-| MIMIC-CDM-OW (OTHER cases) | ❌ not built | — | blocked: fix `build_openworld` first (§3.2) |
+| MIMIC-IV 2.2 hosp (admissions, patients, transfers, diagnoses_icd, labevents, microbiologyevents, dictionaries) | ✅ checksums match | `data/physionet/mimiciv/2.2/hosp/` | demographics for per-group evaluation; open-world cohort (`transfers` gives CDM's time window) |
+| MIMIC-IV-Note 2.2 (discharge, radiology, radiology_detail) | ✅ checksums match | `data/physionet/mimic-iv-note/2.2/note/` | open-world cohort (`radiology_detail` gives CDM's exam names) |
+| MIMIC-CDM-OW (OTHER cases) | ✅ built 2026-10-04 | `data/openworld/` | 713 OTHER cases + 51 same-pipeline controls (`--n 2400`); identical across two builds |
 | DiagBench (4 subsets, 2,257 cases) | ✅ | `data/public/diagbench/` | the MIMIC-IV subset is MIMIC text; treat it as credentialed |
 | MediQ (iMedQA `all_dev_good`, iCraft-MD) | ✅ | `data/public/mediq/` | |
 | DDXPlus (test, validate, evidences, conditions) | ✅ | `data/public/ddxplus/` | training split not downloaded (no training) |
@@ -153,9 +153,13 @@ These follow from [DATA_AUDIT.md](DATA_AUDIT.md) and from running the pipeline o
 6. **Contamination:**
    - DiagAgent-14B was trained on 118k MIMIC-IV records. Its overlap with CDM's 2,400 admissions can't be checked; report its MIMIC-CDM numbers with that caveat.
    - DiagBench's public MIMIC subset contains **19 CDM admissions** (matched through MIMIC-IV-Note `note_id`), and 62 of its 750 cases have a final diagnosis naming a CDM condition. It has been public since Oct 2025, so newer models may have seen those cases.
-7. **OTHER metrics:** false-commit and OOD AUROC need MIMIC-CDM-OW. `build_openworld` has two problems to fix before building it (`DATA_AUDIT.md` findings):
-   - Its `hadm_id`-only join finds microbiology for 32% of CDM admissions, against CDM's 77%.
-   - Its cohort query returns rows in a different order each run, so the sample isn't reproducible.
+7. **OTHER metrics:** false-commit and OOD AUROC need MIMIC-CDM-OW. On 2026-10-04 `build_openworld` was changed to build it the way CDM was built:
+   - A sorted cohort query, so the sample is reproducible. It was not before.
+   - Rows without a `hadm_id`, timed from one day before the first transfer to the last. Before this, the join found microbiology for 32% of CDM admissions against CDM's 77%; now it finds exactly what CDM holds.
+   - Exam names from `radiology_detail`. Before this, 52% of OTHER cases lost all imaging.
+   - CDM's inclusion rule.
+
+   OTHER cases now match CDM on imaging, labs and exam length. A text classifier separates same-pipeline controls from label-matched CDM cases at AUROC 0.563, with the physical exam alone still at 0.673. Results are in [BASELINES.md](BASELINES.md).
 8. **Pipeline checks already run on real data:**
    - The oracle policy scores 100% (environment and scoring are consistent).
    - Qwen3-0.6B completes episodes end to end (2 of 8 smoke-test episodes broke the action format, expected at that size).
