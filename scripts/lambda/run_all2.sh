@@ -32,15 +32,15 @@ roll() {  # roll <name> <model> <seed> <temperature> <extra flags...> -- <case f
 OW_CASES=("$P/cdm/test.jsonl" "$P/openworld/other.jsonl" "$P/openworld/controls.jsonl")
 
 # 1. DiagAgent-14B through its format adapter (environment unchanged), all 2,400 cases
-run smoke_da_adapter python "$P/diagagent_adapter.py" --cases "$P/cdm/test.jsonl" --limit 20 --out "$O/smoke_da_adapter.jsonl" \
-  && run cdm_da_adapter_all python "$P/diagagent_adapter.py" --cases "$P/cdm/all.jsonl" --out "$O/cdm_da_adapter_all.jsonl"
+run smoke_da_adapter python "$HOME/Clinical-Agent-Stanford/scripts/lambda/diagagent_adapter.py" --cases "$P/cdm/test.jsonl" --limit 20 --out "$O/smoke_da_adapter.jsonl" \
+  && run cdm_da_adapter_all python "$HOME/Clinical-Agent-Stanford/scripts/lambda/diagagent_adapter.py" --cases "$P/cdm/all.jsonl" --out "$O/cdm_da_adapter_all.jsonl"
 
 # 2. Open world: Qwen3-8B on the LA-CDM test cases + OTHER cases + same-pipeline controls, OTHER offered
 roll ow_qwen8b_nodefer "$Q8" 0 0.6 --no-defer -- "${OW_CASES[@]}"
 roll ow_qwen8b_defer "$Q8" 0 0.6 -- "${OW_CASES[@]}"
 
 # 3. DiagBench re-score with the fixed exam extractor (also re-checks the diagnosis scores)
-run diagbench_rejudge python "$P/diagbench_score.py" --gen-dir "$P/diagbench_gen" --out "$O/diagbench_scores_v2.json"
+run diagbench_rejudge python "$HOME/Clinical-Agent-Stanford/scripts/lambda/diagbench_score.py" --gen-dir "$P/diagbench_gen" --out "$O/diagbench_scores_v2.json"
 
 # 4. gpt-oss-20b smoke only (A100 support in vLLM 0.11 is not guaranteed)
 roll smoke_gptoss "$GO" 0 0.6 --no-defer --closed-world --limit 20 -- "$P/cdm/test.jsonl"
