@@ -17,6 +17,7 @@ GO=openai/gpt-oss-20b
 phase() { echo "$(date -u +%FT%TZ) PHASE $1 $2" | tee -a "$LOG"; }
 run() {
   local name=$1; shift
+  case " ${SKIP:-} " in *" $name "*) phase "$name" SKIPPED; return 0 ;; esac  # SKIP="a b": resume a partial run
   phase "$name" START
   "$@" > ~/runs/"$name".log 2>&1
   local rc=$?
