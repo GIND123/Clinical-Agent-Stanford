@@ -84,9 +84,20 @@ def bootstrap(values: np.ndarray, n_boot: int = 2000, seed: int = 0) -> tuple[fl
     return float(values.mean()), float(np.percentile(means, 2.5)), float(np.percentile(means, 97.5))
 
 
-def group_table(frame: pd.DataFrame, by: str, min_cell: int, n_boot: int = 2000) -> pd.DataFrame:
+def label_adjusted(sub: pd.DataFrame, weights: pd.Series) -> float:
+    """Accuracy directly standardised to the cohort's class mix, so a group is not rewarded for
+    having more of the easy classes (appendicitis is young and easiest). NaN if the group lacks a class."""
+    acc = sub.groupby("label")["correct"].mean()
+    if not set(weights.index) <= set(acc.index):
+        return float("nan")
+    return float(sum(weights[c] * acc[c] for c in weights.index))
+
+
+def group_table(frame: pd.DataFrame, by: str, min_cell: int, n_boot: int = 2000,
+                weights: pd.Series | None = None) -> pd.DataFrame:
     """Groups under min_cell are hidden, and a second group size is hidden ("·") when the
-    total would otherwise reveal the first (same rule as the data audit)."""
+    total would otherwise reveal the first (same rule as the data audit). With `weights`
+    (class shares), a label-adjusted accuracy column is added."""
     audit_data.MIN_CELL = min_cell
     sizes = frame.groupby(by, sort=True).size()
     shown = suppress(pd.DataFrame({"n": sizes}))["n"]
@@ -94,9 +105,14 @@ def group_table(frame: pd.DataFrame, by: str, min_cell: int, n_boot: int = 2000)
     for g, sub in frame.groupby(by, sort=True):
         if len(sub) < min_cell:
             rows[str(g)] = {"cases": f"<{min_cell}", "accuracy": "–", "95% CI": "–"}
+            if weights is not None:
+                rows[str(g)]["label-adjusted"] = "–"
             continue
         m, lo, hi = bootstrap(sub["correct"].to_numpy(), n_boot)
         rows[str(g)] = {"cases": shown[g], "accuracy": f"{100 * m:.1f}", "95% CI": f"{100 * lo:.1f}–{100 * hi:.1f}"}
+        if weights is not None:
+            adj = label_adjusted(sub, weights)
+            rows[str(g)]["label-adjusted"] = "–" if np.isnan(adj) else f"{100 * adj:.1f}"
     return pd.DataFrame(rows).T
 
 
@@ -105,8 +121,9 @@ def report(frame: pd.DataFrame, min_cell: int = 10, n_boot: int = 2000) -> dict:
     out = {"cases": int(len(frame)), "accuracy": round(m, 4), "ci95": [round(lo, 4), round(hi, 4)],
            "mean_class_accuracy": round(float(frame.groupby("label")["correct"].mean().mean()), 4),
            "demographic_floor": DEMOGRAPHIC_FLOOR, "tables": {}}
+    shares = frame["label"].value_counts(normalize=True)
     for col in ["label"] + [a for a in ATTRS if a in frame] + [c for c in ("rad_mask",) if c in frame]:
-        out["tables"][col] = group_table(frame, col, min_cell, n_boot)
+        out["tables"][col] = group_table(frame, col, min_cell, n_boot, shares if col in ATTRS else None)
     if "rad_mask" in frame:  # does the model do better when the mask is present, within each class?
         out["tables"]["label x rad_mask"] = group_table(
             frame.assign(stratum=frame["label"] + " / mask=" + frame["rad_mask"].astype(str)), "stratum", min_cell, n_boot)

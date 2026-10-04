@@ -106,13 +106,19 @@ Severity-aware conformal planning (arXiv 2608.27847, Aug 2026, Llama-3.1-8B, inf
 
 ## 3. Inference-only runs (step 3, needs GPUs)
 
-**Run on 2026-10-01; results are in [BASELINES.md](BASELINES.md).** That run covered Qwen3-8B and DiagAgent-14B on MIMIC-CDM, the post-hoc baselines and DiagBench. Qwen3-14B, MedGemma-27B, gpt-oss-20b, MediQ, DDXPlus and AgentClinic are not run yet.
+**Run on 2026-10-01 and 2026-10-04; results are in [BASELINES.md](BASELINES.md).** Done:
+- Qwen3-8B and DiagAgent-14B on all 2,400 MIMIC-CDM cases (DiagAgent through a format adapter);
+- the post-hoc baselines;
+- DiagBench;
+- Qwen3-8B on the open-world set.
+
+Qwen3-14B on all 2,400 cases is running. gpt-oss-20b has only a 20-case smoke test. MedGemma-27B, MediQ, DDXPlus and AgentClinic are not run yet.
 
 | Benchmark | Data access | Runs in this repo? | Models (open weights) | Priority |
 |---|---|---|---|---|
-| MIMIC-CDM: all 2,400 cases, plus the LA-CDM split (240 val / 240 test) for comparability | credentialed (have it) | yes: `deferdx rollout --policy vllm --model <m> --no-defer`, then `scripts/subgroup_eval.py` | Qwen3-8B, Qwen3-14B, DiagAgent-14B, MedGemma-27B-text-it, gpt-oss-20b | **1** |
+| MIMIC-CDM: all 2,400 cases, plus the LA-CDM split (240 val / 240 test) for comparability | credentialed (have it) | yes: `deferdx rollout --policy vllm --model <m> --no-defer`, then `scripts/subgroup_eval.py`; DiagAgent-14B through `scripts/lambda/diagagent_adapter.py` | Qwen3-8B, Qwen3-14B, DiagAgent-14B, MedGemma-27B-text-it, gpt-oss-20b | **1** |
 | Post-hoc threshold (#6) and SGR conformal (#7) on those rollouts | same | yes: `deferdx baseline` (CPU only) | — | **1** |
-| DiagBench (to check our harness reproduces DiagAgent-14B's published numbers) | Hugging Face, public; MIMIC subset treated as credentialed | no (DiagGym repo) | DiagAgent-14B | 2 |
+| DiagBench (to check our harness reproduces DiagAgent-14B's published numbers) | Hugging Face, public; MIMIC subset treated as credentialed | partly: `scripts/lambda/diagbench_*.py` drive DiagGym's own loader and judge prompts | DiagAgent-14B | 2 |
 | MediQ, DDXPlus (external check on ASK-style behaviour) | public | no (their repos) | same open models | 3 |
 | AgentClinic | public | no; needs an LLM patient simulator | same | 4 |
 
@@ -159,7 +165,7 @@ These follow from [DATA_AUDIT.md](DATA_AUDIT.md) and from running the pipeline o
    - Exam names from `radiology_detail`. Before this, 52% of OTHER cases lost all imaging.
    - CDM's inclusion rule.
 
-   OTHER cases now match CDM on imaging, labs and exam length. A text classifier separates same-pipeline controls from label-matched CDM cases at AUROC 0.563, with the physical exam alone still at 0.673. Results are in [BASELINES.md](BASELINES.md).
+   OTHER cases now match CDM on imaging, labs and exam length. A text classifier separates same-pipeline controls from label-matched CDM cases at AUROC 0.563, with the physical exam alone still at 0.673. Results are in [BASELINES.md](BASELINES.md) §5.
 8. **Pipeline checks already run on real data:**
    - The oracle policy scores 100% (environment and scoring are consistent).
    - Qwen3-0.6B completes episodes end to end (2 of 8 smoke-test episodes broke the action format, expected at that size).
