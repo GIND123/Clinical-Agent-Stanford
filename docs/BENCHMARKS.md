@@ -107,12 +107,12 @@ Severity-aware conformal planning (arXiv 2608.27847, Aug 2026, Llama-3.1-8B, inf
 ## 3. Inference-only runs (step 3, needs GPUs)
 
 **Run on 2026-10-01 and 2026-10-04; results are in [BASELINES.md](BASELINES.md).** Done:
-- Qwen3-8B and DiagAgent-14B on all 2,400 MIMIC-CDM cases (DiagAgent through a format adapter);
+- Qwen3-8B, Qwen3-14B and DiagAgent-14B on all 2,400 MIMIC-CDM cases (DiagAgent through a format adapter);
 - the post-hoc baselines;
 - DiagBench;
 - Qwen3-8B on the open-world set.
 
-Qwen3-14B on all 2,400 cases is running. gpt-oss-20b has only a 20-case smoke test. MedGemma-27B, MediQ, DDXPlus and AgentClinic are not run yet.
+gpt-oss-20b has only a 20-case smoke test. MedGemma-27B, MediQ, DDXPlus and AgentClinic are not run yet.
 
 | Benchmark | Data access | Runs in this repo? | Models (open weights) | Priority |
 |---|---|---|---|---|
