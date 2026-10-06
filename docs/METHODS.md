@@ -74,7 +74,7 @@ No training case shares a patient with an open-world evaluation case. The time-c
 - **Group filter:** groups whose reward spread is below 0.05 are skipped (dynamic sampling).
 - **Loss:** a clipped surrogate (ε = 0.2 / 0.28, clip-higher) over every assistant turn's exact sampled tokens, averaged at the token level over the batch (DAPO).
 - **Engine correction:** truncated importance sampling (cap 2) against the sampling engine's own token log-probs.
-- **Optimiser:** AdamW, lr 1 × 10⁻⁵ (LoRA needs about 10× the full-fine-tune rate), constant after 5 warm-up steps, gradient-norm clip 1.0, no KL term.
+- **Optimiser:** AdamW, gradient-norm clip 1.0, no KL term. Learning rate 1 × 10⁻⁵ for steps 1–25 (after 5 warm-up steps), then 5 × 10⁻⁵. After 25 steps at 1 × 10⁻⁵ the adapter had moved the weights by only ~1.3 × 10⁻⁴ of their norm and batch metrics were flat, so the rate was raised. The schedule is part of the config (`lr_milestones`), so the control arm and every ablation follow it exactly.
 - **Curricula:** τ is annealed 0.95 → 0.85 over 100 steps (deferral cheap early, §5.4 of the plan), with a small terminal-action entropy bonus (0.02) for the first 30 steps.
 
 **Turns.** Qwen3's chat template strips earlier `<think>` blocks, so every assistant turn is trained against exactly the prompt it was generated from.
