@@ -31,7 +31,15 @@ import numpy as np  # noqa: E402
 from deferdx.eval import metrics as M  # noqa: E402
 from deferdx.eval import stats as S  # noqa: E402
 from deferdx.eval.evaluate import ood_score  # noqa: E402
-from deferdx.eval.report import cdm_pooled, crossfit_posthoc, fmt_ci, load_suite, self_consistency  # noqa: E402
+from deferdx.eval.report import (  # noqa: E402
+    cdm_pooled,
+    crossfit_posthoc,
+    fmt_ci,
+    load_groups,
+    load_suite,
+    per_group,
+    self_consistency,
+)
 from deferdx.labels import OTHER  # noqa: E402
 from deferdx.rewards.scoring import SeverityMatrix  # noqa: E402
 
@@ -208,6 +216,20 @@ def main() -> None:
                      f"{cell(x, 'acc_diverticulitis')} | this report |")
     L += ["", "Environments differ across rows (history summary vs full history, 12 vs 22 tests, different base "
               "models); LDTL's split is unpublished. Read rows from other papers as context, not as head-to-head."]
+    # per diagnosis group on the unseen time-critical OTHER groups (n >= 10 cases shown)
+    group_rows = []
+    for name, label in SYSTEMS:
+        if name in suites and suites[name].get("eval_other_unseen"):
+            g = load_groups(ev / name)
+            rs = suites[name]["eval_other_unseen"]
+            fc, df = per_group(rs, g, S.false_commit), per_group(rs, g, S.defer_rate)
+            for grp in fc:
+                if not fc[grp]["suppressed"]:
+                    group_rows.append((label, grp, fc[grp]["n_cases"], fc[grp]["value"], df[grp]["value"]))
+    if group_rows:
+        L += ["", "## 3d. Unseen time-critical OTHER groups, by diagnosis (groups with >= 10 cases)", "",
+              "| System | Group | Cases | False commit | Defer |", "|---|---|---|---|---|"]
+        L += [f"| {a} | {b.replace('_', ' ')} | {n} | {fc * 100:.1f} | {df * 100:.1f} |" for a, b, n, fc, df in group_rows]
     if paired:
         L += ["", "## 5. Paired differences, DEFER-Dx minus comparator (same cases)", "",
               "| Comparison | Metric | Difference (95% CI) | p |", "|---|---|---|---|"]

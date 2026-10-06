@@ -36,11 +36,12 @@ def run_suite(model: str, adapter: str | None, sets: list[str], seeds: list[int]
 
     out = Path(out_dir) / name
     out.mkdir(parents=True, exist_ok=True)
-    cases, set_of = [], {}
+    cases, set_of, group_of = [], {}, {}
     for path in sets:
         cs = load_cases(path)[: limit or None]
         for c in cs:
             set_of[c.case_id] = set_name(path)
+            group_of[c.case_id] = c.meta.get("group") or c.label
         cases.extend(cs)
     policy = VLLMPolicy(model, adapter, max_new_tokens=max_new_tokens, temperature=temperature, top_p=top_p,
                         top_k=top_k, chat_template_kwargs=chat_template_kwargs or {"enable_thinking": True},
@@ -57,7 +58,7 @@ def run_suite(model: str, adapter: str | None, sets: list[str], seeds: list[int]
         rows = []
         for ro in rollouts:
             d = ro.to_dict()
-            d["set"], d["seed"] = set_of[ro.case_id], seed
+            d["set"], d["seed"], d["group"] = set_of[ro.case_id], seed, group_of[ro.case_id]
             rows.append(d)
         write_jsonl(out / f"s{seed}.jsonl", rows)
         per_set = {}

@@ -68,6 +68,30 @@ def load_suite(path: str | Path) -> dict[str, list[EpisodeResult]]:
     return dict(out)
 
 
+def load_groups(path: str | Path) -> dict[str, str]:
+    """case_id -> diagnosis group (OTHER group name, or the label for in-set cases)."""
+    out: dict[str, str] = {}
+    for f in sorted(Path(path).glob("s*.jsonl")):
+        for row in iter_jsonl(f):
+            if row.get("group"):
+                out[row["case_id"]] = row["group"]
+    return out
+
+
+def per_group(results: list[EpisodeResult], group_of: dict[str, str], stat, min_cases: int = 10) -> dict[str, dict]:
+    """stat per diagnosis group; groups with fewer than `min_cases` distinct cases are suppressed
+    (patient-derived small cells, docs/DATA_AUDIT.md convention)."""
+    by: dict[str, list[EpisodeResult]] = defaultdict(list)
+    for r in results:
+        by[group_of.get(r.case_id, "unknown")].append(r)
+    out = {}
+    for g, rs in sorted(by.items()):
+        n = len({r.case_id for r in rs})
+        out[g] = {"n_cases": n, "value": stat(rs) if n >= min_cases else None,
+                  "suppressed": n < min_cases}
+    return out
+
+
 def cdm_pooled(suite: dict[str, list[EpisodeResult]]) -> list[EpisodeResult]:
     return [r for s in CDM_SETS for r in suite.get(s, [])]
 
