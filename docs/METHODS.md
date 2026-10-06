@@ -1,0 +1,116 @@
+# Methods (as implemented)
+
+This is the method that the code in this repository runs, with the constants it uses. It is written to be lifted into a paper. The research plan is in [stanford_idea_md.md](../stanford_idea_md.md); where the implementation departs from the plan, the reason is given here and in the README.
+
+## 1. Task and environment
+
+**Decision process.** Each episode is one hospital admission. The hidden state is the diagnosis y ∈ {appendicitis, cholecystitis, diverticulitis, pancreatitis} ∪ {OTHER}. At reset the agent sees the patient's full history (the MIMIC-IV-Ext-CDM history text, which contains the history of present illness and past, social and family history). On each turn it emits one action as JSON inside `<action>…</action>`, after reasoning inside `<think>…</think>`.
+
+| Action | Effect |
+|---|---|
+| `ASK(physical_exam)` | reveals the admission physical examination (free) |
+| `TEST(x)`, x in 22 tests | reveals the earliest result of that test for this admission, or "not performed"; charged at its 2025 BIDMC standard charge (placeholder prices where marked in `configs/test_catalog.yaml`) |
+| `COMMIT(d, p)` | terminal: diagnosis d ∈ D ∪ {OTHER} with stated probability p ∈ [0, 1] |
+| `DEFER(differential, reason)` | terminal: hand the case to a clinician with a ranked differential |
+
+At most 8 ASK/TEST actions are allowed per episode, and at most 2 malformed turns. Observations are looked up from the record, never generated, so the environment needs no simulator and no external model. Tests are individual (CBC, CMP, lipase, CT abdomen, …), not the three coarse categories of LDTL. Every COMMIT carries a numeric probability, not a binary confidence flag.
+
+## 2. Reward
+
+**Commit.** For COMMIT(d, p) on a case with label y:
+
+R_commit = α·1[d = y] − λ·(p − 1[d = y])² − κ·C[y, d] − c·Σ_t cost(a_t)
+
+with α = 1, λ = 1 (Brier score, a strictly proper scoring rule), κ = 0.5 and C the 5×5 asymmetric severity matrix in `configs/severity_matrix.yaml`. C is a time-to-harm proxy (for example, a missed OTHER case costs 1.0, a missed appendicitis 0.8). The cost scale c = α / Σ_x cost(x) = 6.81 × 10⁻⁵ per US$, so ordering every test in the catalog costs one correct diagnosis (LA-CDM's convention); a CT abdomen costs 0.089.
+
+**Group-consensus deferral (the contribution).** GRPO samples G episodes of the same case. Let p̂ be the fraction of the group's committing episodes that were correct: an on-policy, label-verified estimate of how likely the current policy is to be wrong on this case. For a DEFER on an in-set case:
+
+R_defer = γ·(τ − p̂) − μ − c·Σ_t cost(a_t)
+
+with γ = 2, handoff cost μ = 0.1 and the safety dial τ. Deferring pays when the group usually gets the case wrong and is penalised when it usually gets it right. If no episode in the group committed, p̂ = τ (deferral then costs only μ). On an OTHER case, R_defer = 1.2 − μ, which beats a perfectly confident correct COMMIT(OTHER) (≤ 1): "none of these" warrants escalation.
+
+**What τ means.** For a calibrated committer with success probability q, the expected commit reward equals the expected defer reward at q*: τ = 0.85 gives q* ≈ 0.645 and τ = 0.95 gives q* ≈ 0.70 (`deferdx crossover`). The policy learns to defer when it estimates q < q*, not q < τ. Both numbers are reported.
+
+**Alternative estimator (ablation).** `reward.p_hat_mode: forced_loo` estimates p̂ for deferring episode i from the forced predictions of the other G − 1 episodes (commit, or the top of a deferral differential). It is not biased by which episodes chose to commit, and it stays defined when most of the group defers. A deferring episode's own differential never changes its own reward.
+
+**Coverage constraint.** Over-deferral is a documented failure mode (Abstain-R1). The rate of DEFER on in-set cases in each batch is held below ρ_max = 0.30 by projected dual ascent on a multiplier ν (lr 2.0, after 2 consecutive violations; ν ≤ 5). ν is charged to deferring episodes on in-set cases only. Subtracting the same constant from every episode in a group would cancel in the advantage, so it is not done. Deferring an OTHER case is the desired behaviour and is not rationed.
+
+**Format.** An episode ending in malformed actions or the step budget scores −1 minus its investigation cost.
+
+## 3. Data
+
+**MIMIC-IV-Ext-CDM v1.1** (Hager et al., *Nature Medicine* 2024): 2,400 admissions (957 appendicitis, 648 cholecystitis, 257 diverticulitis, 538 pancreatitis), labels from `pathology_ids.json`. The exact LA-CDM 80/10/10 split (stratified, seed 269) is kept so that LA-CDM's numbers are comparable on the same test set. When a test repeats within an admission, only the earliest result is kept. CDM's CSVs carry no `subject_id`; it is attached from MIMIC-IV `admissions`.
+
+**MIMIC-CDM-OW (open world).** `deferdx data build-openworld` selects MIMIC-IV 2.2 admissions with an abdominal chief complaint whose principal (seq 1) ICD diagnosis falls in one of 9 non-CDM groups. Admissions carrying any CDM-condition code at any position are excluded. Each case is built with CDM's own text pipeline (`data/parity.py`):
+
+- the history blob and physical-exam windows;
+- the radiology section filter, and the exam name taken from `radiology_detail`;
+- `____` masking of the case's own diagnosis;
+- CDM's inclusion rule;
+- earliest-value deduplication under a total row order.
+
+The build is deterministic and byte-identical across runs. Same-pipeline **controls** are admissions with a CDM condition as principal diagnosis, built by the same pipeline: 648 controls next to 713 OTHER cases.
+
+**Cohorts** (`deferdx data cohorts`, patient-disjoint):
+
+| Set | Cases | Use |
+|---|---|---|
+| RL train | 2,404 = 1,760 CDM + 279 OTHER + 365 controls | GRPO |
+| dev | 212 = 160 CDM + 32 OTHER + 20 controls | monitoring only |
+| CDM val + test | 240 + 240 | evaluation; never seen in training |
+| OTHER, seen groups | 206 (bowel obstruction, gastroenteritis/colitis, GI bleed, urolithiasis) | evaluation |
+| OTHER, unseen groups | 187 (mesenteric ischaemia, perforated/bleeding ulcer, AAA, DKA, ectopic) | evaluation; groups never seen in training |
+| controls | 258 | evaluation (source-shortcut check) |
+
+No training case shares a patient with an open-world evaluation case. The time-critical groups are held out entirely, so the open-world evaluation separates recognising a group seen in training from escalating an unfamiliar, dangerous presentation. Training on controls removes the shortcut "built by the open-world pipeline ⇒ OTHER". Cases are drawn from source pools by weight (CDM 0.75, OTHER 0.15, controls 0.10), which also keeps the controls' cholecystitis-heavy mix from shifting the class balance.
+
+## 4. Training
+
+**Model.** Qwen3-8B (thinking mode), LoRA r = 16, α = 32, all linear layers of the transformer blocks (the output layer is frozen).
+
+**Algorithm.** Multi-turn GRPO, one gradient step per batch of B = 12 cases × G = 8 episodes, rollout temperature 1.0. The constituent choices:
+
+- **Advantages:** r − mean(group), with no division by the group standard deviation (Dr. GRPO). Dividing would inflate the tiny Brier and cost differences inside all-correct groups to unit scale and distort the designed trade-offs.
+- **Group filter:** groups whose reward spread is below 0.05 are skipped (dynamic sampling).
+- **Loss:** a clipped surrogate (ε = 0.2 / 0.28, clip-higher) over every assistant turn's exact sampled tokens, averaged at the token level over the batch (DAPO).
+- **Engine correction:** truncated importance sampling (cap 2) against the sampling engine's own token log-probs.
+- **Optimiser:** AdamW, lr 1 × 10⁻⁵ (LoRA needs about 10× the full-fine-tune rate), constant after 5 warm-up steps, gradient-norm clip 1.0, no KL term.
+- **Curricula:** τ is annealed 0.95 → 0.85 over 100 steps (deferral cheap early, §5.4 of the plan), with a small terminal-action entropy bonus (0.02) for the first 30 steps.
+
+**Turns.** Qwen3's chat template strips earlier `<think>` blocks, so every assistant turn is trained against exactly the prompt it was generated from.
+
+**Single-GPU colocation** (`training/grpo_vllm.py`). vLLM generates with the current LoRA adapter while the HF model's frozen weights sit in pinned CPU memory. vLLM then sleeps (weights to CPU, KV cache freed), the frozen weights return to the GPU, and one policy-gradient step runs. The new adapter is served under a fresh id.
+
+- **Correctness check:** vLLM's LoRA log-probs match HF+PEFT within bf16 noise across sleep/wake cycles (mean |Δ log p| 0.024–0.030 per token, against a LoRA effect of 0.45), and the training-time engine mismatch stays at about 0.02.
+- **Memory:** the output layer's log-probs are computed by a custom autograd function that recomputes logits chunk by chunk in the backward pass (gradient-checked against the naive computation), so memory scales with the backbone, not the 152k vocabulary.
+- **Throughput:** one unpadded sequence per micro-batch is 1.55× faster than padded micro-batches. A step takes about 6–7 minutes on one RTX PRO 5000 (48 GB).
+
+**Control arm.** Identical data, reward (including the Brier term), compute and seed, but DEFER is not offered. Thresholding this model's stated probability is the fair answer to "why not just threshold?".
+
+## 5. Evaluation
+
+**Protocol.** Each model runs on all five evaluation sets with 3 seeds. Sampling uses Qwen3's thinking-mode settings (T 0.6, top-p 0.95, top-k 20), never greedy. Per-request seeds derived from (seed, case, sample, turn) make runs reproducible.
+
+**Metrics.**
+- **Closed world** (CDM val + test, 480 cases): accuracy at full coverage (a deferral counts through the top of its differential), mean-class accuracy (LA-CDM's convention), macro-F1, per-class accuracy, coverage, selective accuracy, risk-coverage curve and AURC, accuracy at 70/80/90% coverage, ECE and Brier on committed cases.
+- **Clinical safety:**
+  - unflagged errors (wrong commits per case) and confident errors (wrong commits with p > 0.8);
+  - severity-weighted error;
+  - deferral precision (deferrals whose best guess was wrong) and recall (would-be errors that were deferred);
+  - tests and dollars per case.
+- **Open world:** false-commit rate (an OTHER case committed to one of the four), confident false commits, deferral rate, and OOD AUROC.
+
+**Statistics.** 95% intervals come from a case-level bootstrap with 2,000 resamples; all seeds of a case are resampled together. Comparisons are paired bootstraps on the same cases.
+
+**Baselines.** All are run here on the same cases and seeds:
+- zero-shot Qwen3-8B, forced choice and with prompted DEFER;
+- the GRPO control;
+- post-hoc confidence thresholds on each forced-choice model at DEFER-Dx's coverage, cross-fitted (fit on val, applied to test and vice versa, so no case is scored by a threshold that saw it);
+- self-consistency over the 3 samples (majority vote, with agreement as confidence: the inference-time twin of the group-consensus reward);
+- DiagAgent-14B and published LA-CDM / LDTL numbers as context (`docs/BASELINES.md`).
+
+**Robustness.**
+- **The `____` diagnosis mask:** each mask is a label cue (`docs/DATA_AUDIT.md` §5). Evaluation is repeated with every masked sentence removed (`--mask-policy drop_sentence`).
+- **Source shortcut:** the in-set controls show whether "answers OTHER" means "recognises OTHER" or "recognises the pipeline".
+
+**Data governance.** No MIMIC text leaves the machine, and every model runs on local weights. Rollouts stay in the git-ignored `outputs/`. Committed documents hold aggregates only, with patient-derived counts of 1–9 suppressed.

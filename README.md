@@ -2,7 +2,7 @@
 
 An interactive clinical diagnostic agent trained with RL over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action with its own verifiable reward (the *group-consensus deferral reward*), not a confidence threshold applied afterwards. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
 
-The research plan is in [stanford_idea_md.md](stanford_idea_md.md). This repo is the base implementation: data pipelines, environment, rewards, metrics, baselines, and the SFT and GRPO trainers. **It contains no results.**
+The research plan is in [stanford_idea_md.md](stanford_idea_md.md); the method as implemented, with every constant, is in [docs/METHODS.md](docs/METHODS.md). This repo holds the data pipelines, environment, rewards, metrics, baselines, a single-GPU colocated GRPO trainer and the evaluation and reporting stack. Results land in [docs/RESULTS.md](docs/RESULTS.md) as the runs finish.
 
 > **PhysioNet DUA.** MIMIC text must never reach a third-party service. The repo has no hosted-API clients: every policy runs on local weights (`transformers` / `vllm`). `.gitignore` excludes `data/`, `outputs/`, `*.jsonl`, `*.csv*` and `*.pkl`. Rollout files contain MIMIC text, so treat them as credentialed data.
 
@@ -61,6 +61,31 @@ deferdx evaluate --rollouts outputs/eval/deferdx_test.jsonl --out outputs/eval/d
 
 The full §6.1 baseline grid is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
 
+## Main experiments on one GPU (48 GB)
+
+```bash
+source scripts/env_gpu.sh            # GPU venv; reads only the HF token from .env; caches under .cache/ (git-ignored)
+
+# Patient-disjoint cohorts: RL train / dev / CDM val+test / OTHER seen + unseen groups / controls
+deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir data/physionet/mimic-iv-note/2.2 \
+    --exclude-cases data/cdm/all.jsonl --controls --controls-per-label 3000 --n 2400 --out data/openworld_xl
+deferdx data cohorts                 # -> data/cohorts/*.jsonl + manifest.json
+
+# Colocated GRPO: vLLM rollouts + PEFT updates on the same GPU (sleep/wake), resumable
+deferdx train grpo-vllm --config configs/grpo_deferdx.yaml     # DEFER-Dx
+deferdx train grpo-vllm --config configs/grpo_nodefer.yaml     # control: same everything, no DEFER
+
+# One engine, all evaluation sets, 3 seeds, reproducible per-request seeds
+deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx/final --name deferdx
+deferdx eval-suite --model Qwen/Qwen3-8B --name zs_nodefer --no-defer
+
+python scripts/make_report.py        # docs/RESULTS.md: ML + clinical tables, bootstrap CIs, paired tests
+python scripts/make_figures.py       # docs/figures/: risk-coverage, open world, reliability, per class
+
+# Or all of it, sequentially and idempotently (waits for a free GPU, resumes after crashes):
+setsid nohup bash scripts/queue.sh > outputs/logs/queue.log 2>&1 &
+```
+
 ## Data audit, benchmarks and baselines
 
 These docs hold aggregates only. MIMIC data and model outputs stay in git-ignored `data/` and `outputs/`.
@@ -69,6 +94,8 @@ These docs hold aggregates only. MIMIC data and model outputs stay in git-ignore
 |---|---|---|
 | [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory and checksums, column-level schema of every file, label checks, label-leakage checks, bias analysis, and the open-world pool | `python scripts/audit_data.py` (about 2 min) |
 | [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Which metrics and benchmarks evaluate each component, the best published result on each, and the evaluation protocol | literature review |
+| [docs/METHODS.md](docs/METHODS.md) | The method as implemented: environment, reward with constants, cohorts, training, evaluation protocol | — |
+| [docs/RESULTS.md](docs/RESULTS.md) | ML-benchmark and clinical-safety tables with bootstrap intervals, open world, published context, paired tests | `scripts/make_report.py` |
 | [docs/BASELINES.md](docs/BASELINES.md) | Inference-only results: models run as-is, plus post-hoc deferral baselines, open-world results, the DiagBench reproduction, and per-group scores | [`scripts/lambda/`](scripts/lambda/), `scripts/subgroup_eval.py` |
 
 ## Layout
@@ -78,6 +105,7 @@ These docs hold aggregates only. MIMIC data and model outputs stay in git-ignore
 | [src/deferdx/data/cdm_loader.py](src/deferdx/data/cdm_loader.py) | MIMIC-IV-Ext-CDM (PhysioNet CSV or Hager-framework pickles) to `Case`; earliest value per repeated test | §4.1 |
 | [src/deferdx/data/openworld.py](src/deferdx/data/openworld.py) | MIMIC-CDM-OW: ICD filtering in DuckDB, stratified sampling, same-pipeline controls | §4.2 |
 | [src/deferdx/data/parity.py](src/deferdx/data/parity.py) | CDM's own text rules (history blob, PE window, radiology section filter, `____` masking) applied to OTHER cases | §4.2 |
+| [src/deferdx/data/cohorts.py](src/deferdx/data/cohorts.py) | Patient-disjoint RL-train / dev / evaluation cohorts; OTHER groups seen vs unseen; same-pipeline controls | §4.2 |
 | [src/deferdx/data/splits.py](src/deferdx/data/splits.py) | Exact LA-CDM split; stratified ratio splits | §4.1 |
 | [src/deferdx/data/synthetic.py](src/deferdx/data/synthetic.py) | Fabricated cases for tests | — |
 | [src/deferdx/env/](src/deferdx/env/) | Reveal-on-request POMDP; 22 tests (a superset of LA-CDM's) matched by MIMIC itemid; action parser | §3.1 |
@@ -86,7 +114,10 @@ These docs hold aggregates only. MIMIC data and model outputs stay in git-ignore
 | [src/deferdx/rollout.py](src/deferdx/rollout.py) | Batched multi-turn rollouts | — |
 | [src/deferdx/policy/](src/deferdx/policy/) | Local HF / vLLM policies; oracle and random scripted policies | §6.1 |
 | [src/deferdx/training/](src/deferdx/training/) | SFT data (oracle, STaR, deferral exemplars), SFT loop, multi-turn GRPO | §5.2–5.4 |
+| [src/deferdx/training/grpo_vllm.py](src/deferdx/training/grpo_vllm.py) | Single-GPU colocated GRPO: vLLM rollouts with LoRA hot-swap, sleep/wake, truncated IS, Dr. GRPO advantages, resume | §5.2 |
 | [src/deferdx/eval/](src/deferdx/eval/) | Leaderboard metrics, risk-coverage/AURC, ECE/Brier, confident errors, OOD AUROC, cost | §6.2 |
+| [src/deferdx/eval/suite.py](src/deferdx/eval/suite.py), [stats.py](src/deferdx/eval/stats.py), [report.py](src/deferdx/eval/report.py) | Multi-set evaluation suites; case-level and paired bootstrap; clinical metrics; self-consistency; cross-fitted post-hoc thresholds | §6.2 |
+| [scripts/queue.sh](scripts/queue.sh) | Sequential GPU job queue for the whole experiment grid | — |
 | [src/deferdx/baselines/](src/deferdx/baselines/) | Post-hoc threshold and SGR (conformal-style) | §6.1 #6–7 |
 | [configs/](configs/) | Env, reward, catalog, severity matrix, ICD lists, trainer configs | — |
 
