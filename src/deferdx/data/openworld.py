@@ -176,12 +176,15 @@ def build_openworld(
     labs = con.execute(
         f"SELECT l.*, i.label, i.fluid FROM ({lab_rows}) l "
         f"JOIN read_csv_auto('{hosp('d_labitems')}', all_varchar=true) i ON l.itemid = i.itemid "
-        "ORDER BY l.hadm_id, l.charttime, l.itemid"
+        # a TOTAL order: ties (same item, same time) otherwise resolve differently from run to run, and
+        # dedup_earliest keeps whichever tied row comes first
+        "ORDER BY l.hadm_id, l.charttime, l.itemid, l.value, l.valuenum, l.valueuom, l.ref_range_lower, "
+        "l.ref_range_upper, l.flag"
     ).fetchdf()
     micro = con.execute(
         attached(f"read_csv_auto('{hosp('microbiologyevents')}', all_varchar=true)",
                  "x.charttime, x.spec_type_desc, x.test_name, x.org_name, x.interpretation, x.comments", "charttime")
-        + " ORDER BY hadm_id, charttime, test_name"
+        + " ORDER BY hadm_id, charttime, test_name, spec_type_desc, org_name, interpretation, comments"
     ).fetchdf()
     rad_rows = attached(f"read_csv_auto('{note('radiology')}', all_varchar=true)", "x.note_id, x.charttime, x.text",
                         "charttime")
@@ -191,12 +194,12 @@ def build_openworld(
             f"SELECT r.*, d.field_value AS exam_name FROM ({rad_rows}) r LEFT JOIN "
             f"(SELECT note_id, field_value FROM read_csv_auto('{detail}', all_varchar=true) "
             "WHERE field_name = 'exam_name' AND field_ordinal = '1') d ON r.note_id = d.note_id "
-            "ORDER BY r.hadm_id, r.charttime"
+            "ORDER BY r.hadm_id, r.charttime, r.note_id"
         ).fetchdf()
     except FileNotFoundError:
         log.warning("note/radiology_detail not found: modality is read from report headers, which drops reports "
                     "without an EXAMINATION line")
-        rad = con.execute(rad_rows + " ORDER BY hadm_id, charttime").fetchdf()
+        rad = con.execute(rad_rows + " ORDER BY hadm_id, charttime, note_id").fetchdf()
 
     labs_by = _group(labs)
     micro_by = _group(micro)
