@@ -334,7 +334,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--note-dir", required=True, help="MIMIC-IV-Note root (contains note/)")
     sp.add_argument("--icd", default="configs/openworld_icd.yaml")
     sp.add_argument("--exclude-cases", help="CDM all.jsonl; these hadm_ids are excluded")
-    sp.add_argument("--n", type=int, default=800)
+    sp.add_argument("--n", type=int, default=2400,
+                    help="OTHER cases sampled BEFORE the history-leak and inclusion drops; 2400 gives the "
+                         "documented 713-case set (800 gives only 259)")
     sp.add_argument("--controls", action="store_true", help="also extract same-pipeline in-set controls")
     sp.add_argument("--controls-per-label", type=int, default=100)
     sp.add_argument("--out", default="data/openworld")

@@ -25,8 +25,10 @@ The smoke test generates fabricated cases, runs the oracle and random policies, 
 ## Real-data pipeline
 
 ```bash
-# 0. Download (credentialed; resumes and checks PhysioNet's SHA256SUMS). --s3 uses PhysioNet's AWS
-#    access points and is far faster than physionet.org; see the script header for setup.
+# 0. Download (credentialed; resumes and checks PhysioNet's SHA256SUMS).
+#    Interactive prompt, no permanent netrc:
+bash scripts/download_physionet_interactive.sh cdm hosp note
+#    Or, with an existing ~/.netrc / AWS setup. --s3 is much faster for hosp/note:
 bash scripts/download_data.sh --s3 cdm hosp note     # -> data/physionet/{mimic-iv-ext-cdm/1.1, mimiciv/2.2, mimic-iv-note/2.2}
 
 # 1. MIMIC-IV-Ext-CDM v1.1 -> canonical cases. Confirm file/column names once:
@@ -39,7 +41,7 @@ deferdx data coverage --cases data/cdm/train.jsonl
 
 # 3. Open-world cohort (OTHER) + same-pipeline in-set controls
 deferdx data build-openworld --mimic-dir /path/mimiciv/2.2 --note-dir /path/mimic-iv-note/2.2 \
-    --exclude-cases data/cdm/all.jsonl --controls --out data/openworld
+    --exclude-cases data/cdm/all.jsonl --controls --n 2400 --out data/openworld   # 713 OTHER + 51 controls
 
 # 4. Stage 1 SFT data: STaR rejection sampling from the base model + deferral exemplars
 deferdx rollout --cases data/cdm/train.jsonl --policy vllm --model Qwen/Qwen3-8B \

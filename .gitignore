@@ -30,3 +30,10 @@ venv/
 .idea/
 .DS_Store
 Thumbs.db
+
+# ---- Secrets and third-party checkouts: NEVER commit ----
+.env
+.env.*
+/external/
+/.cache/
+.venv-gpu/

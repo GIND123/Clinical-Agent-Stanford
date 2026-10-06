@@ -32,7 +32,7 @@ get() {  # <project/version> <relative path> <dest>
   if [[ $USE_S3 == 1 && -n "$(s3_base "$pv")" ]]; then
     aws s3 cp "$(s3_base "$pv")/$rel" "$dest" --only-show-errors
   else
-    curl --netrc --fail -sS -C - -o "$dest" "$BASE/$pv/$rel"
+    wget --netrc=on --quiet --continue --output-document="$dest" "$BASE/$pv/$rel"
   fi
 }
 
