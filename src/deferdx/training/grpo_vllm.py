@@ -236,14 +236,26 @@ def _latest_checkpoint(out_dir: Path) -> Path | None:
     return ck[-1].parent if ck else None
 
 
-def _lr_lambda(schedule: str, warmup: int, total: int):
+def _lr_lambda(schedule: str, warmup: int, total: int, milestones: list | None = None):
+    """LR factor for scheduler step s (training step s + 1). `milestones` = [[step, factor], ...]
+    sets a piecewise-constant factor (the last milestone at or before s); warm-up ramps up to it."""
+    marks = sorted((int(a), float(b)) for a, b in (milestones or [[0, 1.0]]))
+
+    def level(s: int) -> float:
+        out = marks[0][1]
+        for at, fac in marks:
+            if s >= at:
+                out = fac
+        return out
+
     def f(s: int) -> float:
+        base = level(s)
         if s < warmup:
-            return (s + 1) / max(1, warmup)
+            return base * (s + 1) / max(1, warmup)
         if schedule == "cosine":
             prog = (s - warmup) / max(1, total - warmup)
-            return 0.5 * (1.0 + math.cos(math.pi * min(1.0, prog)))
-        return 1.0
+            return base * 0.5 * (1.0 + math.cos(math.pi * min(1.0, prog)))
+        return base
 
     return f
 
@@ -317,7 +329,8 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
     opt = torch.optim.AdamW(params, lr=float(cfg.get("lr", 1e-5)), betas=(0.9, 0.99),
                             weight_decay=float(cfg.get("weight_decay", 0.0)))
     warmup = int(cfg.get("warmup_steps", 5))
-    sched = torch.optim.lr_scheduler.LambdaLR(opt, _lr_lambda(cfg.get("lr_schedule", "constant"), warmup, steps))
+    lr_fn = _lr_lambda(cfg.get("lr_schedule", "constant"), warmup, steps, cfg.get("lr_milestones"))
+    sched = torch.optim.lr_scheduler.LambdaLR(opt, lr_fn)
     constraint = CoverageConstraint.from_dict(cfg.get("constraint"))
     in_set_only = bool((cfg.get("constraint") or {}).get("in_set_only", True))
 
@@ -333,6 +346,13 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
         state = torch.load(ck / "trainer_state.pt", weights_only=False)
         opt.load_state_dict(state["optimizer"])
         sched.load_state_dict(state["scheduler"])
+        # the config is the source of truth for the LR schedule: a resumed run follows the
+        # schedule now in the config (base LR and milestones), not the one it was saved with
+        base_lr = float(cfg.get("lr", 1e-5))
+        sched.base_lrs = [base_lr for _ in opt.param_groups]
+        for g in opt.param_groups:
+            g["initial_lr"] = base_lr
+            g["lr"] = base_lr * lr_fn(sched.last_epoch)
         for k, v in state["constraint"].items():
             setattr(constraint, k, v)
         start = int(state["step"]) + 1

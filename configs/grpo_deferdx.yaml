@@ -21,9 +21,13 @@ output_dir: outputs/runs/deferdx
 steps: 150
 cases_per_step: 12
 group_size: 8            # p_hat needs G >= 8 (stanford_idea §5.2)
-lr: 1.0e-5               # LoRA needs ~10x the full-fine-tune RL rate of 1e-6
+lr: 5.0e-5               # base LR; see lr_milestones
 lr_schedule: constant
 warmup_steps: 5
+# Steps 1-25 ran at 1e-5 (factor 0.2): after them LoRA had moved the weights by only ~1.3e-4 of
+# their norm and batch metrics were flat, so from step 26 the LR is 5e-5. Every run inherits this
+# exact schedule (the control and all ablations), so comparisons stay like-for-like.
+lr_milestones: [[0, 0.2], [25, 1.0]]
 clip_low: 0.2
 clip_high: 0.28          # clip-higher (DAPO)
 max_grad_norm: 1.0
