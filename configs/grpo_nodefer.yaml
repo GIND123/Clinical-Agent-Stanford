@@ -1,0 +1,8 @@
+# Control arm (§6.1 #3b): identical to DEFER-Dx (data, reward incl. the Brier calibration
+# term, compute) except that DEFER is not offered. Thresholding THIS model's stated
+# probability is the fair "why not just threshold?" comparison.
+base: grpo_deferdx.yaml
+env: {allow_defer: false}
+output_dir: outputs/runs/nodefer
+tau_schedule: null
+action_entropy: {coef: 0.0, until_step: 0}

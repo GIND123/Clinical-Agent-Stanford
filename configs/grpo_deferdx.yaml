@@ -1,0 +1,48 @@
+# DEFER-Dx main run: colocated vLLM + PEFT multi-turn GRPO on one GPU.
+#   deferdx train grpo-vllm --config configs/grpo_deferdx.yaml
+# Rewards, environment and the coverage constraint come from base.yaml.
+base: base.yaml
+
+model: Qwen/Qwen3-8B
+dtype: bfloat16
+lora: {r: 16, alpha: 32, dropout: 0.0, target_modules: all-linear}
+gradient_checkpointing: true
+chat_template_kwargs: {enable_thinking: true}
+
+train_cases: data/cohorts/rl_train.jsonl
+# Source pools (case.source) and sampling weights. Controls are in-set cases built by the
+# open-world pipeline; training on them stops "built by the open-world pipeline => OTHER"
+# from being learnable. Weighting by pool also keeps the controls' cholecystitis-heavy mix
+# from shifting the class balance.
+pool_weights: {cdm: 0.75, openworld: 0.15, openworld_control: 0.10}
+dev_cases: data/cohorts/dev.jsonl        # held out of RL; val and test are never used in training
+output_dir: outputs/runs/deferdx
+
+steps: 200
+cases_per_step: 12
+group_size: 8            # p_hat needs G >= 8 (stanford_idea §5.2)
+lr: 1.0e-5               # LoRA needs ~10x the full-fine-tune RL rate of 1e-6
+lr_schedule: constant
+warmup_steps: 5
+clip_low: 0.2
+clip_high: 0.28          # clip-higher (DAPO)
+max_grad_norm: 1.0
+normalize_std: false     # Dr. GRPO: keep the reward's own trade-offs at their scale
+min_group_std: 0.02      # groups with less reward spread carry no signal (dynamic sampling)
+tis_cap: 2.0             # truncated importance sampling vs vLLM's log-probs
+
+generation: {max_new_tokens: 1024, temperature: 1.0, top_p: 1.0}
+eval_generation: {temperature: 0.6, top_p: 0.95, top_k: 20}   # Qwen3 thinking-mode recommendation
+max_model_len: 20480
+vllm_gpu_memory_utilization: 0.80
+micro_batch_tokens: 16384
+
+# Deferral curriculum (§5.4): start permissive (tau high = deferral cheap), anneal to target.
+tau_schedule: {start: 0.95, end: 0.85, steps: 100}
+action_entropy: {coef: 0.02, until_step: 30}
+constraint: {rho_max: 0.30, lr: 2.0, patience: 2, nu_max: 5.0, in_set_only: true}
+
+eval_every: 25
+save_every: 25
+log_rollouts_every: 50
+seed: 0

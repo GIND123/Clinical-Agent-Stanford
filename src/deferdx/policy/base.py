@@ -13,6 +13,9 @@ class Generation:
     # the policy-gradient loss is computed on precisely what was sampled.
     prompt_ids: list[int] | None = None
     completion_ids: list[int] | None = None
+    # log-probs of the sampled tokens under the sampling engine (vLLM), for truncated importance
+    # sampling against the trainer's own log-probs. None when the engine does not report them.
+    logprobs: list[float] | None = None
 
 
 class Policy(Protocol):

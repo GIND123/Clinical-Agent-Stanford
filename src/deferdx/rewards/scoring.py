@@ -72,6 +72,12 @@ class RewardConfig:
     # p_hat when no rollout in the group committed: "neutral" sets p_hat = tau so the
     # consensus term is 0 (deferral then costs mu); "zero" treats the case as hard.
     empty_group_phat: str = "neutral"
+    # How p_hat is estimated for a deferring rollout:
+    #   "commits"    fraction of the group's COMMIT rollouts that were correct (stanford_idea §3.2)
+    #   "forced_loo" leave-one-out over the OTHER rollouts' forced predictions (commit, or the
+    #                top of a deferral differential). Unbiased by which rollouts chose to
+    #                commit, and defined even when most of the group defers.
+    p_hat_mode: str = "commits"
     # Group-level terminal-action entropy bonus (cold-start exploration, §5.4). 0 = off.
     action_entropy_coef: float = 0.0
     severity: SeverityMatrix = field(default_factory=SeverityMatrix.uniform, repr=False)
@@ -149,6 +155,14 @@ def group_p_hat(group: list[EpisodeResult], cfg: RewardConfig) -> float:
     return sum(r.diagnosis == r.label for r in commits) / len(commits)
 
 
+def loo_forced_p_hat(group: list[EpisodeResult], i: int, cfg: RewardConfig) -> float:
+    """Accuracy of the forced predictions of every rollout in the group except i."""
+    others = [r.forced_prediction == r.label for j, r in enumerate(group) if j != i and r.forced_prediction is not None]
+    if not others:
+        return cfg.tau if cfg.empty_group_phat == "neutral" else 0.0
+    return sum(others) / len(others)
+
+
 def group_rewards(group: list[EpisodeResult], cfg: RewardConfig, defer_penalty: float = 0.0) -> list[RewardBreakdown]:
     """Rewards for the G rollouts of ONE case.
 
@@ -156,14 +170,17 @@ def group_rewards(group: list[EpisodeResult], cfg: RewardConfig, defer_penalty: 
     it is charged to deferring rollouts only. (Subtracting a constant from every
     rollout would be a no-op after GRPO's per-group advantage normalisation.)
     """
+    if cfg.p_hat_mode not in ("commits", "forced_loo"):
+        raise ValueError(f"unknown p_hat_mode {cfg.p_hat_mode!r}")
     p_hat = group_p_hat(group, cfg)
     out = []
-    for res in group:
+    for i, res in enumerate(group):
         if res.terminal == "commit":
             rb = commit_reward(res, cfg)
             rb.p_hat = p_hat
         elif res.terminal == "defer":
-            rb = defer_reward(res, p_hat, cfg)
+            ph = loo_forced_p_hat(group, i, cfg) if cfg.p_hat_mode == "forced_loo" else p_hat
+            rb = defer_reward(res, ph, cfg)
             if defer_penalty:
                 rb.constraint = -defer_penalty
                 rb.total -= defer_penalty

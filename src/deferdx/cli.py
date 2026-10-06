@@ -120,6 +120,22 @@ def cmd_data_build_ow(args):
           f"possible label leaks flagged: {leaks} -> {out}")
 
 
+def cmd_data_cohorts(args):
+    from .data.cohorts import build_cohorts, load_cohort_sources, save_cohorts
+
+    train, val, test, other, controls, attached = load_cohort_sources(args.cdm_dir, args.openworld_dir,
+                                                                      args.admissions)
+    co = build_cohorts(train, val, test, other, controls, unseen_groups=args.unseen_groups, n_dev=args.n_dev,
+                       other_eval_frac=args.other_eval_frac, controls_eval_frac=args.controls_eval_frac,
+                       seed=args.seed)
+    counts = save_cohorts(co, args.out)
+    print(f"subject_id attached from admissions: {attached}")
+    for k, v in co.report.items():
+        if k != "counts":
+            print(f"  {k}: {v}")
+    print(f"-> {args.out} {counts}")
+
+
 def cmd_data_leakage(args):
     from .data.leakage import source_classifier
 
@@ -277,6 +293,12 @@ def cmd_train_grpo(args):
     print(f"saved -> {train_grpo(apply_overrides(load_config(args.config), args.set))}")
 
 
+def cmd_train_grpo_vllm(args):
+    from .training.grpo_vllm import train_grpo_vllm
+
+    print(f"saved -> {train_grpo_vllm(apply_overrides(load_config(args.config), args.set))}")
+
+
 def cmd_crossover(args):
     import numpy as np
 
@@ -342,6 +364,20 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--out", default="data/openworld")
     sp.add_argument("--seed", type=int, default=0)
     sp.set_defaults(fn=cmd_data_build_ow)
+
+    sp = data.add_parser("cohorts", help="patient-disjoint RL-train / dev / evaluation sets (CDM + open world)")
+    sp.add_argument("--cdm-dir", default="data/cdm")
+    sp.add_argument("--openworld-dir", default="data/openworld_xl")
+    sp.add_argument("--admissions", default="data/physionet/mimiciv/2.2/hosp/admissions.csv.gz",
+                    help="MIMIC-IV admissions table, to attach subject_id to CDM cases")
+    sp.add_argument("--unseen-groups", nargs="*", default=None,
+                    help="OTHER groups kept out of training (default: the time-critical groups)")
+    sp.add_argument("--n-dev", type=int, default=160)
+    sp.add_argument("--other-eval-frac", type=float, default=0.4)
+    sp.add_argument("--controls-eval-frac", type=float, default=0.4)
+    sp.add_argument("--seed", type=int, default=0)
+    sp.add_argument("--out", default="data/cohorts")
+    sp.set_defaults(fn=cmd_data_cohorts)
 
     sp = data.add_parser("leakage-check", help="can a text classifier tell two case sources apart?")
     sp.add_argument("--a", nargs="+", required=True, help="e.g. data/openworld/controls.jsonl")
@@ -411,7 +447,8 @@ def build_parser() -> argparse.ArgumentParser:
     sp.set_defaults(fn=cmd_sft_rollouts)
 
     train = sub.add_parser("train", help="SFT / GRPO").add_subparsers(dest="sub", required=True)
-    for name, fn, default in (("sft", cmd_train_sft, "configs/sft.yaml"), ("grpo", cmd_train_grpo, "configs/grpo.yaml")):
+    for name, fn, default in (("sft", cmd_train_sft, "configs/sft.yaml"), ("grpo", cmd_train_grpo, "configs/grpo.yaml"),
+                              ("grpo-vllm", cmd_train_grpo_vllm, "configs/grpo_deferdx.yaml")):
         sp = with_config(train.add_parser(name), default)
         sp.add_argument("--set", nargs="*", help="overrides, e.g. steps=10 group_size=8")
         sp.set_defaults(fn=fn)

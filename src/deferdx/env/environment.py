@@ -14,7 +14,7 @@ from ..data.schema import Case
 from ..labels import OTHER
 from .actions import ASK, COMMIT, DEFER, INVALID, TEST, Action, parse_action
 from .catalog import TestCatalog
-from .prompts import initial_observation, system_prompt, truncate
+from .prompts import MASK_POLICIES, apply_mask_policy, initial_observation, system_prompt, truncate
 
 
 @dataclass
@@ -31,6 +31,8 @@ class EnvConfig:
     # behind ASK (only meaningful for data whose history has line-separated headers).
     history_at_reset: bool = True
     ask_topics: list[str] | None = None  # None = every ASK topic in the catalog
+    # How CDM's "____" diagnosis mask is shown to the agent (see prompts.apply_mask_policy).
+    mask_policy: str = "keep"
 
     @classmethod
     def from_dict(cls, d: dict | None) -> "EnvConfig":
@@ -103,6 +105,8 @@ class DiagnosticEnv:
             raise ValueError(f"ask_topics not in catalog: {sorted(unknown)}")
         self._valid_topics = set(topics)
         self._topics = [t for t in catalog.asks if t in self._valid_topics]
+        if self.cfg.mask_policy not in MASK_POLICIES:
+            raise ValueError(f"mask_policy must be one of {MASK_POLICIES}")
 
     @property
     def system_prompt(self) -> str:
@@ -116,7 +120,9 @@ class DiagnosticEnv:
         self.n_investigations = 0
         self.result = EpisodeResult(case_id=case.case_id, label=case.label, terminal="timeout", source=case.source)
         history = case.history if self.cfg.history_at_reset else {}
-        return initial_observation(case.hpi, history)
+        mp = self.cfg.mask_policy
+        history = {k: apply_mask_policy(v, mp) for k, v in history.items()}
+        return initial_observation(apply_mask_policy(case.hpi, mp), history)
 
     def step_text(self, text: str) -> StepOutput:
         return self.step(parse_action(text, self._valid_tests, self._valid_topics))
@@ -155,14 +161,14 @@ class DiagnosticEnv:
             res.steps.append(StepLog(action.to_json(), 0.0, True))
             obs = f"{key} was already provided above."
         elif action.type == ASK:
-            text = self.catalog.resolve_ask(key, self.case)
+            text = apply_mask_policy(self.catalog.resolve_ask(key, self.case), self.cfg.mask_policy)
             cost = self.catalog.asks[key].cost
             res.n_asks += 1
             res.total_cost += cost
             res.steps.append(StepLog(action.to_json(), cost, text is not None))
             obs = f"{self.catalog.asks[key].display.upper()}\n{text or 'Not documented.'}"
         else:
-            text = self.catalog.resolve_test(key, self.case)
+            text = apply_mask_policy(self.catalog.resolve_test(key, self.case), self.cfg.mask_policy)
             spec = self.catalog.tests[key]
             cost = spec.cost if (text is not None or self.cfg.charge_unavailable) else 0.0
             res.n_tests += 1

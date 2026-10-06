@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 from ..labels import IN_SET_LABELS, OTHER
 from .catalog import TestCatalog
 
@@ -55,3 +57,28 @@ def truncate(text: str, max_chars: int) -> str:
     if max_chars and len(text) > max_chars:
         return text[:max_chars] + "\n[... truncated ...]"
     return text
+
+
+# CDM replaces each mention of a case's own diagnosis with "____" (four underscores);
+# MIMIC's de-identification uses "___" (three). The four-underscore mask therefore marks
+# "the diagnosis was named here", a label cue (docs/DATA_AUDIT.md section 5). Policies:
+#   keep           the dataset as published (comparable with prior MIMIC-CDM work)
+#   normalize      "____" -> "___", indistinguishable in form from any de-identified token
+#   drop_sentence  remove every sentence containing the mask (the strictest ablation)
+_MASK_RE = re.compile(r"_{4,}")
+_SENT_RE = re.compile(r"(?<=[.;!?])\s+")
+MASK_POLICIES = ("keep", "normalize", "drop_sentence")
+
+
+def apply_mask_policy(text: str | None, policy: str = "keep") -> str | None:
+    if text is None or policy == "keep" or "____" not in text:
+        return text
+    if policy == "normalize":
+        return _MASK_RE.sub("___", text)
+    if policy == "drop_sentence":
+        lines = []
+        for line in text.split("\n"):
+            kept = [s for s in _SENT_RE.split(line) if not _MASK_RE.search(s)]
+            lines.append(" ".join(kept))
+        return "\n".join(lines)
+    raise ValueError(f"unknown mask_policy {policy!r}; expected one of {MASK_POLICIES}")

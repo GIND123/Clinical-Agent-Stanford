@@ -19,6 +19,7 @@ class TurnSample:
     advantage: float = 0.0
     old_logprobs: Any = None  # torch.Tensor | None
     ref_logprobs: Any = None
+    rollout_logprobs: Any = None  # sampling engine's log-probs (list[float]) for truncated IS
 
 
 def set_seed(seed: int) -> None:
@@ -120,6 +121,102 @@ def completion_logprobs(model, samples: list[TurnSample], pad_id: int, with_entr
         if with_entropy:
             ents.append(-(lsm.exp() * lsm).sum(-1))
     return logps, (ents if with_entropy else None)
+
+
+def _frozen_head_logprob_fn():
+    """Autograd function: log p(target) and entropy under a FROZEN output layer.
+
+    Forward and backward both stream over chunks of positions, so full-vocabulary logits
+    (V = 152k for Qwen3) are never stored for a whole micro-batch. Backward returns only
+    d/d hidden: lm_head is frozen under LoRA, so its weight needs no gradient.
+        d logp_t / d h_t = W[y_t] - softmax(W h_t) @ W
+    """
+    import torch
+
+    class FrozenHeadLogprob(torch.autograd.Function):
+        @staticmethod
+        def forward(ctx, h, weight, target, chunk):
+            lps, ents = [], []
+            for c in range(0, h.shape[0], chunk):
+                z = (h[c : c + chunk] @ weight.T).float()
+                lse = torch.logsumexp(z, -1)
+                lps.append(z.gather(-1, target[c : c + chunk, None])[:, 0] - lse)
+                ents.append(lse - (torch.softmax(z, -1) * z).sum(-1))
+            ctx.save_for_backward(h, weight, target)
+            ctx.chunk = chunk
+            ent = torch.cat(ents)
+            ctx.mark_non_differentiable(ent)
+            return torch.cat(lps), ent
+
+        @staticmethod
+        def backward(ctx, g_lp, g_ent):
+            h, weight, target = ctx.saved_tensors
+            gh = torch.empty_like(h)
+            for c in range(0, h.shape[0], ctx.chunk):
+                g = g_lp[c : c + ctx.chunk].float()
+                gz = torch.softmax((h[c : c + ctx.chunk] @ weight.T).float(), -1) * (-g[:, None])
+                gz.scatter_add_(-1, target[c : c + ctx.chunk, None], g[:, None])
+                gh[c : c + ctx.chunk] = (gz.to(weight.dtype) @ weight).to(h.dtype)
+            return gh, None, None, None
+
+    return FrozenHeadLogprob
+
+
+_FHL = None
+
+
+def frozen_head_logprobs(hidden, weight, target, chunk: int = 2048):
+    """(log-probs, entropies) of `target` tokens given final hidden states, lm_head frozen."""
+    global _FHL
+    if _FHL is None:
+        _FHL = _frozen_head_logprob_fn()
+    return _FHL.apply(hidden, weight, target, chunk)
+
+
+def _backbone_and_head(model):
+    m = model.get_base_model() if hasattr(model, "get_base_model") else model
+    return m.model, m.lm_head
+
+
+def completion_logprobs_lowmem(model, samples: list[TurnSample], pad_id: int, chunk: int = 2048):
+    """Per-sample (log-probs, entropies) of completion tokens. Same values as
+    `completion_logprobs`, but the output layer is applied only at completion positions and
+    through `frozen_head_logprobs`, so memory scales with the backbone, not the vocabulary.
+    Requires a frozen lm_head (true for LoRA on all-linear, which excludes the output layer)."""
+    backbone, head = _backbone_and_head(model)
+    if head.weight.requires_grad:
+        raise ValueError("completion_logprobs_lowmem needs a frozen lm_head")
+    device = head.weight.device
+    ids, mask, spans = pad_batch(samples, pad_id)
+    ids, mask = ids.to(device), mask.to(device)
+    hidden = backbone(input_ids=ids, attention_mask=mask, use_cache=False).last_hidden_state
+    logps, ents = [], []
+    for i, (start, length) in enumerate(spans):
+        lp, ent = frozen_head_logprobs(hidden[i, start - 1 : start - 1 + length], head.weight,
+                                       ids[i, start : start + length], chunk)
+        logps.append(lp)
+        ents.append(ent)
+    return logps, ents
+
+
+def token_budget_batches(samples: list[TurnSample], max_tokens: int, max_samples: int = 64) -> list[list[TurnSample]]:
+    """Group samples (sorted by length, longest first) into micro-batches whose padded size
+    (n x longest) stays within max_tokens. A sample longer than max_tokens gets its own batch."""
+    order = sorted(samples, key=lambda s: len(s.prompt_ids) + len(s.completion_ids), reverse=True)
+    batches: list[list[TurnSample]] = []
+    cur: list[TurnSample] = []
+    width = 0
+    for s in order:
+        n = len(s.prompt_ids) + len(s.completion_ids)
+        w = max(width, n)
+        if cur and (w * (len(cur) + 1) > max_tokens or len(cur) >= max_samples):
+            batches.append(cur)
+            cur, w = [], n
+        cur.append(s)
+        width = w
+    if cur:
+        batches.append(cur)
+    return batches
 
 
 def cosine_lr(step: int, total: int, warmup_ratio: float) -> float:

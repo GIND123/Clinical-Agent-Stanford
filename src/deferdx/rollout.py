@@ -18,6 +18,7 @@ class Turn:
     text: str
     prompt_ids: list[int] | None = None
     completion_ids: list[int] | None = None
+    logprobs: list[float] | None = None
 
 
 @dataclass
@@ -73,7 +74,7 @@ def run_episodes(
         gens = policy.generate([rollouts[i].messages for i in active], [envs[i] for i in active])
         for i, gen in zip(active, gens):
             ro, env = rollouts[i], envs[i]
-            ro.turns.append(Turn(gen.text, gen.prompt_ids, gen.completion_ids))
+            ro.turns.append(Turn(gen.text, gen.prompt_ids, gen.completion_ids, gen.logprobs))
             ro.messages.append({"role": "assistant", "content": gen.text})
             step = env.step_text(gen.text)
             if not step.done:
