@@ -72,12 +72,17 @@ def cdm_pooled(suite: dict[str, list[EpisodeResult]]) -> list[EpisodeResult]:
     return [r for s in CDM_SETS for r in suite.get(s, [])]
 
 
-def crossfit_posthoc(suite: dict[str, list[EpisodeResult]], target_coverage: float) -> tuple[dict[str, list[EpisodeResult]], dict[str, float]]:
-    """Apply a coverage-targeted threshold on stated probability, cross-fitted on val/test."""
+def crossfit_posthoc(suite: dict[str, list[EpisodeResult]], target_coverage: float | None = None,
+                     fit=None) -> tuple[dict[str, list[EpisodeResult]], dict[str, float]]:
+    """Apply a post-hoc threshold on stated probability, cross-fitted on val/test.
+
+    `fit(results) -> threshold`; default: the threshold keeping `target_coverage` of cases.
+    Pass e.g. `lambda rs: sgr_threshold(rs, 0.05, 0.05)` for SGR (guaranteed selective risk).
+    """
+    if fit is None:
+        fit = lambda rs: threshold_for_coverage(rs, target_coverage)  # noqa: E731
     val, test = suite.get("eval_cdm_val", []), suite.get("eval_cdm_test", [])
-    thr = {"fit_on_val": threshold_for_coverage(val, target_coverage),
-           "fit_on_test": threshold_for_coverage(test, target_coverage),
-           "fit_on_cdm_eval": threshold_for_coverage(val + test, target_coverage)}
+    thr = {"fit_on_val": fit(val), "fit_on_test": fit(test), "fit_on_cdm_eval": fit(val + test)}
     out = {"eval_cdm_val": apply_threshold(val, thr["fit_on_test"]),
            "eval_cdm_test": apply_threshold(test, thr["fit_on_val"])}
     for s in OW_SETS:

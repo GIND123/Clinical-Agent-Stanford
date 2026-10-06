@@ -134,6 +134,16 @@ def main() -> None:
                 suites[key], thresholds[key] = crossfit_posthoc(suites[base + suffix], target)
                 labels[key] = f"{labels[base + suffix]} + threshold at matched coverage ({target:.0%})"
 
+    # SGR (Geifman & El-Yaniv 2017; plan #7): the lowest threshold whose binomial upper bound on
+    # selective risk is <= 5% with probability >= 95%, cross-fitted the same way
+    from deferdx.baselines.selective import sgr_threshold
+
+    for base in ("grpo_nodefer", "zs_nodefer"):
+        if base in suites:
+            key = f"{base}+sgr"
+            suites[key], thresholds[key] = crossfit_posthoc(suites[base], fit=lambda rs: sgr_threshold(rs, 0.05, 0.05))
+            labels[key] = f"{labels[base]} + SGR (5% risk, delta 0.05)"
+
     tables = {k: tables_for(v, sev, args.n_boot) for k, v in suites.items()}
     paired: dict = {}
     for ref, comps in (("deferdx", ("grpo_nodefer+thr", "zs_nodefer+thr", "zs_defer", "grpo_nodefer")),
