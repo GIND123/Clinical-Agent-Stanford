@@ -35,6 +35,11 @@ step() {
 M=Qwen/Qwen3-8B
 SEEDS=(--seeds 0 1)
 
+# an open reasoning model of another family as a further zero-shot baseline (forced choice, its
+# recommended sampling T = 1.0; its reasoning channel needs a larger token budget)
+step eval_gptoss deferdx eval-suite --model openai/gpt-oss-20b --name gptoss_nodefer --no-defer \
+  --temperature 1.0 --top-p 1.0 --top-k 0 --max-new-tokens 2048
+
 # the main run at the ablations' step budget (its step-100 checkpoint), for like-for-like comparison
 step eval_deferdx_step100 deferdx eval-suite --model $M --adapter outputs/runs/deferdx/checkpoints/step_0100 \
   --name deferdx_step100 "${SEEDS[@]}"
