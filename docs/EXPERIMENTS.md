@@ -1,57 +1,49 @@
-# Experiment runbook (stanford_idea §6)
+# Experiment runbook
 
-All commands assume `data/cdm/{train,val,test}.jsonl` and `data/openworld/other.jsonl` exist. `M=Qwen/Qwen3-8B`. Evaluation rollouts sample with Qwen3's recommended thinking-mode settings (T=0.6, top-p 0.95, top-k 20; the CLI defaults), because Qwen3's model card warns against greedy decoding. Report mean ± sd over 3 `--seed` values.
-
-## §6.1 Baselines
-
-| # | Baseline | How |
-|---|---|---|
-| 1 | Zero-shot sequential (ReAct-style) | `deferdx rollout --policy vllm --model $M --no-defer --cases data/cdm/test.jsonl --out outputs/eval/zs.jsonl` |
-| 2 | SFT, forced commit (**primary control**) | SFT data built with `--no-defer`, then `deferdx rollout --policy vllm --model $M --adapter outputs/sft_nodefer/final --no-defer ...` |
-| 3 | GRPO accuracy + cost only, no defer | `deferdx train grpo --set env.allow_defer=false reward.calib_lambda=0 output_dir=outputs/grpo_nodefer` |
-| 3b | GRPO accuracy + cost + calibration, no defer | as #3 with `reward.calib_lambda=1`. Thresholding #3 is a strawman because its probabilities were never trained; **#6 should threshold #3b** |
-| 4 | LA-CDM | external: github.com/dharouni/LA-CDM (report its own numbers on the same split) |
-| 5 | DiagAgent-14B | external weights; can also run inside this env with `--policy vllm --model <path>` once prompts are aligned |
-| 6 | **Post-hoc threshold on #3b** (critical ablation) | rollouts of #3b on val and test, then `deferdx baseline --method coverage --target 0.8 --val ... --test ...` (also `--method risk --target 0.05`) |
-| 7 | Conformal-style (SGR) | `deferdx baseline --method sgr --target 0.05 --delta 0.05 --val ... --test ...` |
-| — | Random planner floor | `deferdx rollout --policy random --samples 5 ...` |
-
-For a fair #6 against DEFER-Dx, compare at **matched coverage**: take DEFER-Dx's test coverage from `closed_world.coverage` and use it as `--target` for `--method coverage`.
-
-## §6.2 Metrics → report keys
-
-| Metric | Key in `deferdx evaluate` JSON |
-|---|---|
-| Per-class accuracy, leaderboard mean accuracy, macro-F1 | `closed_world.per_class_accuracy`, `closed_world.accuracy_full_coverage`, `closed_world.macro_f1` |
-| Risk-coverage curve, AURC, acc@{70,80,90} | `selective.curve`, `selective.aurc`, `selective.accuracy@70` … |
-| ECE, Brier (committed cases) | `calibration.ece`, `calibration.brier` |
-| Deferral precision/recall vs "would have been wrong" | `deferral.*` (pass `--counterfactual <no-defer rollouts>` for a true counterfactual) |
-| Confident-error rate (p > 0.8) | `safety.confident_errors_per_case@0.8`, `safety.error_rate_among_confident@0.8` |
-| Severity-weighted error | `safety.severity_weighted_error_per_case` |
-| Diverticulitis accuracy (headline) | `closed_world.per_class_accuracy.diverticulitis` (+ `per_class_coverage`) |
-| False-commit on OTHER, OOD AUROC | `open_world.false_commit_rate`, `open_world.ood_auroc` |
-| Tests/case, termination-step distribution | `cost.mean_tests`, `cost.investigations_histogram`, `cost.one_step_terminations` |
-
-## τ sweep → risk-coverage curve from training
-
-Each τ gives a separate policy (an operating point). Run `deferdx crossover` first to see the effective threshold each τ induces.
+This is the grid that produces docs/RESULTS.md, run on one 48 GB GPU by two sequential queues. Every step is idempotent: a step whose `outputs/queue/<name>.done` marker exists is skipped, and training resumes from its latest checkpoint. Both queues wait for a free GPU.
 
 ```bash
-for t in 0.75 0.80 0.85 0.90 0.95; do
-  deferdx train grpo --set reward.tau=$t tau_schedule=null output_dir=outputs/grpo_tau$t
-done
+source scripts/env_gpu.sh
+setsid nohup bash scripts/queue.sh > outputs/logs/queue.log 2>&1 &                                   # main grid
+WAIT_PID=<queue.sh pid> setsid nohup bash scripts/queue_ablations.sh > outputs/logs/queue_ablations.log 2>&1 &
+python scripts/make_report.py && python scripts/make_figures.py                                      # any time
+python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outputs/runs/nodefer
 ```
 
-## Open-world ablations (§4.2)
+## Main grid (scripts/queue.sh)
 
-- OTHER in test only: train on `data/cdm/train.jsonl`.
-- OTHER partly in training: split `data/openworld/other.jsonl` by patient and add the train part to `train_cases`. Keep the evaluation OTHER cases disjoint by `subject_id`.
-- Pipeline-leak check: train a bag-of-words classifier to separate `data/openworld/controls.jsonl` from CDM cases of the same labels. An AUROC well above 0.5 means the open-world numbers are confounded.
+| Step | What | Time (approx.) |
+|---|---|---|
+| `train_deferdx` | DEFER-Dx, 150 GRPO steps, B = 12 cases × G = 8 (configs/grpo_deferdx.yaml) | ~18 h |
+| `eval_deferdx` | 5 evaluation sets × 3 seeds | ~1 h |
+| `eval_zs_nodefer`, `eval_zs_defer` | zero-shot Qwen3-8B: forced choice; prompted DEFER | ~1 h each |
+| `train_nodefer` | control: identical, DEFER not offered (configs/grpo_nodefer.yaml) | ~18 h |
+| `eval_grpo_nodefer` | as above | ~1 h |
+| `eval_*_maskdrop` | both trained models with every sentence containing CDM's `____` mask removed | ~30 min each |
+| `eval_zs_closed` | zero-shot, closed world (four labels only, as in prior work) | ~30 min |
 
-## Scaling out
+## Ablations (scripts/queue_ablations.sh; 100 steps, compared with the main run's step-100 checkpoint)
 
-`training/grpo.py` is a single-process reference implementation. For 8B with G=16 and full runs (plan §5.2: 2–5 days per run), port it to verl:
+| Ablation | Config | Question |
+|---|---|---|
+| group std normalisation | configs/ablations/std_norm.yaml | Does deferral collapse as Che et al. (2026) predict when advantages are std-normalised? |
+| CDM-only training | configs/ablations/cdm_only.yaml | Does deferral learned from in-set difficulty alone transfer to out-of-set presentations? |
+| no coverage constraint | configs/ablations/no_constraint.yaml | What does the Lagrangian floor prevent? |
+| leave-one-out p̂ | configs/ablations/forced_loo.yaml | Does removing p̂'s commit-selection bias change deferral quality? |
+| training seed 1 | configs/ablations/seed1.yaml | Training-seed variance of the main result (150 steps) |
 
-- Environment: `DiagnosticEnv.reset/step_text` is a pure lookup, so wrap it as a verl multi-turn tool/interaction.
-- Reward: call `rewards.group_rewards` on each prompt's group of G rollouts. It needs the whole group for p̂, so compute rewards at group level, not per sample.
-- Keep the constraint's ν as trainer state, updated once per batch with `CoverageConstraint.update`.
+## Evaluation sets (data/cohorts, built by `deferdx data cohorts`)
+
+`eval_cdm_val` (240) and `eval_cdm_test` (240) are the exact LA-CDM splits, never used for training or any training-time decision. Also evaluated: `eval_other_seen` (206), `eval_other_unseen` (187: time-critical groups held out of training) and `eval_controls` (258: same-pipeline in-set cases). Development decisions use only `dev` (212), a held-out part of the training split.
+
+## Comparisons and how they are made
+
+- **Learned vs post-hoc deferral (the critical ablation, plan §6.1 #6).** DEFER-Dx against the GRPO control plus a confidence threshold at DEFER-Dx's own coverage. The threshold is cross-fitted: fit on val and applied to test, and vice versa, so no case is scored by a threshold that saw it. The comparison is a paired bootstrap on the same cases.
+- **Conformal-style (plan #7).** SGR at 5% selective risk, δ = 0.05, cross-fitted the same way.
+- **Prompted vs learned deferral.** Zero-shot with DEFER in the prompt against DEFER-Dx.
+- **Self-consistency.** Majority vote over the 3 evaluation samples for every system. Agreement is the confidence: the inference-time version of the group-consensus signal.
+- **Published systems.** As context only (different environments or splits); see RESULTS.md §4.
+
+## Reporting rules
+
+Report every number with its 95% case-level bootstrap interval. Pool val + test (480 cases) for headline numbers, and give the test-only row for comparability with LA-CDM. Per-class claims need the pooled set (51 diverticulitis cases); the test split alone has 25. Groups with fewer than 10 cases are suppressed.
