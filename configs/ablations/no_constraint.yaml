@@ -1,0 +1,5 @@
+# Ablation: no coverage constraint (rho_max 1.0 never binds). Shows what the Lagrangian floor prevents.
+base: ../grpo_deferdx.yaml
+constraint: {rho_max: 1.0}
+steps: 100
+output_dir: outputs/runs/abl_no_constraint

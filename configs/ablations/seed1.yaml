@@ -1,0 +1,4 @@
+# Training-seed replicate of the main run (case order, rollout sampling, LoRA init).
+base: ../grpo_deferdx.yaml
+seed: 1
+output_dir: outputs/runs/deferdx_seed1

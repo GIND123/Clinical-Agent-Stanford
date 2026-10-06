@@ -1,0 +1,6 @@
+# Ablation: train on MIMIC-CDM cases only (no OTHER cases, no same-pipeline controls). Does
+# deferral learned purely from in-set difficulty transfer to out-of-set presentations?
+base: ../grpo_deferdx.yaml
+pool_weights: {cdm: 1.0, openworld: 0.0, openworld_control: 0.0}   # base: deep-merges, so zero the others explicitly
+steps: 100
+output_dir: outputs/runs/abl_cdm_only

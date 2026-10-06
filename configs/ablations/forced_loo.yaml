@@ -1,0 +1,6 @@
+# Ablation: p_hat for a deferring rollout from the other rollouts' forced predictions
+# (leave-one-out), instead of from the committing rollouts only.
+base: ../grpo_deferdx.yaml
+reward: {p_hat_mode: forced_loo}
+steps: 100
+output_dir: outputs/runs/abl_forced_loo

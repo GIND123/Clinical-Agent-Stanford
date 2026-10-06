@@ -1,0 +1,8 @@
+# Ablation: GRPO's group std normalisation of advantages, ON. Che et al. (arXiv 2608.00301)
+# predict that, with abstention as an action, std normalisation in the sparse-answer regime
+# replaces the designed penalties with an effective penalty of one and drives deferral
+# collapse. Compare its deferral and coverage trajectory with the main run (normalize_std: false).
+base: ../grpo_deferdx.yaml
+normalize_std: true
+steps: 100
+output_dir: outputs/runs/abl_std_norm
