@@ -60,6 +60,7 @@ def run_episodes(
         for s in range(n_samples):
             env = DiagnosticEnv(catalog, env_cfg)
             obs = env.reset(case)
+            env.sample_idx = s  # lets a policy derive per-episode sampling seeds
             envs.append(env)
             msgs = [{"role": "system", "content": env.system_prompt}, {"role": "user", "content": obs}]
             rollouts.append(Rollout(case.case_id, s, msgs, [], env.result))

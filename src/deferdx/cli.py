@@ -214,6 +214,20 @@ def cmd_rollout(args):
     print(f"{n} rollouts -> {args.out}")
 
 
+def cmd_eval_suite(args):
+    from .eval.suite import run_suite
+
+    cfg = _base(args)
+    catalog, env_cfg = _catalog_env(cfg, args)
+    if args.mask_policy:
+        env_cfg.mask_policy = args.mask_policy
+    run_suite(args.model, args.adapter, args.sets, args.seeds, args.name, args.out, catalog, env_cfg, _severity(cfg),
+              temperature=args.temperature, top_p=args.top_p, top_k=args.top_k, max_new_tokens=args.max_new_tokens,
+              max_model_len=args.max_model_len, gpu_memory_utilization=args.gpu_memory_utilization,
+              chat_template_kwargs=cfg.get("chat_template_kwargs", {"enable_thinking": True}),
+              max_lora_rank=args.max_lora_rank, limit=args.limit)
+
+
 def _results(path):
     from .data.io import read_jsonl
     from .env import EpisodeResult
@@ -413,6 +427,27 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--seed", type=int, default=0)
     sp.add_argument("--out", required=True)
     sp.set_defaults(fn=cmd_rollout)
+
+    sp = with_config(sub.add_parser("eval-suite", help="one model x several evaluation sets x seeds, one vLLM engine"))
+    sp.add_argument("--model", required=True)
+    sp.add_argument("--adapter")
+    sp.add_argument("--name", required=True, help="output sub-directory, e.g. deferdx_s0")
+    sp.add_argument("--sets", nargs="+", default=[f"data/cohorts/{s}.jsonl" for s in (
+        "eval_cdm_val", "eval_cdm_test", "eval_other_seen", "eval_other_unseen", "eval_controls")])
+    sp.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
+    sp.add_argument("--temperature", type=float, default=0.6)
+    sp.add_argument("--top-p", type=float, default=0.95)
+    sp.add_argument("--top-k", type=int, default=20)
+    sp.add_argument("--max-new-tokens", type=int, default=1024)
+    sp.add_argument("--max-model-len", type=int, default=20480)
+    sp.add_argument("--gpu-memory-utilization", type=float, default=0.88)
+    sp.add_argument("--max-lora-rank", type=int, default=16)
+    sp.add_argument("--mask-policy", choices=["keep", "normalize", "drop_sentence"])
+    sp.add_argument("--no-defer", action="store_true")
+    sp.add_argument("--closed-world", action="store_true")
+    sp.add_argument("--limit", type=int, help="first N cases of each set (smoke tests)")
+    sp.add_argument("--out", default="outputs/eval")
+    sp.set_defaults(fn=cmd_eval_suite)
 
     sp = with_config(sub.add_parser("evaluate", help="metric report for a rollout file"))
     sp.add_argument("--rollouts", required=True)

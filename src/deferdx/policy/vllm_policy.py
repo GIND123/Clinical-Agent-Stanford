@@ -15,8 +15,17 @@ from .base import Generation
 from .hf import encode_chat
 
 
+def episode_seed(base_seed: int, case_id: str, sample_idx: int, turn: int) -> int:
+    """Deterministic per-request seed: an evaluation run is reproducible for a given seed, and
+    different seeds (or samples of the same case) draw independent samples."""
+    import hashlib
+
+    h = hashlib.sha256(f"{base_seed}|{case_id}|{sample_idx}|{turn}".encode()).hexdigest()
+    return int(h[:8], 16)
+
+
 def sampling_params(max_new_tokens: int, temperature: float, top_p: float = 1.0, top_k: int | None = None,
-                    logprobs: bool = False):
+                    logprobs: bool = False, seed: int | None = None):
     from vllm import SamplingParams
 
     kw: dict[str, Any] = dict(max_tokens=max_new_tokens, temperature=temperature, top_p=top_p)
@@ -24,8 +33,8 @@ def sampling_params(max_new_tokens: int, temperature: float, top_p: float = 1.0,
         kw["top_k"] = top_k
     if logprobs:
         kw["logprobs"] = 0  # the sampled token's own log-prob
-    # No per-request seed: it would make every sample of the same prompt identical
-    # (breaking --samples N). The engine-level seed gives run reproducibility.
+    if seed is not None:
+        kw["seed"] = seed
     return SamplingParams(**kw)
 
 
@@ -33,7 +42,8 @@ class VLLMPolicy:
     def __init__(self, model_path: str | None = None, adapter_path: str | None = None, max_new_tokens: int = 768,
                  temperature: float = 1.0, top_p: float = 1.0, top_k: int | None = None,
                  chat_template_kwargs: dict | None = None, seed: int = 0, llm=None, return_logprobs: bool = False,
-                 max_lora_rank: int = 16, max_prompt_tokens: int | None = None, **llm_kwargs):
+                 max_lora_rank: int = 16, max_prompt_tokens: int | None = None, request_seed: int | None = None,
+                 **llm_kwargs):
         if llm is None:
             from vllm import LLM
 
@@ -43,6 +53,9 @@ class VLLMPolicy:
         self.llm = llm
         self.tokenizer = self.llm.get_tokenizer()
         self.params = sampling_params(max_new_tokens, temperature, top_p, top_k, return_logprobs)
+        # request_seed: derive a seed per (case, sample, turn) from this base seed (evaluation).
+        # None: engine-level randomness only (training rollouts).
+        self.request_seed = request_seed
         self.chat_template_kwargs = chat_template_kwargs or {}
         self.lora = None
         self._lora_id = 0
@@ -69,11 +82,21 @@ class VLLMPolicy:
         self._lora_id += 1
         self.lora = LoRARequest(name or f"adapter{self._lora_id}", self._lora_id, str(path))
 
+    def _seeded(self, env):
+        import copy
+
+        p = copy.copy(self.params)
+        p.seed = episode_seed(self.request_seed, env.case.case_id, getattr(env, "sample_idx", 0), len(env.result.steps))
+        return p
+
     def generate(self, conversations: list[list[dict[str, str]]], contexts: list[Any] | None = None) -> list[Generation]:
         prompts = [encode_chat(self.tokenizer, conv, self.chat_template_kwargs) for conv in conversations]
         limit = self.max_prompt_tokens
         ok = [i for i, p in enumerate(prompts) if limit is None or len(p) <= limit]
-        outputs = self.llm.generate([{"prompt_token_ids": prompts[i]} for i in ok], self.params,
+        params = self.params
+        if self.request_seed is not None and contexts is not None:
+            params = [self._seeded(contexts[i]) for i in ok]
+        outputs = self.llm.generate([{"prompt_token_ids": prompts[i]} for i in ok], params,
                                     lora_request=self.lora, use_tqdm=False) if ok else []
         by_index = dict(zip(ok, outputs))
         gens = []

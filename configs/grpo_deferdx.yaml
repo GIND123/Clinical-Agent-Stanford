@@ -18,7 +18,7 @@ pool_weights: {cdm: 0.75, openworld: 0.15, openworld_control: 0.10}
 dev_cases: data/cohorts/dev.jsonl        # held out of RL; val and test are never used in training
 output_dir: outputs/runs/deferdx
 
-steps: 200
+steps: 150
 cases_per_step: 12
 group_size: 8            # p_hat needs G >= 8 (stanford_idea §5.2)
 lr: 1.0e-5               # LoRA needs ~10x the full-fine-tune RL rate of 1e-6
@@ -28,7 +28,7 @@ clip_low: 0.2
 clip_high: 0.28          # clip-higher (DAPO)
 max_grad_norm: 1.0
 normalize_std: false     # Dr. GRPO: keep the reward's own trade-offs at their scale
-min_group_std: 0.02      # groups with less reward spread carry no signal (dynamic sampling)
+min_group_std: 0.05      # groups with less reward spread carry ~no gradient (dynamic sampling)
 tis_cap: 2.0             # truncated importance sampling vs vLLM's log-probs
 
 generation: {max_new_tokens: 1024, temperature: 1.0, top_p: 1.0}
@@ -36,6 +36,7 @@ eval_generation: {temperature: 0.6, top_p: 0.95, top_k: 20}   # Qwen3 thinking-m
 max_model_len: 20480
 vllm_gpu_memory_utilization: 0.80
 micro_batch_tokens: 16384
+micro_batch_max_samples: 1   # unpadded: 1.55x faster than padded batches (benchmarked)
 
 # Deferral curriculum (§5.4): start permissive (tau high = deferral cheap), anneal to target.
 tau_schedule: {start: 0.95, end: 0.85, steps: 100}

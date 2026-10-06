@@ -350,6 +350,9 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
     normalize_std = bool(cfg.get("normalize_std", False))
     max_seq_len = int(cfg.get("max_seq_len", max_model_len))
     mb_tokens = int(cfg.get("micro_batch_tokens", 16384))
+    # One unpadded sequence per micro-batch is 1.55x faster than padded batches on Qwen3-8B
+    # (no attention mask, so SDPA can use its flash kernel; no padding compute) and uses less memory.
+    mb_samples = int(cfg.get("micro_batch_max_samples", 1))
     chunk = int(cfg.get("logprob_chunk", 2048))
     ent_cfg = cfg.get("action_entropy") or {}
     keep_adapters = int(cfg.get("keep_adapters", 2))
@@ -408,7 +411,7 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
             parker.load()
             torch.cuda.reset_peak_memory_stats()
             model.train()
-            for mb in token_budget_batches(samples, mb_tokens):
+            for mb in token_budget_batches(samples, mb_tokens, max_samples=mb_samples):
                 _backward_with_split(model, mb, pad_id, n_tok, float(cfg.get("clip_low", 0.2)),
                                      float(cfg.get("clip_high", 0.28)), tis_cap, chunk, stats)
             stats["grad_norm"] = float(torch.nn.utils.clip_grad_norm_(params, float(cfg.get("max_grad_norm", 1.0))))
