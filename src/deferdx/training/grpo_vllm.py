@@ -134,20 +134,43 @@ class FrozenWeightParker:
 
 
 def pg_loss(model, samples: list[TurnSample], pad_id: int, n_tok_total: int, clip_low: float, clip_high: float,
-            tis_cap: float | None, chunk: int = 2048):
-    """Clipped surrogate (on-policy: ratio = 1 with gradient), truncated-IS weighted,
-    normalised by the step's total completion tokens. Returns (loss, stats)."""
+            tis_cap: float | None, chunk: int = 2048, behavior: str = "current"):
+    """Clipped surrogate normalised by `n_tok_total` completion tokens. Returns (loss, stats).
+
+    behavior="current": on-policy, ratio = 1 with gradient; tokens weighted by truncated IS
+        against the sampling engine's log-probs (one optimizer step per rollout batch).
+    behavior="rollout": PPO against the sampling engine's own log-probs, ratio = pi_theta / pi_vLLM,
+        clipped. Used when one rollout batch feeds several optimizer steps (mini-batches): the
+        later mini-batches are off-policy, and the clipped ratio is their importance correction
+        (it also absorbs the small engine mismatch, so no separate IS weight is applied).
+    """
     import torch
 
     logps, ents = completion_logprobs_lowmem(model, samples, pad_id, chunk)
     total = 0.0
-    st = {"entropy_sum": 0.0, "tis_w_sum": 0.0, "tis_capped": 0.0, "mismatch_sum": 0.0, "tis_tokens": 0.0}
+    st = {"entropy_sum": 0.0, "tis_w_sum": 0.0, "tis_capped": 0.0, "mismatch_sum": 0.0, "tis_tokens": 0.0,
+          "clipped": 0.0}
     for s, lp, ent in zip(samples, logps, ents):
+        adv = torch.as_tensor(float(s.advantage), dtype=lp.dtype, device=lp.device)
+        has_rl = s.rollout_logprobs is not None and len(s.rollout_logprobs) == len(s.completion_ids)
+        if behavior == "rollout" and has_rl:
+            rl = torch.tensor(s.rollout_logprobs, dtype=lp.dtype, device=lp.device)
+            ok = torch.isfinite(rl)
+            old = torch.where(ok, rl, lp.detach())
+            ratio = torch.exp(lp - old)
+            lo, hi = 1 - clip_low, 1 + clip_high
+            surr = -torch.minimum(ratio * adv, torch.clamp(ratio, lo, hi) * adv)
+            st["clipped"] += float(((ratio.detach() < lo) | (ratio.detach() > hi)).sum())
+            st["mismatch_sum"] += float((lp.detach() - rl)[ok].abs().sum())
+            st["tis_w_sum"] += float(ratio.detach().sum())
+            st["tis_tokens"] += float(ok.sum())
+            total = total + surr.sum()
+            st["entropy_sum"] += float(ent.sum())
+            continue
         old = lp.detach()
         ratio = torch.exp(lp - old)
-        adv = torch.as_tensor(float(s.advantage), dtype=lp.dtype, device=lp.device)
         surr = -torch.minimum(ratio * adv, torch.clamp(ratio, 1 - clip_low, 1 + clip_high) * adv)
-        if tis_cap and s.rollout_logprobs is not None and len(s.rollout_logprobs) == len(s.completion_ids):
+        if tis_cap and has_rl:
             rl = torch.tensor(s.rollout_logprobs, dtype=lp.dtype, device=lp.device)
             ok = torch.isfinite(rl)
             raw = torch.exp(torch.where(ok, old - rl, torch.zeros_like(rl)))
@@ -162,12 +185,13 @@ def pg_loss(model, samples: list[TurnSample], pad_id: int, n_tok_total: int, cli
     return total / max(1, n_tok_total), st
 
 
-def _backward_with_split(model, mb: list[TurnSample], pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, stats):
+def _backward_with_split(model, mb: list[TurnSample], pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, stats,
+                         behavior: str = "current"):
     """loss.backward() on a micro-batch; on CUDA OOM, retry as two halves (recursively)."""
     import torch
 
     try:
-        loss, st = pg_loss(model, mb, pad_id, n_tok, clip_low, clip_high, tis_cap, chunk)
+        loss, st = pg_loss(model, mb, pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, behavior)
         loss.backward()
         stats["loss"] += float(loss.detach())
         for k, v in st.items():
@@ -179,7 +203,7 @@ def _backward_with_split(model, mb: list[TurnSample], pad_id, n_tok, clip_low, c
         stats["oom_splits"] += 1
         half = len(mb) // 2
         for part in (mb[:half], mb[half:]):
-            _backward_with_split(model, part, pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, stats)
+            _backward_with_split(model, part, pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, stats, behavior)
 
 
 # ---- helpers ------------------------------------------------------------------------------------
@@ -229,6 +253,44 @@ def _dev_metrics(rep: dict[str, Any]) -> dict[str, float]:
         "dev_invalid": tr.get("invalid", math.nan),
         "dev_mean_tests": rep.get("cost", {}).get("mean_tests", math.nan),
     }
+
+
+def piecewise(marks: list | None, i: int, default: float):
+    """Value of a piecewise-constant schedule [[index, value], ...] at index i."""
+    out = default
+    for at, val in sorted((int(a), v) for a, v in (marks or [])):
+        if i >= at:
+            out = val
+    return out
+
+
+def ppo_update(model, samples: list[TurnSample], opt, params, pad_id: int, n_minibatches: int, mb_tokens: int,
+               mb_samples: int, clip_low: float, clip_high: float, tis_cap, chunk: int, max_grad_norm: float,
+               rng: random.Random) -> Counter:
+    """One rollout batch -> n_minibatches optimizer steps. With one mini-batch this is the original
+    on-policy step (TIS-weighted); with several, each mini-batch is a PPO step against the sampling
+    engine's log-probs. Returns accumulated stats."""
+    import torch
+
+    stats: Counter = Counter()
+    order = list(samples)
+    if n_minibatches > 1:
+        rng.shuffle(order)
+    chunks = [order[i::n_minibatches] for i in range(n_minibatches)] if n_minibatches > 1 else [order]
+    behavior = "rollout" if n_minibatches > 1 else "current"
+    norms = []
+    for part in chunks:
+        if not part:
+            continue
+        n_tok = sum(len(s.completion_ids) for s in part)
+        for mb in token_budget_batches(part, mb_tokens, max_samples=mb_samples):
+            _backward_with_split(model, mb, pad_id, n_tok, clip_low, clip_high, tis_cap, chunk, stats, behavior)
+        norms.append(float(torch.nn.utils.clip_grad_norm_(params, max_grad_norm)))
+        opt.step()
+        opt.zero_grad(set_to_none=True)
+    stats["grad_norm"] = float(np.mean(norms)) if norms else 0.0
+    stats["opt_steps"] = len(norms)
+    return stats
 
 
 def _latest_checkpoint(out_dir: Path) -> Path | None:
@@ -431,12 +493,10 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
             parker.load()
             torch.cuda.reset_peak_memory_stats()
             model.train()
-            for mb in token_budget_batches(samples, mb_tokens, max_samples=mb_samples):
-                _backward_with_split(model, mb, pad_id, n_tok, float(cfg.get("clip_low", 0.2)),
-                                     float(cfg.get("clip_high", 0.28)), tis_cap, chunk, stats)
-            stats["grad_norm"] = float(torch.nn.utils.clip_grad_norm_(params, float(cfg.get("max_grad_norm", 1.0))))
-            opt.step()
-            opt.zero_grad(set_to_none=True)
+            n_mb = int(piecewise(cfg.get("ppo_minibatch_milestones"), step - 1, int(cfg.get("ppo_minibatches", 1))))
+            stats = ppo_update(model, samples, opt, params, pad_id, n_mb, mb_tokens, mb_samples,
+                               float(cfg.get("clip_low", 0.2)), float(cfg.get("clip_high", 0.28)), tis_cap, chunk,
+                               float(cfg.get("max_grad_norm", 1.0)), rng)
             model.eval()
             peak = torch.cuda.max_memory_allocated() / 2**30
             adapter_dir = out_dir / "adapters" / f"step_{step:04d}"
@@ -463,7 +523,8 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
                "tis_w": stats["tis_w_sum"] / max(1, stats["tis_tokens"]),
                "tis_capped_frac": stats["tis_capped"] / max(1, stats["tis_tokens"]),
                "engine_mismatch": stats["mismatch_sum"] / max(1, stats["tis_tokens"]),
-               "oom_splits": stats["oom_splits"], "peak_gib": round(peak, 1)}
+               "oom_splits": stats["oom_splits"], "peak_gib": round(peak, 1),
+               "opt_steps": stats.get("opt_steps", 0), "clip_frac": stats["clipped"] / max(1, stats["tis_tokens"])}
         if cfg.get("log_rollouts_every") and step % int(cfg["log_rollouts_every"]) == 0:
             write_jsonl(out_dir / "rollouts" / f"step_{step:04d}.jsonl", (ro.to_dict() for ro in rollouts))
 

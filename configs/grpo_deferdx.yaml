@@ -28,6 +28,10 @@ warmup_steps: 5
 # their norm and batch metrics were flat, so from step 26 the LR is 5e-5. Every run inherits this
 # exact schedule (the control and all ablations), so comparisons stay like-for-like.
 lr_milestones: [[0, 0.2], [25, 1.0]]
+# Optimizer steps per rollout batch. Steps 1-50 took one (on-policy); from step 51 each batch is split
+# into 4 PPO mini-batches against vLLM's behaviour log-probs (clipped ratio), 4x the updates per
+# rollout at almost no extra compute. Inherited by every run, like the LR schedule.
+ppo_minibatch_milestones: [[0, 1], [50, 4]]
 clip_low: 0.2
 clip_high: 0.28          # clip-higher (DAPO)
 max_grad_norm: 1.0

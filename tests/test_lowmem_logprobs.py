@@ -89,3 +89,34 @@ def test_token_budget_batches_respects_budget():
     for b in batches:
         width = max(len(x.prompt_ids) + len(x.completion_ids) for x in b)
         assert width * len(b) <= 100 or len(b) == 1
+
+
+def test_ppo_update_minibatches_and_behavior_ratio():
+    import random
+
+    from deferdx.training.common import completion_logprobs_lowmem
+    from deferdx.training.grpo_vllm import piecewise, ppo_update
+
+    m = _tiny_model()
+    params = [p for p in m.parameters() if p.requires_grad]
+    samples = [TurnSample([1 + i, 5, 9], [3 + i, 4, 8, 2], advantage=(-1) ** i * 0.5) for i in range(8)]
+    lps, _ = completion_logprobs_lowmem(m, samples, 0)
+    for s, lp in zip(samples, lps):  # behaviour log-probs = current policy -> first ratios are exactly 1
+        s.rollout_logprobs = lp.detach().tolist()
+
+    opt = torch.optim.AdamW(params, lr=1e-3)
+    before = [p.detach().clone() for p in params]
+    st1 = ppo_update(m, samples, opt, params, 0, 1, 10_000, 1, 0.2, 0.28, 2.0, 2048, 1.0, random.Random(0))
+    assert st1["opt_steps"] == 1 and st1["clipped"] == 0
+    assert any(not torch.equal(a, b) for a, b in zip(before, params))
+
+    m2 = _tiny_model()
+    params2 = [p for p in m2.parameters() if p.requires_grad]
+    opt2 = torch.optim.AdamW(params2, lr=1e-3)
+    st4 = ppo_update(m2, samples, opt2, params2, 0, 4, 10_000, 1, 0.2, 0.28, 2.0, 2048, 1.0, random.Random(0))
+    assert st4["opt_steps"] == 4
+    # in rollout mode the mismatch statistic is |log pi_theta - log pi_behaviour|: 0 before any update, small after
+    assert st4["mismatch_sum"] / st4["tis_tokens"] < 0.5
+
+    assert piecewise([[0, 1], [50, 4]], 49, 1) == 1 and piecewise([[0, 1], [50, 4]], 50, 1) == 4
+    assert piecewise(None, 7, 3) == 3
