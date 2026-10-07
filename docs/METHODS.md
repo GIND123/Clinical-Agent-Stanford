@@ -23,7 +23,22 @@ R_commit = α·1[d = y] − λ·(p − 1[d = y])² − κ·C[y, d] − c·Σ_t c
 
 with α = 1, λ = 1 (Brier score, a strictly proper scoring rule), κ = 0.5 and C the 5×5 asymmetric severity matrix in `configs/severity_matrix.yaml`. C is a time-to-harm proxy (for example, a missed OTHER case costs 1.0, a missed appendicitis 0.8). The cost scale c = α / Σ_x cost(x) = 6.81 × 10⁻⁵ per US$, so ordering every test in the catalog costs one correct diagnosis (LA-CDM's convention); a CT abdomen costs 0.089.
 
-**Group-consensus deferral (the contribution).** GRPO samples G episodes of the same case. Let p̂ be the fraction of the group's committing episodes that were correct: an on-policy, label-verified estimate of how likely the current policy is to be wrong on this case. For a DEFER on an in-set case:
+**Counterfactual escalation value (CEV; the contribution).** Every published deferral or abstention reward we found prices escalation by how likely the policy is to be wrong on the *case*. Some use the share of a GRPO group that was correct (TIAR, KARL, and our own earlier version below); some use a prior estimate of the success rate (AWA-RL); some use cases designated in advance (TrustMed-RL). CEV prices it by what would happen if the agent did not escalate **at the exact state where it escalated**.
+
+1. **Branch.** For an episode that ends with DEFER at state s (the conversation and the tests revealed so far), the environment is rebuilt by deterministic replay. The trainer then samples K = 3 *forced continuations* from s. In these, escalating is not an option: a DEFER is executed as COMMIT of the differential's top, at its stated probability, but further tests remain allowed within the budget.
+2. **Value of not escalating.** Their mean clinical return V̂(s) = mean_k [α·1[correct] − λ(p − 1[correct])² − κ·C[y, d] − c·cost(tests after s)] estimates the value of continuing from s: deciding now or investigating further, whichever the policy would do.
+3. **Value of escalating.** E = V_τ + η·S(q, y) − μ − ν. V_τ is the expected commit reward of a calibrated decision with success probability τ (in-set cases), or 1.2 (OTHER cases). S is the normalised multi-class Brier score of the **handed-over probabilistic differential** q, which is strictly proper, so honest differentials are optimal; η = 0.3. μ = 0.1 is the handoff cost and ν the coverage multiplier.
+4. **Credit.** The DEFER turn's advantage is the state-level counterfactual A = E − V̂(s). Earlier turns keep the usual group advantage, computed from the episode reward E − c·cost(tests).
+
+The consequence is the distinction a clinician makes:
+- **reducible uncertainty** (another test would settle it) gives a high V̂(s), so escalation is discouraged and the agent learns to investigate;
+- **irreducible uncertainty** (continuing would err) gives a low V̂(s), so escalation is credited;
+- because V̂ includes the severity matrix and the scoring rule, an escalation is worth more where the agent's errors would be dangerous or confidently wrong;
+- because S rewards the handoff's content, deferral is a calibrated, informative handoff rather than an "I don't know".
+
+Config: `configs/grpo_cev.yaml` (`reward.defer_mode: cev`, `cev_k`, `cev_max_roots`, `env.handoff_probs: true`). Ablations: without the scored handoff (`configs/ablations/cev_no_handoff.yaml`), and a constant deferral reward (`configs/ablations/constant_defer.yaml`).
+
+**Group-consensus deferral (case-level baseline arm, published mechanism).** This is the reward first implemented here, now known to match prior work (TIAR's λ(1 − 2p̂) advantage adjustment is the case τ = 0.5; KARL and AWA-RL are close variants). It is kept as the comparator that isolates what the counterfactual, state-level estimate adds. GRPO samples G episodes of the same case. Let p̂ be the fraction of the group's committing episodes that were correct: an on-policy, label-verified estimate of how likely the current policy is to be wrong on this case. For a DEFER on an in-set case:
 
 R_defer = γ·(τ − p̂) − μ − c·Σ_t cost(a_t)
 

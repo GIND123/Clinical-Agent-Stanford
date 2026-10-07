@@ -30,8 +30,14 @@ DEFER_BLOCK = """- DEFER the case to a clinician with a ranked differential and 
 """
 
 
+DEFER_BLOCK_PROBS = """- DEFER the case to a clinician, handing over your differential with a probability for each diagnosis, and a short reason:
+  {"type": "DEFER", "differential": {"<diagnosis>": <0-1>, "<diagnosis>": <0-1>}, "reason": "<why a human should decide>"}
+  Defer when you are likely to be wrong and further tests would not settle it, or the presentation does not fit the listed diagnoses. The handed-over probabilities are scored with a proper scoring rule: report your honest beliefs. Deferral is not free: use it when it protects the patient.
+"""
+
+
 def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True, open_world: bool = True,
-                  topics: list[str] | None = None) -> str:
+                  topics: list[str] | None = None, handoff_probs: bool = False) -> str:
     diagnoses = list(IN_SET_LABELS) + ([OTHER] if open_world else [])
     open_world_line = (
         f'The true diagnosis may be none of the four listed conditions; "{OTHER}" means a different diagnosis.\n'
@@ -42,7 +48,7 @@ def system_prompt(catalog: TestCatalog, max_steps: int, allow_defer: bool = True
         topics=", ".join(topics if topics is not None else catalog.asks),
         tests=", ".join(catalog.tests),
         diagnoses=", ".join(diagnoses),
-        defer_block=DEFER_BLOCK if allow_defer else "",
+        defer_block=(DEFER_BLOCK_PROBS if handoff_probs else DEFER_BLOCK) if allow_defer else "",
         max_steps=max_steps,
         open_world_line=open_world_line,
     )

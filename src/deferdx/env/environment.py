@@ -33,6 +33,11 @@ class EnvConfig:
     ask_topics: list[str] | None = None  # None = every ASK topic in the catalog
     # How CDM's "____" diagnosis mask is shown to the agent (see prompts.apply_mask_policy).
     mask_policy: str = "keep"
+    # Ask for probabilities in the DEFER differential (a scored handoff; counterfactual escalation reward).
+    handoff_probs: bool = False
+    # Forced continuation (counterfactual branches): a DEFER is executed as COMMIT(top of the
+    # differential, its stated probability), i.e. "what the agent would have done had it not escalated".
+    defer_as_commit: bool = False
 
     @classmethod
     def from_dict(cls, d: dict | None) -> "EnvConfig":
@@ -55,6 +60,7 @@ class EpisodeResult:
     diagnosis: str | None = None
     probability: float | None = None
     differential: list[str] = field(default_factory=list)
+    differential_probs: dict[str, float] | None = None
     reason: str = ""
     total_cost: float = 0.0
     n_tests: int = 0
@@ -111,7 +117,7 @@ class DiagnosticEnv:
     @property
     def system_prompt(self) -> str:
         return system_prompt(self.catalog, self.cfg.max_steps, self.cfg.allow_defer, self.cfg.open_world,
-                             topics=self._topics)
+                             topics=self._topics, handoff_probs=self.cfg.handoff_probs)
 
     def reset(self, case: Case) -> str:
         self.case = case
@@ -130,6 +136,13 @@ class DiagnosticEnv:
     def step(self, action: Action) -> StepOutput:
         assert self.case is not None and not self.done, "call reset() first / episode finished"
         res = self.result
+        if action.type == DEFER and self.cfg.defer_as_commit:
+            top = action.differential[0] if action.differential else None
+            if top is None:
+                action = Action(INVALID, error="a decision is required: COMMIT a diagnosis")
+            else:
+                p = (action.differential_probs or {}).get(top)
+                action = Action(COMMIT, diagnosis=top, probability=0.5 if p is None else float(p))
         if action.type == DEFER and not self.cfg.allow_defer:
             action = Action(INVALID, error="DEFER is not available in this setting")
         if action.type == COMMIT and action.diagnosis == OTHER and not self.cfg.open_world:
@@ -148,6 +161,7 @@ class DiagnosticEnv:
             return self._finish("commit", action, "Diagnosis recorded.")
         if action.type == DEFER:
             res.differential, res.reason = action.differential, action.reason
+            res.differential_probs = action.differential_probs
             res.steps.append(StepLog(action.to_json(), 0.0))
             return self._finish("defer", action, "Case handed to clinician.")
 
@@ -185,6 +199,17 @@ class DiagnosticEnv:
         else:
             obs += f"\n\n({remaining} investigations remaining.)"
         return StepOutput(truncate(obs, self.cfg.max_obs_chars), False, action)
+
+    def replay(self, case: Case, actions: list[Action]) -> str:
+        """Reset to `case` and re-execute `actions` (the environment is deterministic), returning the
+        last observation. Used to branch counterfactual continuations from a recorded state."""
+        obs = self.reset(case)
+        for a in actions:
+            out = self.step(a)
+            obs = out.observation
+            if out.done:
+                raise ValueError("replayed actions ended the episode")
+        return obs
 
     def _finish(self, terminal: str, action: Action, obs: str) -> StepOutput:
         self.result.terminal = terminal

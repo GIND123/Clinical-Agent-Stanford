@@ -83,6 +83,11 @@ class RewardConfig:
     #              (Chow's rule; the setting analysed by Che et al. 2026). Ablation of the consensus signal.
     defer_mode: str = "consensus"
     defer_constant: float | None = None  # None: matched to the consensus reward's crossover at tau (see matched_defer_constant)
+    # "cev" (counterfactual escalation value): an escalation is worth the value of a tau-reliable decision
+    # (OTHER cases: openworld_defer_reward) minus the handoff cost, plus cev_eta x the proper score of the
+    # handed-over differential. The trainer compares it with the value of NOT escalating from the same
+    # state, estimated by forced-continuation branches (training/grpo_vllm.py).
+    cev_eta: float = 0.3
     # Group-level terminal-action entropy bonus (cold-start exploration, §5.4). 0 = off.
     action_entropy_coef: float = 0.0
     severity: SeverityMatrix = field(default_factory=SeverityMatrix.uniform, repr=False)
@@ -142,6 +147,51 @@ def commit_reward(res: EpisodeResult, cfg: RewardConfig) -> RewardBreakdown:
     return RewardBreakdown(total=acc + calib + sev + cost, accuracy=acc, calibration=calib, severity=sev, cost=cost)
 
 
+def handoff_distribution(res: EpisodeResult) -> dict[str, float]:
+    """The handed-over differential as a distribution over ALL_LABELS. Stated probabilities are kept and the
+    leftover mass is spread over unlisted labels; a list without probabilities is uniform over its labels;
+    no differential is uniform over all labels."""
+    if res.differential_probs:
+        q = {lab: float(res.differential_probs.get(lab, 0.0)) for lab in ALL_LABELS}
+        rest = max(0.0, 1.0 - sum(q.values()))
+        unlisted = [lab for lab in ALL_LABELS if lab not in res.differential_probs]
+        if unlisted:
+            for lab in unlisted:
+                q[lab] += rest / len(unlisted)
+        total = sum(q.values())
+        return {k: v / total for k, v in q.items()} if total > 0 else {lab: 1 / len(ALL_LABELS) for lab in ALL_LABELS}
+    listed = [lab for lab in (res.differential or []) if lab in ALL_LABELS]
+    pool = listed or list(ALL_LABELS)
+    return {lab: (1.0 / len(pool) if lab in pool else 0.0) for lab in ALL_LABELS}
+
+
+def handoff_score(res: EpisodeResult) -> float:
+    """Normalised multi-class Brier score of the handoff differential at the true label, in [0, 1]
+    (1 = all mass on the true diagnosis). Strictly proper: honest probabilities maximise its expectation."""
+    q = handoff_distribution(res)
+    return 1.0 - 0.5 * sum((q[lab] - (1.0 if lab == res.label else 0.0)) ** 2 for lab in ALL_LABELS)
+
+
+def escalation_value(res: EpisodeResult, cfg: "RewardConfig") -> float:
+    """Value credited to escalating (before the handoff cost and test costs): a tau-reliable decision for
+    in-set cases, openworld_defer_reward for OTHER, plus cev_eta x the handoff score."""
+    base = cfg.openworld_defer_reward if res.label == OTHER else expected_commit_reward(cfg.tau, cfg)
+    return base + cfg.cev_eta * handoff_score(res)
+
+
+def continuation_value(cont: EpisodeResult, prefix_cost: float, cfg: "RewardConfig") -> float:
+    """Return of a forced continuation from a deferral state: its commit reward, charging only the
+    tests ordered after the branch point (failed continuations score the format penalty)."""
+    extra = -cfg.cost_scale * max(0.0, cont.total_cost - prefix_cost)
+    if cont.terminal != "commit":
+        pen = cfg.timeout_penalty if cont.terminal == "timeout" else cfg.invalid_penalty
+        return -pen + extra
+    correct = float(cont.diagnosis == cont.label)
+    p = float(cont.probability if cont.probability is not None else 0.0)
+    sev = 0.0 if correct else -cfg.severity_kappa * cfg.severity(cont.label, cont.diagnosis)
+    return cfg.alpha * correct + cfg.calib_lambda * calibration_score(p, correct, cfg) + sev + extra
+
+
 def expected_commit_reward(q: float, cfg: "RewardConfig", severity_cost: float | None = None) -> float:
     """Expected COMMIT reward of a calibrated committer with success probability q (no test cost)."""
     if severity_cost is None:
@@ -166,12 +216,16 @@ def matched_defer_constant(cfg: "RewardConfig") -> float:
 
 def defer_reward(res: EpisodeResult, p_hat: float, cfg: RewardConfig) -> RewardBreakdown:
     cost = -cfg.cost_scale * res.total_cost
-    if res.label == OTHER:
+    if cfg.defer_mode == "cev":
+        consensus = escalation_value(res, cfg)
+    elif res.label == OTHER:
         consensus = cfg.openworld_defer_reward
     elif cfg.defer_mode == "constant":
         consensus = cfg.defer_constant if cfg.defer_constant is not None else matched_defer_constant(cfg)
     elif cfg.defer_mode == "consensus":
         consensus = cfg.gamma * (cfg.tau - p_hat)
+    elif cfg.defer_mode == "cev":
+        consensus = escalation_value(res, cfg)
     else:
         raise ValueError(f"unknown defer_mode {cfg.defer_mode!r}")
     return RewardBreakdown(

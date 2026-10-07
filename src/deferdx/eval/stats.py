@@ -188,6 +188,15 @@ def mean_cost(rs) -> float:
     return float(np.mean([r.total_cost for r in rs])) if rs else float("nan")
 
 
+def handoff_quality(rs) -> float:
+    """Mean proper (normalised Brier) score of the handed-over differential, over deferrals (1 = all
+    probability on the true diagnosis)."""
+    from ..rewards.scoring import handoff_score
+
+    d = [r for r in rs if r.terminal == "defer"]
+    return float(np.mean([handoff_score(r) for r in d])) if d else float("nan")
+
+
 def handoff_contains_truth(rs) -> float:
     """Among deferrals: the true diagnosis appears in the handed-off differential."""
     d = [r for r in rs if r.terminal == "defer"]
@@ -241,11 +250,12 @@ CLOSED_WORLD: dict[str, Stat] = {
     "aurc": aurc, "ece": ece, "brier": brier, "confident_errors": confident_error_rate(0.8),
     "invalid": invalid_rate, "mean_tests": mean_tests, "mean_cost_usd": mean_cost,
     "unsafe_errors": unsafe_error_rate, "deferral_precision": deferral_precision, "deferral_recall": deferral_recall,
+    "handoff_quality": handoff_quality, "handoff_contains_truth": handoff_contains_truth,
 }
 OPEN_WORLD: dict[str, Stat] = {
     "false_commit": false_commit, "commit_other": commit_other_rate, "defer": defer_rate,
     "invalid": invalid_rate, "handoff_contains_truth": handoff_contains_truth,
-    "confident_false_commit": confident_false_commit(0.8),
+    "confident_false_commit": confident_false_commit(0.8), "handoff_quality": handoff_quality,
 }
 
 

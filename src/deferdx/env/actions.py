@@ -38,6 +38,8 @@ class Action:
     diagnosis: str | None = None
     probability: float | None = None
     differential: list[str] = field(default_factory=list)
+    # optional probabilities over the handed-off differential (a scored handoff); None if not given
+    differential_probs: dict[str, float] | None = None
     reason: str = ""
     error: str = ""
 
@@ -53,8 +55,26 @@ class Action:
         if self.type == COMMIT:
             return {"type": COMMIT, "diagnosis": self.diagnosis, "probability": round(float(self.probability), 3)}
         if self.type == DEFER:
+            if self.differential_probs:
+                return {"type": DEFER, "differential": {d: round(float(self.differential_probs.get(d, 0.0)), 3)
+                                                        for d in self.differential}, "reason": self.reason}
             return {"type": DEFER, "differential": list(self.differential), "reason": self.reason}
         return {"type": INVALID, "error": self.error}
+
+    @classmethod
+    def from_json(cls, d: dict) -> "Action":
+        """Inverse of to_json (used to replay an episode up to a state)."""
+        kind = str(d.get("type", "")).upper()
+        if kind == ASK:
+            return cls(ASK, topic=d.get("topic"))
+        if kind == TEST:
+            return cls(TEST, test=d.get("test"))
+        if kind == COMMIT:
+            return cls(COMMIT, diagnosis=d.get("diagnosis"), probability=d.get("probability"))
+        if kind == DEFER:
+            diff, probs = _parse_differential(d.get("differential"))
+            return cls(DEFER, differential=diff, differential_probs=probs, reason=d.get("reason", ""))
+        return cls(INVALID, error=d.get("error", ""))
 
 
 _ACTION_TAG = re.compile(r"<action>\s*(.*?)\s*</action>", re.DOTALL | re.IGNORECASE)
@@ -93,16 +113,47 @@ def _from_json(obj: dict, valid_tests: set[str], valid_topics: set[str]) -> Acti
             return Action(INVALID, error="COMMIT requires probability in [0, 1]")
         return Action(COMMIT, diagnosis=dx, probability=p)
     if kind == DEFER:
-        diff_raw = obj.get("differential") or []
-        if isinstance(diff_raw, str):
-            diff_raw = re.split(r"[,;]", diff_raw)
-        diff = []
-        for d in diff_raw:
-            lab = normalize_label(d)
-            if lab and lab not in diff:
-                diff.append(lab)
-        return Action(DEFER, differential=diff, reason=str(obj.get("reason", "")).strip())
+        diff, probs = _parse_differential(obj.get("differential"))
+        return Action(DEFER, differential=diff, differential_probs=probs, reason=str(obj.get("reason", "")).strip())
     return Action(INVALID, error=f"unknown action type {kind!r}")
+
+
+def _parse_differential(raw) -> tuple[list[str], dict[str, float] | None]:
+    """A DEFER differential as (labels ordered most likely first, probabilities or None).
+
+    Accepted: ["a", "b"] | "a, b" | {"a": 0.6, "b": 0.3} | [{"diagnosis": "a", "probability": 0.6}, ...].
+    Probabilities are clipped to [0, 1] and rescaled if they sum above 1; labels that do not map
+    to the label space are dropped."""
+    if raw is None:
+        return [], None
+    if isinstance(raw, str):
+        raw = re.split(r"[,;]", raw)
+    pairs: list[tuple[str, float | None]] = []
+    if isinstance(raw, dict):
+        pairs = [(k, _prob(v)) for k, v in raw.items()]
+    else:
+        for item in raw:
+            if isinstance(item, dict):
+                name = item.get("diagnosis", item.get("dx", item.get("label")))
+                pairs.append((name, _prob(item.get("probability", item.get("p")))))
+            else:
+                pairs.append((item, None))
+    labs: list[str] = []
+    probs: dict[str, float] = {}
+    for name, p in pairs:
+        lab = normalize_label(name)
+        if not lab or lab in labs:
+            continue
+        labs.append(lab)
+        if p is not None:
+            probs[lab] = p
+    if not probs:
+        return labs, None
+    total = sum(probs.values())
+    if total > 1.0:
+        probs = {k: v / total for k, v in probs.items()}
+    labs.sort(key=lambda lab: -probs.get(lab, 0.0))
+    return labs, probs
 
 
 def _from_call(kind: str, args: str, valid_tests: set[str], valid_topics: set[str]) -> Action:

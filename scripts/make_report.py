@@ -48,12 +48,17 @@ SYSTEMS = [  # eval-suite directory name, label
     ("zs_defer", "Qwen3-8B zero-shot, prompted DEFER"),
     ("gptoss_nodefer", "gpt-oss-20b zero-shot, forced choice"),
     ("grpo_nodefer", "GRPO control (no DEFER)"),
-    ("deferdx", "DEFER-Dx (learned DEFER)"),
+    ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
+    ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
+    ("cev_step100", "DEFER-Dx at step 100"),
+    ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
+    ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
 ]
+MAIN = ("cev", "deferdx")  # the reference system: the first one that has been evaluated
 PCT = {"acc_full", "mean_class_acc", "macro_f1", "acc_diverticulitis", "acc_appendicitis", "acc_cholecystitis",
        "acc_pancreatitis", "coverage", "selective_acc", "acc@70", "acc@80", "acc@90", "confident_errors",
        "unsafe_errors", "false_commit", "commit_other", "defer", "invalid", "handoff_contains_truth",
-       "confident_false_commit", "deferral_precision", "deferral_recall", "ood_auroc"}
+       "confident_false_commit", "deferral_precision", "deferral_recall", "ood_auroc", "handoff_quality"}
 ML_COLS = [("acc_full", "Acc, full cov."), ("mean_class_acc", "Mean-class acc"), ("macro_f1", "Macro-F1"),
            ("coverage", "Coverage"), ("selective_acc", "Selective acc"), ("acc@80", "Acc@80% cov."),
            ("aurc", "AURC ↓"), ("ece", "ECE ↓"), ("brier", "Brier ↓"), ("ood_auroc", "OOD AUROC")]
@@ -132,7 +137,8 @@ def main() -> None:
                 labels[name + "@sc"] = f"{label}, self-consistency over {n_seeds} samples"
     # post-hoc thresholds at DEFER-Dx's own coverage, cross-fitted on val/test
     thresholds = {}
-    for ref in ("deferdx", "deferdx@sc"):
+    main = next((m for m in MAIN if m in suites), None)
+    for ref in ((main, main + "@sc") if main else ()):
         if ref not in suites:
             continue
         target = S.coverage(cdm_pooled(suites[ref]))
@@ -155,8 +161,13 @@ def main() -> None:
 
     tables = {k: tables_for(v, sev, args.n_boot) for k, v in suites.items()}
     paired: dict = {}
-    for ref, comps in (("deferdx", ("grpo_nodefer+thr", "zs_nodefer+thr", "zs_defer", "grpo_nodefer")),
-                       ("deferdx@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "zs_defer@sc"))):
+    comparisons = []
+    if main:
+        comparisons += [(main, ("grpo_nodefer+thr", "zs_nodefer+thr", "grpo_nodefer+sgr", "deferdx", "zs_defer",
+                                "grpo_nodefer")),
+                        (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc"))]
+    comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
+    for ref, comps in comparisons:
         if ref not in suites:
             continue
         for other in comps:
@@ -167,6 +178,7 @@ def main() -> None:
                 "selective_acc": S.selective_acc, "coverage": S.coverage, "acc_full": S.acc_full,
                 "unsafe_errors": S.unsafe_error_rate, "confident_errors": S.confident_error_rate(0.8),
                 "acc_diverticulitis": S.class_acc("diverticulitis"), "aurc": S.aurc, "ece": S.ece}.items()}
+            d["handoff_quality"] = S.paired_bootstrap(a, b, S.handoff_quality, args.n_boot)
             for s in ("eval_other_seen", "eval_other_unseen"):
                 if s in suites[ref] and s in suites[other]:
                     d[f"false_commit:{s}"] = S.paired_bootstrap(suites[ref][s], suites[other][s], S.false_commit,
@@ -232,7 +244,7 @@ def main() -> None:
               "| System | Group | Cases | False commit | Defer |", "|---|---|---|---|---|"]
         L += [f"| {a} | {b.replace('_', ' ')} | {n} | {fc * 100:.1f} | {df * 100:.1f} |" for a, b, n, fc, df in group_rows]
     if paired:
-        L += ["", "## 5. Paired differences, DEFER-Dx minus comparator (same cases)", "",
+        L += ["", "## 5. Paired differences, reference system minus comparator (same cases)", "",
               "| Comparison | Metric | Difference (95% CI) | p |", "|---|---|---|---|"]
         for comp, d in paired.items():
             for m, v in d.items():

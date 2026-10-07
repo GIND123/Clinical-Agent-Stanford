@@ -1,6 +1,6 @@
 # DEFER-Dx
 
-An interactive clinical diagnostic agent trained with reinforcement learning over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action with its own reward, not a confidence threshold applied afterwards. The deferral reward is the **group-consensus** signal: GRPO already samples several episodes of each case, and the share that diagnosed it correctly is a free, label-verified estimate of whether the policy would be wrong. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
+An interactive clinical diagnostic agent trained with reinforcement learning over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action. Its reward is the **counterfactual escalation value (CEV)**: at the exact state where the agent escalates, forced continuations branched from that state estimate the clinical value of *not* escalating, by deciding now or investigating further. The DEFER turn is credited with the difference. The handoff is a probabilistic differential trained with a strictly proper scoring rule. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
 
 - Research plan: [stanford_idea_md.md](stanford_idea_md.md) (target: Stanford AI+HEALTH 2026 abstract, due Oct 15, 2026)
 - The method as implemented, with every constant: [docs/METHODS.md](docs/METHODS.md)
@@ -19,11 +19,12 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Open-world set MIMIC-CDM-OW: 713 OTHER + 648 same-pipeline controls | built; deterministic (byte-identical rebuilds) |
 | Patient-disjoint cohorts (`data/cohorts/`) | built |
 | Single-GPU colocated GRPO trainer | built, tested and in use |
-| **DEFER-Dx main run** (Qwen3-8B + LoRA, 150 steps) | **running**: resumed at step 76 after a machine reboot; ends around Oct 7, 22:30 IST |
-| Held-out evaluation of DEFER-Dx and the zero-shot baselines | queued (`scripts/queue.sh`); first numbers around Oct 8, 01:30 |
+| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | **running**: resumed at step 76 after a reboot; ends around Oct 7, 22:30 IST |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | implemented and unit-tested; queued next (`scripts/queue_v2.sh`): smoke test, then 150 steps, around Oct 8–9 |
+| Held-out evaluation of the consensus arm and the zero-shot baselines | queued; first numbers around Oct 8, 01:30 |
 | GRPO control (no DEFER), the key comparator | queued; around Oct 9, 01:00 |
-| Ablations: constant deferral reward, std normalisation, CDM-only, leave-one-out p̂; gpt-oss-20b baseline; seed replicate | queued (`scripts/queue_ablations.sh`); through about Oct 11–12 |
-| Tests | 102 pass (`pytest`; CPU only) |
+| Ablations of what is new: CEV without the scored handoff; a constant deferral reward. Robustness and gpt-oss-20b | queued (`scripts/queue_v2.sh`); through about Oct 11 |
+| Tests | 108 pass (`pytest`; CPU only) |
 
 **No held-out result exists yet.** The numbers in §3 are the interim training and dev-set signals and earlier zero-shot baselines. Read them as such.
 
@@ -31,26 +32,26 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ### 2.1 Novelty
 
-Literature re-checks on 2026-10-06 and 2026-10-07 (alphaXiv; details in [docs/RESEARCH.md](docs/RESEARCH.md) §7–8) found that **no single component is unprecedented**:
+Three literature checks (2026-10-06 and 2026-10-07; details in [docs/RESEARCH.md](docs/RESEARCH.md) §7–9) found that the reward first built here was **already published**. Deferral rewarded by the policy's estimated case-level success rate γ(τ − p̂) is:
+- **TIAR** (arXiv 2605.25850): identical at τ = 0.5;
+- **KARL** (2604.22779): a binary variant;
+- **AWA-RL** (2607.10738): the same idea in multi-turn agents, with a refusal-rate penalty;
+- **TrustMed-RL** (2610.04387): RL-trained clinical deferral on designated cases.
 
-| Closest prior work | What it already does | What DEFER-Dx adds |
+The method was therefore redesigned around a quantity none of them uses.
+
+**Counterfactual escalation value (CEV).** At the exact state where the agent escalates, K forced continuations are branched by replaying the environment, with escalation disabled and further tests allowed. Their mean clinical return V̂(s) (accuracy, proper score, severity, cost of further tests) is the value of *not* escalating there. The DEFER turn's advantage is E − V̂(s), where E includes a strictly proper score of the handed-over probabilistic differential.
+
+| Closest work | What it does | Difference from CEV |
 |---|---|---|
-| **KARL** (Gao et al., arXiv 2604.22779, Apr 2026) | GRPO abstention reward from **within-group response statistics** in single-turn QA. The rule is binary: if any rollout in the group is correct, abstaining scores −1; if none is, +1. | A **continuous** consensus reward γ(τ − p̂) with a clinical safety dial τ and an analytic decision threshold (τ = 0.85 ⇒ defer below an estimated success of about 0.645); multi-turn test ordering with per-test costs; proper-scored commitment probabilities; a severity matrix. KARL's rule is roughly the degenerate case (defer only when p̂ = 0). |
-| **TrustMed-RL** (Zhan et al., arXiv 2610.04387, Oct 3 2026) | RL-trained clinical VLM agent with a **deferral action**, rewarded on instances designated by construction (evidence-corruption probes, out-of-knowledge tasks) | No case is labelled "should defer": the deferral target comes from the policy's own rollouts on real cases. Calibrated commitments, real EHR data, and an open-world evaluation. |
-| **Che et al.** (arXiv 2608.00301, Jul 2026) | Proves that abstain-as-an-action collapses under error-penalised RL, worsened by GRPO std normalisation; recommends thresholding a proper-scored confidence report | DEFER-Dx removes each stated collapse condition: a case-dependent deferral reward, no std normalisation, no KL anchor, and a coverage dual. Its **control arm is exactly their repair**, so the main comparison tests their prediction directly. The std-normalisation ablation tests the mechanism. |
-| LA-CDM (ICLR 2026), LDTL (arXiv 2604.05116), DiagAgent, CDPR | RL-trained sequential diagnosis on MIMIC data | All are closed-world and forced-choice, with no deferral action. |
-| Safe to Stop? (arXiv 2609.09678), MedAbstain, Decide/Ask/Defer (arXiv 2610.04542), MediQ | Deferral or abstention by conformal stopping, prompting or evaluation only | Learned by RL, not post-hoc or prompted. |
+| TIAR, KARL, AWA-RL | Abstention reward from the policy's **case-level** success rate (group statistics or a prior checkpoint) | CEV is **state-level and counterfactual**: escalating versus continuing *from the same state*, so "another test would settle it" (escalation discouraged) is separated from "continuing would err" (escalation credited). Valued in clinical units: severity, calibration and workup cost. |
+| TrustMed-RL | Deferral rewarded on cases designated by construction | No case is labelled "should defer"; the target is counterfactual and on-policy. |
+| Tree / branched RL (Tree-GRPO, SIPO, Counterfactual Rollout Replay, ASCT); CDPR | Branching for generic step-level credit; CDPR scores investigative actions | None targets an **escalation** action or values it against continuation, and none has a handoff. |
+| Signed Rescue Routing | Escalation value in model cascades, at inference time | CEV *trains* an agent's escalation, with on-policy counterfactuals. |
+| Decide/Ask/Defer, Safe to Stop?, MedAbstain, MediQ | Evaluation, conformal stopping or prompting | Learned by RL. |
+| — | (none found) | **The scored handoff:** deferral must hand over a probabilistic differential, rewarded with a strictly proper scoring rule. |
 
-**Verdict.** DEFER-Dx is **not "completely novel"** in its parts:
-- within-group abstention rewards exist (KARL, for QA);
-- RL-trained clinical deferral exists (TrustMed-RL).
-
-The contribution that holds, to our knowledge, is the **combination**:
-- the first interactive, multi-turn, cost-aware diagnostic agent whose deferral is learned from a label-free, continuous group-consensus reward with an explicit clinical operating point, jointly with proper-scored commitment probabilities;
-- evaluated on real EHR admissions with an **open-world** test, including never-seen, time-critical diagnoses (MIMIC-CDM-OW is a new benchmark asset);
-- compared head-to-head with the threshold-a-calibrated-report approach that current theory recommends.
-
-Cite KARL and TrustMed-RL prominently, and use the narrowed claim wording in [docs/RESEARCH.md](docs/RESEARCH.md) §8.
+**Verdict.** To our knowledge, based on these searches, the CEV mechanism (state-level counterfactual escalation credit plus a properly scored handoff) is new, and so is MIMIC-CDM-OW, the open-world benchmark with never-seen time-critical diagnoses. Novelty against an open literature cannot be proven absolutely, so the plan re-checks within 72 hours of submission. The previously built consensus reward is kept only as a **comparator arm**: it is the published mechanism, and CEV must beat it.
 
 ### 2.2 SOTA
 
@@ -63,7 +64,8 @@ Published MIMIC-CDM numbers use different splits, metrics and environments, so o
 | Random planner (from LDTL) | own split | – | 84.8 | 90.4 | – |
 | DiagAgent-14B (run here) | LA-CDM test | 71.9 | 77.9 | 56.0 | – |
 | **Qwen3-8B zero-shot in this environment** (run here, 3 seeds) | LA-CDM test | **87.2 ± 2.4** | 88.3 ± 1.1 | 84.8 (all 2,400 cases) | **95.5 ± 0.7 (85.8%)** with a post-hoc threshold |
-| DEFER-Dx | LA-CDM val + test | pending | pending | pending | pending |
+| Case-level consensus arm (published mechanism) | LA-CDM val + test | pending | pending | pending | pending |
+| **DEFER-Dx (CEV)** | LA-CDM val + test | pending | pending | pending | pending |
 
 **Verdict so far:**
 - **Above LA-CDM:** the environment plus an untrained Qwen3-8B already exceeds LA-CDM's 81.3 on its own test split. The environment differs, though: full history versus a summary, 22 tests versus 12, and a different base model.
@@ -100,7 +102,11 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
 
 - **Actions.** `ASK(physical_exam)`; `TEST(x)` for 22 individual tests (CBC, CMP, lipase, CT abdomen, …) at 2025 BIDMC charges; `COMMIT(d, p)` with d ∈ {4 conditions, OTHER} and stated probability p; `DEFER(differential, reason)`. At most 8 investigations. The full history is shown at reset.
 - **Commit reward:** α·1[d = y] − λ(p − 1[d = y])² − κ·C[y, d] − c·Σcost, with α = 1, λ = 1 (Brier), κ = 0.5, C the severity matrix, and c = 1/Σ(catalog prices).
-- **Deferral reward, in-set cases:** γ(τ − p̂) − μ − c·Σcost, with γ = 2, μ = 0.1, τ annealed 0.95 → 0.85. **OTHER cases:** 1.2 − μ, above any correct COMMIT(OTHER). `deferdx crossover` prints the threshold each τ induces.
+- **Escalation (CEV):** the DEFER turn's advantage is E − V̂(s).
+  - V̂(s) is the mean clinical return of K = 3 forced continuations from the same state (no escalation; tests allowed).
+  - E = V_τ (OTHER: 1.2) + η·S(handoff) − μ − ν, with S the normalised Brier score of the handed-over differential, η = 0.3, μ = 0.1.
+  - τ is annealed 0.95 → 0.85.
+- **Comparator arm (published mechanism):** a case-level reward γ(τ − p̂) − μ, with p̂ the group's commit accuracy.
 - **Coverage constraint:** in-set deferral ≤ 30% by projected dual ascent; ν is charged to deferring rollouts only.
 - **Training:** multi-turn GRPO, B = 12 cases × G = 8.
   - Dr. GRPO advantages (r − mean, no std division); groups with reward spread < 0.05 are skipped.
@@ -128,6 +134,12 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
     - The time-critical OTHER groups are held out of training entirely.
     - Same-pipeline controls are in training, so "open-world pipeline ⇒ OTHER" cannot be learned.
     - Cases are drawn from source pools by weight (CDM 0.75 / OTHER 0.15 / controls 0.10).
+
+11. **Redesigned the deferral reward for novelty (2026-10-07).**
+    - The case-level group-consensus reward turned out to be published: TIAR is identical at τ = 0.5; KARL and AWA-RL are close variants.
+    - It was replaced as the method by the counterfactual escalation value with a scored handoff (`configs/grpo_cev.yaml`, `rollout.branch_rollouts`, `training.grpo_vllm.turn_advantages`).
+    - The running consensus run became a comparator arm.
+    - Ablations now isolate the new parts: no scored handoff, and a constant reward.
 
 ### Departures from the original plan
 
@@ -191,12 +203,12 @@ deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir d
     --exclude-cases data/cdm/all.jsonl --controls --controls-per-label 3000 --n 2400 --out data/openworld_xl
 deferdx data cohorts                      # -> data/cohorts/*.jsonl + manifest.json
 
-# Everything else runs through two idempotent queues (wait for a free GPU; resume after crashes or reboots):
-setsid nohup bash scripts/queue.sh >> outputs/logs/queue.log 2>&1 &
-WAIT_PID=$(pgrep -f "^bash scripts/queue.sh$") setsid nohup bash scripts/queue_ablations.sh >> outputs/logs/queue_ablations.log 2>&1 &
+# Everything else runs through one idempotent queue (waits for a free GPU; resumes after crashes or reboots):
+setsid nohup bash scripts/queue_v2.sh >> outputs/logs/queue_v2.log 2>&1 &
 
 # Single pieces:
-deferdx train grpo-vllm --config configs/grpo_deferdx.yaml         # DEFER-Dx (resumes from its latest checkpoint)
+deferdx train grpo-vllm --config configs/grpo_cev.yaml            # DEFER-Dx, counterfactual escalation (the method)
+deferdx train grpo-vllm --config configs/grpo_deferdx.yaml         # case-level consensus comparator arm
 deferdx train grpo-vllm --config configs/grpo_nodefer.yaml         # control
 deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx/final --name deferdx
 python scripts/make_report.py && python scripts/make_figures.py    # docs/RESULTS.md, docs/figures/
@@ -204,7 +216,7 @@ python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outp
 deferdx crossover                                                   # tau -> effective deferral threshold
 ```
 
-**After a reboot,** relaunch the two queue commands above. Steps marked done in `outputs/queue/*.done` are skipped, and training resumes from its newest checkpoint (one is saved every 5 steps).
+**After a reboot,** relaunch the queue command above. Steps marked done in `outputs/queue/*.done` are skipped, and training resumes from its newest checkpoint (one is saved every 5 steps).
 
 **Synthetic smoke tests (no MIMIC data):** `bash scripts/smoke_synthetic.sh`; `deferdx data synth`.
 
@@ -222,7 +234,7 @@ deferdx crossover                                                   # tau -> eff
 | [src/deferdx/baselines/](src/deferdx/baselines/) | Post-hoc threshold and SGR |
 | [configs/](configs/) | Environment, reward, catalog, severity matrix, ICD lists; `grpo_deferdx.yaml`, `grpo_nodefer.yaml`, `ablations/` |
 | [scripts/](scripts/) | Queues, report, figures, training plots, data audit, downloads, Lambda baseline jobs |
-| [tests/](tests/) | 102 CPU tests (`pytest`) |
+| [tests/](tests/) | 108 CPU tests (`pytest`) |
 
 ## 9. Documents
 

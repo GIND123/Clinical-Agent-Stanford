@@ -65,7 +65,13 @@ def run_episodes(
             msgs = [{"role": "system", "content": env.system_prompt}, {"role": "user", "content": obs}]
             rollouts.append(Rollout(case.case_id, s, msgs, [], env.result))
 
-    max_turns = env_cfg.max_steps + env_cfg.max_invalid + 2
+    _advance(policy, envs, rollouts, env_cfg.max_steps + env_cfg.max_invalid + 2, on_turn)
+    return rollouts
+
+
+def _advance(policy: Policy, envs: list[DiagnosticEnv], rollouts: list[Rollout], max_turns: int,
+             on_turn: Callable[[int, int], None] | None = None) -> None:
+    """Advance every unfinished episode in lock-step until all are done (or max_turns)."""
     for turn in range(max_turns):
         active = [i for i, e in enumerate(envs) if not e.done]
         if not active:
@@ -84,7 +90,37 @@ def run_episodes(
         if not env.done:  # safety net; the env's own budget normally ends episodes first
             env.result.terminal = "timeout"
             env.done = True
-    return rollouts
+
+
+def branch_rollouts(policy: Policy, catalog: TestCatalog, env_cfg: EnvConfig, roots: list[tuple[Case, Rollout]],
+                    k: int) -> list[list[Rollout]]:
+    """Counterfactual continuations of deferring episodes.
+
+    For each (case, rollout) that ended in DEFER, rebuild the exact state just before the deferral (same
+    conversation, same environment state, by deterministic replay of its earlier actions) and sample `k`
+    continuations in which DEFER is not an option: a DEFER is executed as COMMIT(top of its differential,
+    its stated probability), and the agent may still order tests within its remaining budget. Returns one
+    list of k continuation rollouts per root, in order."""
+    from dataclasses import replace
+
+    from .env.actions import Action
+
+    cfg = replace(env_cfg, defer_as_commit=True)
+    envs: list[DiagnosticEnv] = []
+    conts: list[Rollout] = []
+    for case, ro in roots:
+        if ro.result.terminal != "defer" or not ro.messages or ro.messages[-1]["role"] != "assistant":
+            raise ValueError(f"branch root {ro.case_id} did not end in a DEFER turn")
+        actions = [Action.from_json(st.action) for st in ro.result.steps[:-1]]
+        prefix = [dict(m) for m in ro.messages[:-1]]
+        for j in range(k):
+            env = DiagnosticEnv(catalog, cfg)
+            env.replay(case, actions)
+            env.sample_idx = 1000 * (ro.sample_idx + 1) + j  # distinct per-request seeds when seeding is on
+            envs.append(env)
+            conts.append(Rollout(case.case_id, j, list(prefix), [], env.result))
+    _advance(policy, envs, conts, cfg.max_steps + cfg.max_invalid + 2)
+    return [conts[i * k:(i + 1) * k] for i in range(len(roots))]
 
 
 def group_by_case(rollouts: list[Rollout]) -> list[list[Rollout]]:

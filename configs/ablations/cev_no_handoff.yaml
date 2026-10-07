@@ -1,0 +1,6 @@
+# Ablation: counterfactual escalation value WITHOUT the scored handoff (cev_eta 0). Isolates what
+# scoring the handed-over differential adds to the escalation decision and to handoff quality.
+base: ../grpo_cev.yaml
+reward: {cev_eta: 0.0}
+steps: 100
+output_dir: outputs/runs/abl_cev_no_handoff

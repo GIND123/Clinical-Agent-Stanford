@@ -1,0 +1,18 @@
+# DEFER-Dx with the COUNTERFACTUAL ESCALATION VALUE (the method's contribution).
+#   deferdx train grpo-vllm --config configs/grpo_cev.yaml
+#
+# For every DEFER, the trainer rebuilds the exact state just before it (same conversation, same tests
+# already done) and samples cev_k continuations in which escalating is not an option (a DEFER there is
+# executed as COMMIT of the differential's top; further tests remain allowed). Their mean clinical
+# return V_hat(s) (accuracy + proper score of the stated probability + severity of the error - cost of
+# further tests) is the value of NOT escalating from that state. The DEFER turn's advantage is
+#     A_esc = E - V_hat(s),   E = V(tau-reliable decision) [OTHER: 1.2] + cev_eta * S(handoff) - mu,
+# where S is the proper score of the handed-over probabilistic differential. Escalation is credited
+# only where continuing (deciding now OR investigating further) would be worse than a scored handoff:
+# reducible uncertainty is resolved by testing, irreducible uncertainty is escalated.
+base: grpo_deferdx.yaml
+env: {handoff_probs: true}
+reward: {defer_mode: cev, cev_eta: 0.3}
+cev_k: 3
+cev_max_roots: 32
+output_dir: outputs/runs/cev

@@ -42,8 +42,8 @@ from ..data.schema import Case
 from ..eval.evaluate import summarize
 from ..labels import OTHER
 from ..rewards.constraint import CoverageConstraint
-from ..rewards.scoring import crossover_p_hat, group_rewards
-from ..rollout import Rollout, group_by_case, run_episodes
+from ..rewards.scoring import continuation_value, crossover_p_hat, escalation_value, group_rewards, handoff_score
+from ..rollout import Rollout, branch_rollouts, group_by_case, run_episodes
 from .common import JsonlLogger, TurnSample, completion_logprobs_lowmem, set_seed, token_budget_batches
 from .grpo import _reward_setup, group_advantages, linear_schedule
 
@@ -255,6 +255,47 @@ def _dev_metrics(rep: dict[str, Any]) -> dict[str, float]:
     }
 
 
+def turn_advantages(groups: list[list[Rollout]], rcfg, nu: float, in_set_only: bool, min_std: float,
+                    normalize_std: bool, cont_values: dict[int, float] | None = None):
+    """Per-turn advantages for every rollout. Returns ([(rollout, [advantage per turn] or None)], stats).
+
+    Group advantages (r - mean, Dr. GRPO) apply to every turn. With counterfactual escalation values
+    (`cont_values`: id(rollout) -> mean return of forced continuations from its deferral state), the
+    DEFER turn of that rollout instead gets the STATE-LEVEL advantage
+        A = E(handoff) - V_hat(continue from the same state),
+    E = escalation value - handoff cost - coverage multiplier. Groups whose rewards have no spread
+    contribute only these escalation turns (None = rollout skipped)."""
+    cont_values = cont_values or {}
+    out, st = [], Counter()
+    for grp in groups:
+        label = grp[0].result.label
+        pen = nu if (label != OTHER or not in_set_only) else 0.0
+        rbs = group_rewards([ro.result for ro in grp], rcfg, defer_penalty=pen)
+        rewards = [rb.total for rb in rbs]
+        st["reward_sum"] += sum(rewards)
+        st["n"] += len(rewards)
+        flat = float(np.std(rewards)) < min_std
+        st["skipped" if flat else "kept"] += 1
+        advs = [0.0] * len(grp) if flat else group_advantages(rewards, normalize_std)
+        for ro, rb, adv in zip(grp, rbs, advs):
+            ro.reward = rb.as_dict()
+            for k in ("accuracy", "calibration", "severity", "cost", "consensus", "penalty", "constraint"):
+                st[f"r_{k}"] += getattr(rb, k)
+            per_turn = None if flat else [adv] * len(ro.turns)
+            if id(ro) in cont_values and ro.turns:
+                e = escalation_value(ro.result, rcfg) - rcfg.handoff_mu + rb.constraint
+                a = e - cont_values[id(ro)]
+                per_turn = per_turn or [None] * len(ro.turns)
+                per_turn[-1] = a
+                st["cev_n"] += 1
+                st["cev_E"] += e
+                st["cev_V"] += cont_values[id(ro)]
+                st["cev_A"] += a
+                st["cev_A_pos"] += float(a > 0)
+            out.append((ro, per_turn))
+    return out, st
+
+
 def piecewise(marks: list | None, i: int, default: float):
     """Value of a piecewise-constant schedule [[index, value], ...] at index i."""
     out = default
@@ -428,6 +469,8 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
           f"crossover p_hat~{q}; pools={ {k: len(v) for k, v in sampler.pools.items()} }", flush=True)
 
     tis_cap = cfg.get("tis_cap", 2.0)
+    cev_k = int(cfg.get("cev_k", 3))               # forced continuations per deferral state
+    cev_max_roots = int(cfg.get("cev_max_roots", 32))  # deferral states branched per step
     min_std = float(cfg.get("min_group_std", 0.02))
     normalize_std = bool(cfg.get("normalize_std", False))
     max_seq_len = int(cfg.get("max_seq_len", max_model_len))
@@ -451,34 +494,44 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
         rollouts = run_episodes(policy, catalog, env_cfg, batch, n_samples=G)
         t_roll = time.time() - t0
 
+        # ---- 1b. counterfactual escalation: branch forced continuations from each deferral state -----
+        cont_values: dict[int, float] = {}
+        cev_stats: Counter = Counter()
+        if rcfg.defer_mode == "cev":
+            tb = time.time()
+            case_by_id = {c.case_id: c for c in batch}
+            roots = [ro for ro in rollouts if ro.result.terminal == "defer" and ro.turns
+                     and ro.messages and ro.messages[-1]["role"] == "assistant"]
+            if len(roots) > cev_max_roots:
+                roots = rng.sample(roots, cev_max_roots)
+            if roots:
+                branches = branch_rollouts(policy, catalog, env_cfg, [(case_by_id[r.case_id], r) for r in roots], cev_k)
+                for r, conts in zip(roots, branches):
+                    vals = [continuation_value(c.result, r.result.total_cost, rcfg) for c in conts]
+                    cont_values[id(r)] = float(np.mean(vals))
+                    cev_stats["cont_n"] += len(conts)
+                    cev_stats["cont_commit_correct"] += sum(c.result.correct for c in conts)
+                    cev_stats["cont_tests"] += sum(c.result.n_tests - r.result.n_tests for c in conts)
+            cev_stats["sec"] = time.time() - tb
+
         # ---- 2. rewards and advantages -------------------------------------------------------------
         nu = constraint.nu
         samples: list[TurnSample] = []
-        all_rewards, kept, skipped, dropped_long = [], 0, 0, 0
-        comp: Counter = Counter()
-        for grp in group_by_case(rollouts):
-            label = grp[0].result.label
-            pen = nu if (label != OTHER or not in_set_only) else 0.0
-            rbs = group_rewards([ro.result for ro in grp], rcfg, defer_penalty=pen)
-            rewards = [rb.total for rb in rbs]
-            all_rewards.extend(rewards)
-            for ro, rb in zip(grp, rbs):
-                ro.reward = rb.as_dict()
-                for k in ("accuracy", "calibration", "severity", "cost", "consensus", "penalty", "constraint"):
-                    comp[k] += getattr(rb, k)
-            if float(np.std(rewards)) < min_std:
-                skipped += 1
+        dropped_long = 0
+        assigned, comp = turn_advantages(group_by_case(rollouts), rcfg, nu, in_set_only, min_std, normalize_std,
+                                         cont_values)
+        all_rewards = [comp["reward_sum"] / max(1, comp["n"])]
+        kept, skipped = comp["kept"], comp["skipped"]
+        for ro, per_turn in assigned:
+            if per_turn is None:
                 continue
-            kept += 1
-            for ro, adv in zip(grp, group_advantages(rewards, normalize_std)):
-                for turn in ro.turns:
-                    if not turn.completion_ids:
-                        continue
-                    if len(turn.prompt_ids) + len(turn.completion_ids) > max_seq_len:
-                        dropped_long += 1
-                        continue
-                    samples.append(TurnSample(turn.prompt_ids, turn.completion_ids, adv,
-                                              rollout_logprobs=turn.logprobs))
+            for turn, adv in zip(ro.turns, per_turn):
+                if adv is None or not turn.completion_ids:
+                    continue
+                if len(turn.prompt_ids) + len(turn.completion_ids) > max_seq_len:
+                    dropped_long += 1
+                    continue
+                samples.append(TurnSample(turn.prompt_ids, turn.completion_ids, adv, rollout_logprobs=turn.logprobs))
         res = [ro.result for ro in rollouts]
         gate = [r for r in res if r.label != OTHER] if in_set_only else res
         constraint.update(float(np.mean([r.terminal == "defer" for r in gate])) if gate else 0.0)
@@ -511,10 +564,18 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
         t_train = time.time() - t1
 
         # ---- 4. logging ---------------------------------------------------------------------------
+        defers = [ro.result for ro in rollouts if ro.result.terminal == "defer"]
+        n_cev = max(1, comp["cev_n"])
         row = {"step": step, "sec": round(time.time() - t0, 1), "sec_rollout": round(t_roll, 1),
                "sec_train": round(t_train, 1), "episodes": len(rollouts),
-               "reward_mean": float(np.mean(all_rewards)), "reward_std": float(np.std(all_rewards)),
-               **{f"r_{k}": v / max(1, len(rollouts)) for k, v in comp.items()},
+               "reward_mean": float(np.mean(all_rewards)),
+               **{k: v / max(1, len(rollouts)) for k, v in comp.items() if k.startswith("r_")},
+               "handoff_score": float(np.mean([handoff_score(r) for r in defers])) if defers else math.nan,
+               "cev_roots": comp["cev_n"], "cev_E": comp["cev_E"] / n_cev, "cev_V": comp["cev_V"] / n_cev,
+               "cev_A": comp["cev_A"] / n_cev, "cev_A_pos": comp["cev_A_pos"] / n_cev,
+               "cev_cont_acc": cev_stats["cont_commit_correct"] / max(1, cev_stats["cont_n"]),
+               "cev_cont_tests": cev_stats["cont_tests"] / max(1, cev_stats["cont_n"]),
+               "sec_cev": round(cev_stats["sec"], 1),
                **_rollout_stats(rollouts),
                "tau": rcfg.tau, "nu": nu, "kept_groups": kept, "skipped_groups": skipped,
                "turn_samples": len(samples), "train_tokens": n_tok, "dropped_long": dropped_long,

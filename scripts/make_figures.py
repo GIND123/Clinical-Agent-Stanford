@@ -37,7 +37,7 @@ SLOTS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]  # fixed order, never cycle
 MARKERS = ["o", "s", "^", "D"]
 # fixed system -> slot assignment (colour follows the entity, never its rank)
 SYSTEMS = [("zs_nodefer", "Zero-shot (forced choice)"), ("grpo_nodefer", "GRPO control (no DEFER)"),
-           ("deferdx", "DEFER-Dx"), ("zs_defer", "Zero-shot, prompted DEFER")]
+           ("cev", "DEFER-Dx (counterfactual escalation)"), ("zs_defer", "Zero-shot, prompted DEFER")]
 STYLE = {name: (SLOTS[i], MARKERS[i]) for i, (name, _) in enumerate(SYSTEMS)}
 
 

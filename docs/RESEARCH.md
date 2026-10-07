@@ -115,3 +115,30 @@ Searches on the core mechanism (abstention or deferral rewarded from a model's o
 | Search for new MIMIC-CDM SOTA | Nothing newer than LDTL (arXiv 2604.05116) on the same task was found. | LDTL's 93.4 (case-weighted, own split) remains the reported SOTA at full coverage. |
 
 **Claim wording (supersedes §7).** "To our knowledge, DEFER-Dx is the first interactive, multi-turn, cost-aware diagnostic agent whose deferral to a clinician is learned from a label-free, continuous group-consensus reward with an explicit clinical operating point. The reward generalises within-group abstention rewards for single-turn QA (KARL), and is learned jointly with proper-scored commitment probabilities. It is evaluated on real EHR admissions with an open-world test that includes never-seen, time-critical diagnoses, and compared head-to-head with thresholding a calibrated confidence report, the repair that recent theory recommends (Che et al.)." Do not claim "first RL-trained deferral" (TrustMed-RL) or "first group-statistics abstention reward" (KARL).
+
+## 9. Third re-check (2026-10-07): the case-level consensus reward is prior art; pivot to a counterfactual escalation value
+
+Targeted searches on abstention rewards from within-group statistics turned up two more exact or near matches:
+
+| Paper | Mechanism | Overlap with the original DEFER-Dx reward γ(τ − p̂) |
+|---|---|---|
+| Pan et al., **TIAR** (arXiv 2605.25850, May 2026) | p̂ = n_correct / (n_correct + n_wrong) among a GRPO group's non-abstaining trajectories; abstention advantage += λ(1 − 2p̂) | **Identical** for τ = 0.5 (and γ = 2, λ = 1); single-turn QA |
+| Zhang et al., **AWA-RL** (arXiv 2607.10738, Jul 2026) | Multi-turn search agents; refusal reward 1 − p_i^γ, with p_i the query's success rate estimated from an earlier checkpoint, plus a batch-level refusal-rate penalty | Same idea (case-level competence sets the abstention reward) in a **multi-turn agent**, with a rate penalty like our coverage dual |
+| KARL (§8), TrustMed-RL (§7) | within-group statistics (binary); designated deferral cases | — |
+
+**Conclusion:** rewarding deferral by the policy's estimated case-level success rate is published (TIAR, KARL, AWA-RL). The original reward stays only as a comparator arm (`configs/grpo_deferdx.yaml`).
+
+**New mechanism: the counterfactual escalation value (CEV; docs/METHODS.md §2).**
+- For each DEFER, branch K forced continuations from the exact pre-deferral state, with deferral disabled and further tests allowed.
+- Estimate the clinical value of not escalating there, V̂(s), as the mean of accuracy, proper score, severity and post-branch test cost.
+- Credit the DEFER turn with the state-level counterfactual advantage E − V̂(s).
+- E includes a strictly proper score of the handed-over probabilistic differential.
+
+What the searches on 2026-10-07 found nearby, and the differences:
+- **Generic tree or branched rollouts for step-level credit** (TreeRL / Tree-GRPO, SIPO, belief-shift branching, Counterfactual Rollout Replay, ASCT, CIPO): none targets an escalation or abstention action, and none values it against continuation in clinical-value units.
+- **CDPR** (2608.28599): counterfactual short rollouts score the chosen investigative action against its alternatives. It has no deferral action and no handoff.
+- **Signed Rescue Routing** (2609.07786): escalation value in model cascades, from a second model's correctness. Inference-time routing, not RL training of an agent's escalation.
+- **Decide/Ask/Defer** (2610.04542): separates asking from deferring conceptually, in evaluation only.
+- **No paper found** rewards the content of a deferral handoff (a probabilistic differential under a proper scoring rule).
+
+**Claim wording (supersedes §7 and §8).** "To our knowledge, DEFER-Dx is the first agent whose escalation to a clinician is trained against a counterfactual of not escalating from the same decision state. Forced continuations branched at each escalation estimate the clinical value of deciding now or investigating further, so the agent learns to separate uncertainty that more testing would resolve from uncertainty that warrants a handoff. The handoff itself is a probabilistic differential trained with a strictly proper scoring rule." Always cite TIAR, KARL, AWA-RL and TrustMed-RL for case-level and designated-case deferral, and the tree-RL work for branching. Novelty is checked against alphaXiv searches and cannot be proven absolute; re-check within 72 hours of submission.

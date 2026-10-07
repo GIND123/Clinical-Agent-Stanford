@@ -14,7 +14,7 @@ Three developments make this gap pressing. Regulators increasingly ask that clin
 We ask whether an agent can *learn* when to defer, without collapsing, and whether learned deferral beats thresholding a confidence report produced by an identically trained agent. Our contributions:
 
 1. **DEFER-Dx.** An agent trained with multi-turn group-relative policy optimisation over four actions: ask, order one of 22 individual tests, commit with a stated probability, or defer to a clinician with a ranked differential.
-2. **A continuous group-consensus deferral reward,** generalising within-group abstention rewards (KARL) to a clinical operating point τ. It needs no labels for when to defer. GRPO already samples several episodes per case, and the share of them that diagnosed the case correctly is a free, label-verified estimate of whether the current policy would be wrong. Deferral is paid in proportion to that estimate's shortfall from a clinical safety dial τ. It is combined with a proper scoring rule on every commitment, an asymmetric severity cost and per-test costs.
+2. **The counterfactual escalation value.** At each state where the agent escalates, forced continuations branched from that exact state estimate the clinical value of not escalating, by deciding now or investigating further. The escalation is credited with the difference, so the agent learns to separate uncertainty that more testing would resolve from uncertainty that warrants a handoff. Prior deferral rewards price escalation by case-level difficulty (TIAR, KARL, AWA-RL) or by designated cases (TrustMed-RL). The handoff is a probabilistic differential trained with a strictly proper scoring rule.
 3. **An open-world benchmark (MIMIC-CDM-OW).** 713 abdominal-pain admissions whose principal diagnosis is none of the four, built with MIMIC-CDM's own text pipeline, and 648 same-pipeline in-set controls. Time-critical diagnosis groups are held out of training entirely.
 4. **A head-to-head test of learned versus post-hoc deferral.** The comparison is at matched coverage, with paired bootstrap inference, against an identically trained no-deferral agent whose confidence is thresholded: exactly the repair theory recommends.
 
@@ -33,6 +33,8 @@ We ask whether an agent can *learn* when to defer, without collapsing, and wheth
 ## 4. Method
 
 ### 4.1 Rewards
+[[docs/METHODS.md §2: the counterfactual escalation value (branching, V̂(s), E, the state-level advantage); the scored handoff; the case-level consensus comparator arm and why it is prior art (TIAR is identical at τ = 0.5).]]
+
 [[docs/METHODS.md §2: commit reward; group-consensus deferral reward; the τ → crossover table (τ = 0.85 ⇒ defer when the estimated success probability is below 0.645); the open-world deferral reward; the coverage constraint.]]
 
 **Why this design avoids the collapse of Che et al.** Their collapse needs three things: (i) abstention scored 0 while blanket answering loses in expectation; (ii) a KL anchor whose restoring force shares the abstain gate; (iii) group std normalisation in the sparse-answer regime. DEFER-Dx removes each:
@@ -56,7 +58,9 @@ Every commitment still carries a proper-scored probability, so the agent can als
 - zero-shot forced choice;
 - zero-shot with prompted DEFER;
 - the GRPO control (identical training without DEFER);
-- DEFER-Dx;
+- the case-level group-consensus arm (the published mechanism: TIAR/KARL-style);
+- DEFER-Dx with the counterfactual escalation value;
+- ablations: no scored handoff; constant deferral reward;
 - each forced-choice system plus a post-hoc threshold at DEFER-Dx's coverage, cross-fitted on val/test;
 - each forced-choice system plus SGR (5% selective risk, δ = 0.05);
 - self-consistency over three samples for every system.
