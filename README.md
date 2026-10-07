@@ -1,163 +1,261 @@
 # DEFER-Dx
 
-An interactive clinical diagnostic agent trained with RL over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action with its own verifiable reward (the *group-consensus deferral reward*), not a confidence threshold applied afterwards. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
+An interactive clinical diagnostic agent trained with reinforcement learning over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action with its own reward, not a confidence threshold applied afterwards. The deferral reward is the **group-consensus** signal: GRPO already samples several episodes of each case, and the share that diagnosed it correctly is a free, label-verified estimate of whether the policy would be wrong. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
 
-The research plan is in [stanford_idea_md.md](stanford_idea_md.md); the method as implemented, with every constant, is in [docs/METHODS.md](docs/METHODS.md). This repo holds the data pipelines, environment, rewards, metrics, baselines, a single-GPU colocated GRPO trainer and the evaluation and reporting stack. Results land in [docs/RESULTS.md](docs/RESULTS.md) as the runs finish.
+- Research plan: [stanford_idea_md.md](stanford_idea_md.md) (target: Stanford AI+HEALTH 2026 abstract, due Oct 15, 2026)
+- The method as implemented, with every constant: [docs/METHODS.md](docs/METHODS.md)
+- Paper draft: [docs/PAPER.md](docs/PAPER.md) · abstract scaffold: [docs/ABSTRACT.md](docs/ABSTRACT.md)
+- Results: [docs/RESULTS.md](docs/RESULTS.md) (generated as evaluations finish)
 
-> **PhysioNet DUA.** MIMIC text must never reach a third-party service. The repo has no hosted-API clients: every policy runs on local weights (`transformers` / `vllm`). `.gitignore` excludes `data/`, `outputs/`, `*.jsonl`, `*.csv*` and `*.pkl`. Rollout files contain MIMIC text, so treat them as credentialed data.
+> **PhysioNet DUA.** MIMIC text never reaches a third-party service. Every model runs on local weights (`transformers` / `vllm`), and the repo has no hosted-API clients. `.gitignore` excludes `data/`, `outputs/`, `.env`, `*.jsonl`, `*.csv*` and `*.pkl`. Rollout files contain MIMIC text, so treat them as credentialed data. Committed documents hold aggregates only, and patient-derived counts of 1–9 are suppressed. Weights trained on MIMIC are not pushed to public hubs; PhysioNet's credentialed hosting is the DUA-consistent release route.
 
-## Install
+---
+
+## 1. Status (2026-10-07)
+
+| Component | State |
+|---|---|
+| Data: MIMIC-IV-Ext-CDM 1.1, MIMIC-IV 2.2 hosp, MIMIC-IV-Note 2.2 | downloaded; SHA256 and gzip verified |
+| Open-world set MIMIC-CDM-OW: 713 OTHER + 648 same-pipeline controls | built; deterministic (byte-identical rebuilds) |
+| Patient-disjoint cohorts (`data/cohorts/`) | built |
+| Single-GPU colocated GRPO trainer | built, tested and in use |
+| **DEFER-Dx main run** (Qwen3-8B + LoRA, 150 steps) | **running**: resumed at step 76 after a machine reboot; ends around Oct 7, 22:30 IST |
+| Held-out evaluation of DEFER-Dx and the zero-shot baselines | queued (`scripts/queue.sh`); first numbers around Oct 8, 01:30 |
+| GRPO control (no DEFER), the key comparator | queued; around Oct 9, 01:00 |
+| Ablations: constant deferral reward, std normalisation, CDM-only, leave-one-out p̂; gpt-oss-20b baseline; seed replicate | queued (`scripts/queue_ablations.sh`); through about Oct 11–12 |
+| Tests | 102 pass (`pytest`; CPU only) |
+
+**No held-out result exists yet.** The numbers in §3 are the interim training and dev-set signals and earlier zero-shot baselines. Read them as such.
+
+## 2. Is it novel? Is it beating SOTA? (honest assessment)
+
+### 2.1 Novelty
+
+Literature re-checks on 2026-10-06 and 2026-10-07 (alphaXiv; details in [docs/RESEARCH.md](docs/RESEARCH.md) §7–8) found that **no single component is unprecedented**:
+
+| Closest prior work | What it already does | What DEFER-Dx adds |
+|---|---|---|
+| **KARL** (Gao et al., arXiv 2604.22779, Apr 2026) | GRPO abstention reward from **within-group response statistics** in single-turn QA. The rule is binary: if any rollout in the group is correct, abstaining scores −1; if none is, +1. | A **continuous** consensus reward γ(τ − p̂) with a clinical safety dial τ and an analytic decision threshold (τ = 0.85 ⇒ defer below an estimated success of about 0.645); multi-turn test ordering with per-test costs; proper-scored commitment probabilities; a severity matrix. KARL's rule is roughly the degenerate case (defer only when p̂ = 0). |
+| **TrustMed-RL** (Zhan et al., arXiv 2610.04387, Oct 3 2026) | RL-trained clinical VLM agent with a **deferral action**, rewarded on instances designated by construction (evidence-corruption probes, out-of-knowledge tasks) | No case is labelled "should defer": the deferral target comes from the policy's own rollouts on real cases. Calibrated commitments, real EHR data, and an open-world evaluation. |
+| **Che et al.** (arXiv 2608.00301, Jul 2026) | Proves that abstain-as-an-action collapses under error-penalised RL, worsened by GRPO std normalisation; recommends thresholding a proper-scored confidence report | DEFER-Dx removes each stated collapse condition: a case-dependent deferral reward, no std normalisation, no KL anchor, and a coverage dual. Its **control arm is exactly their repair**, so the main comparison tests their prediction directly. The std-normalisation ablation tests the mechanism. |
+| LA-CDM (ICLR 2026), LDTL (arXiv 2604.05116), DiagAgent, CDPR | RL-trained sequential diagnosis on MIMIC data | All are closed-world and forced-choice, with no deferral action. |
+| Safe to Stop? (arXiv 2609.09678), MedAbstain, Decide/Ask/Defer (arXiv 2610.04542), MediQ | Deferral or abstention by conformal stopping, prompting or evaluation only | Learned by RL, not post-hoc or prompted. |
+
+**Verdict.** DEFER-Dx is **not "completely novel"** in its parts:
+- within-group abstention rewards exist (KARL, for QA);
+- RL-trained clinical deferral exists (TrustMed-RL).
+
+The contribution that holds, to our knowledge, is the **combination**:
+- the first interactive, multi-turn, cost-aware diagnostic agent whose deferral is learned from a label-free, continuous group-consensus reward with an explicit clinical operating point, jointly with proper-scored commitment probabilities;
+- evaluated on real EHR admissions with an **open-world** test, including never-seen, time-critical diagnoses (MIMIC-CDM-OW is a new benchmark asset);
+- compared head-to-head with the threshold-a-calibrated-report approach that current theory recommends.
+
+Cite KARL and TrustMed-RL prominently, and use the narrowed claim wording in [docs/RESEARCH.md](docs/RESEARCH.md) §8.
+
+### 2.2 SOTA
+
+Published MIMIC-CDM numbers use different splits, metrics and environments, so only some comparisons are like-for-like. What exists today (held-out numbers are from earlier zero-shot runs, [docs/BASELINES.md](docs/BASELINES.md)):
+
+| System | Split | Mean-class acc | Case-weighted acc | Diverticulitis | Selective (coverage) |
+|---|---|---|---|---|---|
+| LA-CDM, trained (ICLR 2026, reported) | LA-CDM test | 81.3 | – | 75.0 | – |
+| LDTL (reported; current SOTA) | own unpublished 70/10/20 | – | **93.4** | 78.8 | – |
+| Random planner (from LDTL) | own split | – | 84.8 | 90.4 | – |
+| DiagAgent-14B (run here) | LA-CDM test | 71.9 | 77.9 | 56.0 | – |
+| **Qwen3-8B zero-shot in this environment** (run here, 3 seeds) | LA-CDM test | **87.2 ± 2.4** | 88.3 ± 1.1 | 84.8 (all 2,400 cases) | **95.5 ± 0.7 (85.8%)** with a post-hoc threshold |
+| DEFER-Dx | LA-CDM val + test | pending | pending | pending | pending |
+
+**Verdict so far:**
+- **Above LA-CDM:** the environment plus an untrained Qwen3-8B already exceeds LA-CDM's 81.3 on its own test split. The environment differs, though: full history versus a summary, 22 tests versus 12, and a different base model.
+- **Above LDTL on diverticulitis:** 84.8 versus 78.8, on a different split.
+- **Meets the plan's selective target:** "> 95 at 85% coverage" is already met by a post-hoc threshold.
+- **Below LDTL's 93.4 at full coverage:** this is the one SOTA number not yet beaten, and LDTL's split is unpublished, so no head-to-head is possible.
+- **Undecided:** whether learned deferral beats thresholding is the central claim. It is decided only by the DEFER-Dx versus thresholded-control paired comparison (around Oct 9).
+
+The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; the pitch is a Pareto improvement on safety axes nobody else reports.
+
+## 3. Interim training results (not held-out)
+
+**Dev set** (212 cases held out of RL: 160 CDM, 32 OTHER, 20 controls; one sample at T = 0.6, so differences under ~3 points are noise):
+
+| Step | Acc (full cov.) | Mean-class | Coverage | Selective acc | Diverticulitis (n = 18) | AURC ↓ | ECE ↓ | Brier ↓ | OOD defer | OOD false commit | Tests/case |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 25 | 77.2 | 73.2 | 75.0 | 89.6 | 61.1 | 0.078 | 0.043 | 0.096 | 53.1 | 9.4 | 1.65 |
+| 50 | 77.8 | 74.1 | 73.9 | 87.2 | 66.7 | 0.089 | 0.054 | 0.121 | 59.4 | 12.5 | 2.15 |
+| 75 | **84.4** | **82.2** | 76.1 | **95.6** | **83.3** | **0.047** | 0.063 | **0.063** | **71.9** | 9.4 | 2.37 |
+
+**Training batches** (12 cases × 8 rollouts per step, T = 1.0; window means):
+
+| Steps | Commit accuracy | Full-coverage acc | In-set deferral | OTHER said on in-set cases | OOD deferral | OOD false commit | Tests/case | Entropy |
+|---|---|---|---|---|---|---|---|---|
+| 1–25 | 85.7 | 77.7 | 22.5 | 6.1 | 41.3 | 8.7 | 1.80 | 0.31 |
+| 26–50 | 87.0 | 76.9 | 24.0 | 6.4 | 38.9 | 5.1 | 1.87 | 0.31 |
+| 51–75 | 91.1 | 81.4 | 23.2 | 3.0 | 65.5 | 9.1 | 2.24 | 0.36 |
+| 76–86 | **94.7** | **83.8** | 25.4 | **1.0** | **78.4** | **2.5** | 2.32 | 0.45 |
+
+- **No deferral collapse:** in-set deferral stays at 22–25%, under the 30% cap, and the coverage multiplier ν ≈ 0.
+- **Watched:** rising tests per case (cost) and rising entropy.
+
+## 4. Method in brief
+
+- **Actions.** `ASK(physical_exam)`; `TEST(x)` for 22 individual tests (CBC, CMP, lipase, CT abdomen, …) at 2025 BIDMC charges; `COMMIT(d, p)` with d ∈ {4 conditions, OTHER} and stated probability p; `DEFER(differential, reason)`. At most 8 investigations. The full history is shown at reset.
+- **Commit reward:** α·1[d = y] − λ(p − 1[d = y])² − κ·C[y, d] − c·Σcost, with α = 1, λ = 1 (Brier), κ = 0.5, C the severity matrix, and c = 1/Σ(catalog prices).
+- **Deferral reward, in-set cases:** γ(τ − p̂) − μ − c·Σcost, with γ = 2, μ = 0.1, τ annealed 0.95 → 0.85. **OTHER cases:** 1.2 − μ, above any correct COMMIT(OTHER). `deferdx crossover` prints the threshold each τ induces.
+- **Coverage constraint:** in-set deferral ≤ 30% by projected dual ascent; ν is charged to deferring rollouts only.
+- **Training:** multi-turn GRPO, B = 12 cases × G = 8.
+  - Dr. GRPO advantages (r − mean, no std division); groups with reward spread < 0.05 are skipped.
+  - Clip-higher (0.2 / 0.28), DAPO token-level loss, no KL.
+  - LoRA r = 16 / α = 32 on all linear layers; temperature 1.0 rollouts.
+
+## 5. Decisions made during the build, and why
+
+1. **Colocated vLLM + PEFT trainer** (`training/grpo_vllm.py`), replacing the HF-generate GRPO reference loop, which was too slow for multi-turn RL on one GPU.
+   - **How it works:** vLLM samples with the current LoRA while the frozen weights wait in pinned CPU memory; vLLM then sleeps and PEFT trains.
+   - **Checked:** vLLM's LoRA log-probs match HF+PEFT within bf16 noise across sleep/wake cycles (mean |Δ log p| 0.024–0.030 per token, against a LoRA effect of 0.45).
+2. **Truncated importance sampling** against vLLM's own token log-probs: the engines differ by about 0.02 nats per token.
+3. **Memory and speed of the training pass.**
+   - **Memory:** a custom frozen-head log-prob autograd function recomputes logits chunk by chunk in the backward pass (gradient-checked), so memory doesn't scale with the 152k vocabulary.
+   - **Speed:** one unpadded sequence per micro-batch is 1.55× faster than padded batches (benchmarked: 1,945 vs 1,259 tokens/s).
+4. **Learning-rate schedule (all runs inherit it).** Steps 1–25 at 1e-5, then 5e-5 (`lr_milestones`). After 25 steps at 1e-5 the adapter had moved the weights by only 1.3 × 10⁻⁴ of their norm and metrics were flat.
+5. **PPO mini-batches (all runs inherit it).** One optimizer step per rollout batch up to step 50, then 4 PPO mini-batches against vLLM's behaviour log-probs (`ppo_minibatch_milestones`). At step 50 the update was still only 6 × 10⁻⁴ of the weights' norm. This is what produced the step-75 gains in §3.
+6. **Checkpoints every 5 steps** (multiples of 25 kept). The machine rebooted at step 86; the run resumed from step 75.
+7. **Constant-deferral-reward ablation replaces the no-constraint ablation.**
+   - The constraint never bound, so a no-constraint run would replicate the main one.
+   - The constant arm matches the consensus reward's operating point (0.503 → 0.412 over the τ curriculum), so it isolates the value of the consensus signal itself.
+8. **Open-world set made deterministic.** Its SQL row order was not total, so tied lab results resolved differently between builds: 21 of 713 OTHER cases differed between two builds. It is now byte-identical across rebuilds.
+9. **`build-openworld --n 2400` is the default.** It samples before its drop rules: `--n 800` yields 259 OTHER cases, not 713.
+10. **Cohorts are patient-disjoint.**
+    - The time-critical OTHER groups are held out of training entirely.
+    - Same-pipeline controls are in training, so "open-world pipeline ⇒ OTHER" cannot be learned.
+    - Cases are drawn from source pools by weight (CDM 0.75 / OTHER 0.15 / controls 0.10).
+
+### Departures from the original plan
+
+1. **The coverage penalty applies to deferring rollouts only.** A constant subtracted from a whole GRPO group cancels in the advantage.
+2. **The open-world DEFER reward is 1.2, not 1.1.** After the handoff cost μ = 0.1, 1.1 would exactly tie a perfect COMMIT(OTHER).
+3. **τ is not the effective threshold.** τ = 0.85 means defer below a success estimate of about 0.645; report both numbers.
+4. **p̂ with no commits in the group is "neutral" (= τ).** Setting it to "zero" would reward all-defer groups.
+5. **There are two "Mean Acc" conventions.**
+   - LA-CDM uses the per-class mean; LDTL's own rows are case-weighted.
+   - Both are reported (`accuracy_full_coverage`, `mean_class_accuracy`).
+   - The plan's "93.4 vs 81.3" crosses both metrics and splits.
+6. **Full-coverage accuracy for DEFER** counts the top of the deferral differential.
+7. **RL samples are per turn.** Qwen3's template strips earlier `<think>` blocks.
+8. **ASK covers the physical exam only, and the full history is shown at reset**, as in LA-CDM and LDTL.
+9. **Evaluation samples** at T 0.6, top-p 0.95, top-k 20, as Qwen3 recommends; it never decodes greedily.
+10. **No SFT stage.** The base model already uses DEFER when it's offered (25% of CDM cases zero-shot), so RL starts from it directly.
+11. **The LDTL "official 70/10/20 split" doesn't exist.** The exact LA-CDM 80/10/10 split is used, and val + test are pooled for power (cross-fitted thresholds).
+
+## 6. Evaluation protocol
+
+- **Sets:**
+  - CDM val + test (480; never used in training);
+  - OTHER from seen groups (206) and from unseen, time-critical groups (187);
+  - same-pipeline controls (258).
+  - 3 seeds each, with reproducible per-request seeds.
+- **Baselines, all run here on the same cases:**
+  - zero-shot Qwen3-8B, forced choice and with prompted DEFER;
+  - the GRPO control;
+  - post-hoc thresholds at DEFER-Dx's coverage (cross-fitted: fit on val, applied to test and vice versa);
+  - SGR (5% risk, δ 0.05);
+  - self-consistency over 3 samples;
+  - gpt-oss-20b;
+  - DiagAgent-14B and the published LA-CDM / LDTL numbers as context.
+- **Machine-learning metrics:** accuracy at full coverage, mean-class accuracy, macro-F1, coverage, selective accuracy, AURC, accuracy at 70/80/90% coverage, ECE, Brier, OOD AUROC.
+- **Clinical metrics:**
+  - per-class accuracy (diverticulitis);
+  - unflagged errors and confident errors (p > 0.8);
+  - severity-weighted error;
+  - false commits on never-seen, time-critical diagnoses, overall and per diagnosis group (groups ≥ 10 cases);
+  - deferral precision and recall;
+  - tests and dollars per case.
+- **Statistics:** 95% case-level bootstrap intervals; paired bootstrap differences on the same cases.
+- **Robustness:**
+  - every sentence containing CDM's `____` diagnosis mask removed;
+  - same-pipeline controls (source shortcut);
+  - closed-world zero-shot, as in prior work.
+
+## 7. Reproduce
 
 ```bash
-pip install -e ".[train,data,dev]"   # add ,vllm for fast evaluation rollouts
-pytest                               # CPU-only; no downloads, no MIMIC data
-```
+pip install -e ".[train,data,dev]"        # CPU tools + tests: pytest
+# GPU stack (one 48 GB GPU; Python 3.12): torch, vllm, transformers, peft in .venv-gpu
+uv venv --python 3.12 .venv-gpu && uv pip install --python .venv-gpu/bin/python vllm -e ".[train,data,dev]"
+source scripts/env_gpu.sh                 # reads only the HF token from .env; caches in .cache/ (git-ignored)
 
-## Quickstart (synthetic data, no GPU)
-
-```bash
-bash scripts/smoke_synthetic.sh
-python scripts/check_model.py --model Qwen/Qwen3-0.6B   # real model in the loop, CPU is fine
-```
-
-The smoke test generates fabricated cases, runs the oracle and random policies, builds SFT data and evaluates. `check_model.py` runs a real local model on synthetic cases. It reports action-format compliance, whether `<think>` tags survive decoding, and whether SFT prompts are token-identical to generation prompts. Synthetic numbers mean nothing; they only show the pipeline works.
-
-## Real-data pipeline
-
-```bash
-# 0. Download (credentialed; resumes and checks PhysioNet's SHA256SUMS).
-#    Interactive prompt, no permanent netrc:
+# Data (credentialed). Interactive prompt; resumes and checks PhysioNet SHA256SUMS:
 bash scripts/download_physionet_interactive.sh cdm hosp note
-#    Or, with an existing ~/.netrc / AWS setup. --s3 is much faster for hosp/note:
-bash scripts/download_data.sh --s3 cdm hosp note     # -> data/physionet/{mimic-iv-ext-cdm/1.1, mimiciv/2.2, mimic-iv-note/2.2}
-
-# 1. MIMIC-IV-Ext-CDM v1.1 -> canonical cases. Confirm file/column names once:
-deferdx data inspect-cdm --cdm-dir /path/to/mimic-iv-ext-cdm/1.1
-#    Default split = exact LA-CDM 80/10/10 (there is no official split; see docs/RESEARCH.md)
-deferdx data build-cdm --cdm-dir /path/to/mimic-iv-ext-cdm/1.1 --out data/cdm
-
-# 2. Check that the test catalog actually reaches your lab names
-deferdx data coverage --cases data/cdm/train.jsonl
-
-# 3. Open-world cohort (OTHER) + same-pipeline in-set controls
-deferdx data build-openworld --mimic-dir /path/mimiciv/2.2 --note-dir /path/mimic-iv-note/2.2 \
-    --exclude-cases data/cdm/all.jsonl --controls --n 2400 --out data/openworld   # 713 OTHER + 51 controls
-
-# 4. Stage 1 SFT data: STaR rejection sampling from the base model + deferral exemplars
-deferdx rollout --cases data/cdm/train.jsonl --policy vllm --model Qwen/Qwen3-8B \
-    --samples 8 --temperature 1.0 --out outputs/rollouts/base_train.jsonl
-deferdx sft-data rollouts --rollouts outputs/rollouts/base_train.jsonl --out data/sft/sft_train.jsonl
-#    (cold start without a usable base model: `deferdx sft-data oracle ...`)
-deferdx train sft --config configs/sft.yaml
-
-# 5. Stage 2 GRPO
-deferdx train grpo --config configs/grpo.yaml
-
-# 6. Evaluate on test + OTHER (Qwen3 sampling defaults; repeat over --seed 0 1 2)
-deferdx rollout --cases data/cdm/test.jsonl data/openworld/other.jsonl --policy vllm \
-    --model Qwen/Qwen3-8B --adapter outputs/grpo/final --out outputs/eval/deferdx_test.jsonl
-deferdx evaluate --rollouts outputs/eval/deferdx_test.jsonl --out outputs/eval/deferdx_test.json
-```
-
-The full §6.1 baseline grid is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
-
-## Main experiments on one GPU (48 GB)
-
-```bash
-source scripts/env_gpu.sh            # GPU venv; reads only the HF token from .env; caches under .cache/ (git-ignored)
-
-# Patient-disjoint cohorts: RL train / dev / CDM val+test / OTHER seen + unseen groups / controls
+bash scripts/verify_physionet_downloads.sh
+deferdx data build-cdm --cdm-dir data/physionet/mimic-iv-ext-cdm/1.1 --out data/cdm      # exact LA-CDM split
 deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir data/physionet/mimic-iv-note/2.2 \
     --exclude-cases data/cdm/all.jsonl --controls --controls-per-label 3000 --n 2400 --out data/openworld_xl
-deferdx data cohorts                 # -> data/cohorts/*.jsonl + manifest.json
+deferdx data cohorts                      # -> data/cohorts/*.jsonl + manifest.json
 
-# Colocated GRPO: vLLM rollouts + PEFT updates on the same GPU (sleep/wake), resumable
-deferdx train grpo-vllm --config configs/grpo_deferdx.yaml     # DEFER-Dx
-deferdx train grpo-vllm --config configs/grpo_nodefer.yaml     # control: same everything, no DEFER
+# Everything else runs through two idempotent queues (wait for a free GPU; resume after crashes or reboots):
+setsid nohup bash scripts/queue.sh >> outputs/logs/queue.log 2>&1 &
+WAIT_PID=$(pgrep -f "^bash scripts/queue.sh$") setsid nohup bash scripts/queue_ablations.sh >> outputs/logs/queue_ablations.log 2>&1 &
 
-# One engine, all evaluation sets, 3 seeds, reproducible per-request seeds
+# Single pieces:
+deferdx train grpo-vllm --config configs/grpo_deferdx.yaml         # DEFER-Dx (resumes from its latest checkpoint)
+deferdx train grpo-vllm --config configs/grpo_nodefer.yaml         # control
 deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx/final --name deferdx
-deferdx eval-suite --model Qwen/Qwen3-8B --name zs_nodefer --no-defer
-
-python scripts/make_report.py        # docs/RESULTS.md: ML + clinical tables, bootstrap CIs, paired tests
-python scripts/make_figures.py       # docs/figures/: risk-coverage, open world, reliability, per class
-
-# Or all of it, sequentially and idempotently (waits for a free GPU, resumes after crashes):
-setsid nohup bash scripts/queue.sh > outputs/logs/queue.log 2>&1 &
+python scripts/make_report.py && python scripts/make_figures.py    # docs/RESULTS.md, docs/figures/
+python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outputs/runs/nodefer
+deferdx crossover                                                   # tau -> effective deferral threshold
 ```
 
-## Data audit, benchmarks and baselines
+**After a reboot,** relaunch the two queue commands above. Steps marked done in `outputs/queue/*.done` are skipped, and training resumes from its newest checkpoint (one is saved every 5 steps).
 
-These docs hold aggregates only. MIMIC data and model outputs stay in git-ignored `data/` and `outputs/`.
+**Synthetic smoke tests (no MIMIC data):** `bash scripts/smoke_synthetic.sh`; `deferdx data synth`.
 
-| Doc | What it holds | Produced by |
-|---|---|---|
-| [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory and checksums, column-level schema of every file, label checks, label-leakage checks, bias analysis, and the open-world pool | `python scripts/audit_data.py` (about 2 min) |
-| [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Which metrics and benchmarks evaluate each component, the best published result on each, and the evaluation protocol | literature review |
-| [docs/METHODS.md](docs/METHODS.md) | The method as implemented: environment, reward with constants, cohorts, training, evaluation protocol | — |
-| [docs/RESULTS.md](docs/RESULTS.md) | ML-benchmark and clinical-safety tables with bootstrap intervals, open world, published context, paired tests | `scripts/make_report.py` |
-| [docs/BASELINES.md](docs/BASELINES.md) | Inference-only results: models run as-is, plus post-hoc deferral baselines, open-world results, the DiagBench reproduction, and per-group scores | [`scripts/lambda/`](scripts/lambda/), `scripts/subgroup_eval.py` |
+## 8. Layout
 
-## Layout
+| Path | What it does |
+|---|---|
+| [src/deferdx/data/](src/deferdx/data/) | CDM loader (earliest value per repeated test), open-world builder (DuckDB; CDM-parity text pipeline in `parity.py`), patient-disjoint cohorts (`cohorts.py`), LA-CDM split, synthetic cases |
+| [src/deferdx/env/](src/deferdx/env/) | Reveal-on-request POMDP; 22-test catalog matched by MIMIC itemid; action parser; `mask_policy` for the `____` cue |
+| [src/deferdx/rewards/](src/deferdx/rewards/) | Commit reward, group-consensus deferral reward (`p_hat_mode`, `defer_mode`), crossover analysis, coverage constraint |
+| [src/deferdx/policy/](src/deferdx/policy/) | Local vLLM (LoRA hot-swap, per-request seeds, token log-probs) and HF policies; scripted oracle/random |
+| [src/deferdx/training/grpo_vllm.py](src/deferdx/training/grpo_vllm.py) | Colocated GRPO: sleep/wake, frozen-weight parking, PPO mini-batches, truncated IS, LR and mini-batch milestones, OOM split-and-retry, checkpoint/resume |
+| [src/deferdx/training/common.py](src/deferdx/training/common.py) | Frozen-head log-prob autograd function, token-budget micro-batching |
+| [src/deferdx/eval/](src/deferdx/eval/) | Metrics; evaluation suites; bootstrap statistics and clinical metrics; self-consistency; cross-fitted post-hoc thresholds; per-group tables |
+| [src/deferdx/baselines/](src/deferdx/baselines/) | Post-hoc threshold and SGR |
+| [configs/](configs/) | Environment, reward, catalog, severity matrix, ICD lists; `grpo_deferdx.yaml`, `grpo_nodefer.yaml`, `ablations/` |
+| [scripts/](scripts/) | Queues, report, figures, training plots, data audit, downloads, Lambda baseline jobs |
+| [tests/](tests/) | 102 CPU tests (`pytest`) |
 
-| Path | What it does | Plan section |
-|---|---|---|
-| [src/deferdx/data/cdm_loader.py](src/deferdx/data/cdm_loader.py) | MIMIC-IV-Ext-CDM (PhysioNet CSV or Hager-framework pickles) to `Case`; earliest value per repeated test | §4.1 |
-| [src/deferdx/data/openworld.py](src/deferdx/data/openworld.py) | MIMIC-CDM-OW: ICD filtering in DuckDB, stratified sampling, same-pipeline controls | §4.2 |
-| [src/deferdx/data/parity.py](src/deferdx/data/parity.py) | CDM's own text rules (history blob, PE window, radiology section filter, `____` masking) applied to OTHER cases | §4.2 |
-| [src/deferdx/data/cohorts.py](src/deferdx/data/cohorts.py) | Patient-disjoint RL-train / dev / evaluation cohorts; OTHER groups seen vs unseen; same-pipeline controls | §4.2 |
-| [src/deferdx/data/splits.py](src/deferdx/data/splits.py) | Exact LA-CDM split; stratified ratio splits | §4.1 |
-| [src/deferdx/data/synthetic.py](src/deferdx/data/synthetic.py) | Fabricated cases for tests | — |
-| [src/deferdx/env/](src/deferdx/env/) | Reveal-on-request POMDP; 22 tests (a superset of LA-CDM's) matched by MIMIC itemid; action parser | §3.1 |
-| [src/deferdx/rewards/scoring.py](src/deferdx/rewards/scoring.py) | Commit reward (accuracy, Brier or log score, severity, cost) and the group-consensus DEFER reward | §3.2 |
-| [src/deferdx/rewards/constraint.py](src/deferdx/rewards/constraint.py) | Adaptive-Lagrangian coverage floor | §3.2 |
-| [src/deferdx/rollout.py](src/deferdx/rollout.py) | Batched multi-turn rollouts | — |
-| [src/deferdx/policy/](src/deferdx/policy/) | Local HF / vLLM policies; oracle and random scripted policies | §6.1 |
-| [src/deferdx/training/](src/deferdx/training/) | SFT data (oracle, STaR, deferral exemplars), SFT loop, multi-turn GRPO | §5.2–5.4 |
-| [src/deferdx/training/grpo_vllm.py](src/deferdx/training/grpo_vllm.py) | Single-GPU colocated GRPO: vLLM rollouts with LoRA hot-swap, sleep/wake, truncated IS, Dr. GRPO advantages, resume | §5.2 |
-| [src/deferdx/eval/](src/deferdx/eval/) | Leaderboard metrics, risk-coverage/AURC, ECE/Brier, confident errors, OOD AUROC, cost | §6.2 |
-| [src/deferdx/eval/suite.py](src/deferdx/eval/suite.py), [stats.py](src/deferdx/eval/stats.py), [report.py](src/deferdx/eval/report.py) | Multi-set evaluation suites; case-level and paired bootstrap; clinical metrics; self-consistency; cross-fitted post-hoc thresholds | §6.2 |
-| [scripts/queue.sh](scripts/queue.sh) | Sequential GPU job queue for the whole experiment grid | — |
-| [src/deferdx/baselines/](src/deferdx/baselines/) | Post-hoc threshold and SGR (conformal-style) | §6.1 #6–7 |
-| [configs/](configs/) | Env, reward, catalog, severity matrix, ICD lists, trainer configs | — |
+## 9. Documents
 
-## Where this departs from the plan, and why
+| Doc | What it holds |
+|---|---|
+| [docs/METHODS.md](docs/METHODS.md) | Environment, reward with constants, cohorts, training, evaluation protocol |
+| [docs/RESULTS.md](docs/RESULTS.md) | ML-benchmark and clinical tables with intervals, open world, published context, paired tests (generated) |
+| [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | The run grid, queues, ablations and the question each answers |
+| [docs/PAPER.md](docs/PAPER.md), [docs/ABSTRACT.md](docs/ABSTRACT.md) | Paper draft and abstract scaffold (placeholders until results) |
+| [docs/RESEARCH.md](docs/RESEARCH.md) | Facts checked against primary sources; literature re-checks and the narrowed novelty claim |
+| [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory, schemas, label and leakage checks, bias analysis |
+| [docs/BENCHMARKS.md](docs/BENCHMARKS.md) | Metrics and best published results per component |
+| [docs/BASELINES.md](docs/BASELINES.md) | Earlier inference-only baselines (Lambda A100 runs) |
 
-1. **The coverage penalty applies to deferring rollouts only.** §3.2 writes `R ← R − ν·max(0, rate − ρ)` for every rollout. Subtracting the same constant from a whole GRPO group cancels out in advantage normalisation, so the penalty would do nothing. ν is charged to each DEFER rollout instead, which is the per-sample gradient of the Lagrangian. ν is updated by projected dual ascent.
-2. **The open-world DEFER reward defaults to 1.2, not 1.1.** After the handoff cost μ = 0.1, a value of 1.1 exactly ties a perfect COMMIT(OTHER). The plan wants DEFER slightly higher.
-3. **τ is not the effective threshold.** With the §3.2 weights, τ = 0.85 makes the agent defer only when p̂ < ~0.645 (for a calibrated committer). Run `deferdx crossover` to see the τ → threshold table. Report both numbers, and pick γ, μ and τ from this table.
-4. **p̂ with no commits in the group** defaults to "neutral" (p̂ = τ), so deferral costs only μ. Setting it to "zero" would reward all-defer groups and speed up collapse.
-5. **There are two "Mean Acc" conventions.** LA-CDM (and the LA-CDM and ReAct rows that LDTL copies) average the per-class accuracies. LDTL's own rows are case-weighted (93.4, not 90.25). Both are reported: `accuracy_full_coverage` and `mean_class_accuracy`. The plan's "93.4 vs 81.3" crosses both metrics and splits; see [docs/RESEARCH.md](docs/RESEARCH.md).
-6. **Full-coverage accuracy for DEFER** uses the top of the deferral differential, so a deferring agent still gets a leaderboard-comparable number. Deferral precision/recall can use a real no-defer run as the counterfactual (`--counterfactual`).
-7. **RL samples are per turn, not per conversation.** Qwen3's chat template strips earlier `<think>` blocks (confirmed on the real tokenizer), so the policy gradient uses the exact prompt and completion tokens of each generation call.
-8. **ASK covers the physical exam only by default, and the full history is shown at reset.** CDM stores past, social and family history inside one flattened blob, and LA-CDM and LDTL both show it up front. `env.history_at_reset` / `env.ask_topics` change this.
-9. **Evaluation samples; it doesn't decode greedily.** Qwen3's model card warns against greedy decoding in thinking mode, so evaluation uses T=0.6, top-p 0.95, top-k 20. Report mean ± sd over seeds.
+## 10. Checked vs. still to verify
 
-## Checked vs. still to verify
+**Resolved:**
+- **The dataset:** CDM v1.1 files, columns and labels (`pathology_ids.json`); no official split exists, so LA-CDM's split is reproduced exactly; CDM's text pipeline and inclusion rule, replicated for the open world; BIDMC costs for the panels and imaging.
+- **Catalog coverage:** the core panels resolve for ≥ 99.8% of cases; `hida_scan` never resolves (CDM has no HIDA reports). Urine blood, bacteria and yeast are never reachable, a faithful copy of Hager's urinalysis panel.
+- **Source shortcut:** a classifier separates same-pipeline controls from CDM cases only weakly (AUROC 0.563); the physical exam alone reaches 0.673.
 
-Resolved from primary sources ([docs/RESEARCH.md](docs/RESEARCH.md)):
-- CDM v1.1 file and column names, the `pathology_ids.json` label file, and the modality/region vocabulary.
-- The split: there is no official one. The default reproduces LA-CDM's exactly.
-- How CDM's text was processed; the open-world cases now match it.
-- How CDM attached data and chose admissions (Hager et al., `fill_nan_hadm` and `check_missing`); `build_openworld` now does the same. That covers rows without a `hadm_id` timed from one day before the first transfer to the last, the exam name from `radiology_detail`, and the inclusion rule (exam of 40+ characters, a lab, an abdominal study). On CDM's own admissions the builder's join finds exactly what CDM holds ([docs/DATA_AUDIT.md](docs/DATA_AUDIT.md)).
-- Costs for panels and imaging: the 2025 BIDMC standard charges from LA-CDM.
+**Still to verify:**
+- **Placeholder costs:** tests marked `cost_source: placeholder` need real prices.
+- **The severity matrix** is a time-to-harm proxy; it needs a clinician-built version.
+- **Clinician review** of the ICD lists and sanitize terms.
+- **Clinician adjudication** of deferrals (plan §6.3).
+- **Informative test availability:** a test's existence can hint at the diagnosis. Report `charge_unavailable` both ways.
 
-Checked on the real data (2026-09/10):
-- **The CDM columns** ([docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) §2). The CSVs have no `subject_id` and no lab or microbiology `charttime`, although `configs/cdm_format.yaml` maps them. So `build-cdm`'s patient-leakage count is always 0; joined to `admissions`, fewer than 10 patients span splits.
-- **Catalog coverage** (`deferdx data coverage`; [docs/BENCHMARKS.md](docs/BENCHMARKS.md) §3.2):
-  - The core panels resolve for ≥ 99.8% of cases.
-  - `hida_scan` never resolves, because CDM has no HIDA reports.
-  - Anion Gap, eGFR, Mg, LDH and troponin are present but no catalog test reaches them.
-- **The source-classifier check.** Same-pipeline controls vs label-matched CDM cases score AUROC 0.563 combined. The physical exam alone is still separable (0.673; 51 controls).
+## 11. Limitations and not built yet
 
-Still to verify:
-- **Placeholder costs.** Tests marked `cost_source: placeholder` (lipase, CRP, lactate, cultures, HIDA, …) need real prices.
-- **The severity matrix** is a time-to-harm proxy. Replace it with the clinician-built version.
-- **ICD lists and sanitize terms** ([configs/openworld_icd.yaml](configs/openworld_icd.yaml)) need clinician review.
-- **Test availability is informative.** For example, a HIDA scan implies someone already suspected cholecystitis. `charge_unavailable: true` charges for tests that were never performed; LA-CDM doesn't. Report both.
-
-## Not built yet
-
-- A multi-GPU / verl port of the trainer. The reward functions are framework-agnostic; see [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md).
-- A runner for LA-CDM (its repo has code but no trained weights). DiagAgent-14B runs here through [`scripts/lambda/diagagent_adapter.py`](scripts/lambda/diagagent_adapter.py) and on DiagBench through `scripts/lambda/diagbench_*.py`.
-- MIMIC-IV-ED triage variant (§4.3), clinician adjudication tooling (§6.3), and the Med-PRM verifier (stretch goal).
+- **Scope:** single centre (BIDMC), abdominal pain only; proxy labels (principal ICD for OTHER).
+- **Statistics:** 51 diverticulitis cases in val + test; one training seed per arm until the seed replicate finishes.
+- **Not run:**
+  - **MedGemma-27B:** gated; the configured HF account has not accepted its terms.
+  - **LA-CDM re-run:** its repo has no released weights.
+  - **The MIMIC-IV-ED triage variant, a Med-PRM verifier, a multi-GPU/verl port.**

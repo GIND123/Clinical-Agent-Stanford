@@ -21,6 +21,9 @@ Status: **DRAFT. Every `[[...]]` is a placeholder filled only from docs/RESULTS.
 
 [[Cut from the full version once the numbers are in.]]
 
+## Novelty wording (docs/RESEARCH.md §8)
+Do not claim "first RL-trained deferral" (TrustMed-RL, Oct 2026) or "first group-statistics abstention reward" (KARL, Apr 2026). Claim the combination: a continuous group-consensus deferral reward with a clinical operating point, in a multi-turn, cost-aware agent with calibrated commitments, tested in an open world with never-seen time-critical diagnoses and against thresholding.
+
 ## Claims checklist (each must trace to docs/RESULTS.md)
 - [ ] Selective accuracy and coverage of DEFER-Dx, with 95% CI (Table 1)
 - [ ] Paired difference vs matched-coverage threshold on the GRPO control (Table 5)
