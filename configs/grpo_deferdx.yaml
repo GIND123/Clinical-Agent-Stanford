@@ -52,6 +52,7 @@ action_entropy: {coef: 0.02, until_step: 30}
 constraint: {rho_max: 0.30, lr: 2.0, patience: 2, nu_max: 5.0, in_set_only: true}
 
 eval_every: 25
-save_every: 25
+save_every: 5            # frequent resume points (the machine can reboot); see keep_every
+keep_every: 25           # older checkpoints kept only at multiples of 25 (evaluation points)
 log_rollouts_every: 50
 seed: 0

@@ -544,6 +544,12 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
             torch.save({"step": step, "optimizer": opt.state_dict(), "scheduler": sched.state_dict(),
                         "constraint": {"nu": constraint.nu, "_violations": constraint._violations},
                         "config": cfg}, ck_dir / "trainer_state.pt")
+            # keep every `keep_every`-th checkpoint (used for evaluation) plus the latest two (for resume)
+            keep_every = int(cfg.get("keep_every", 25))
+            cks = sorted((out_dir / "checkpoints").glob("step_*"))
+            for old_ck in cks[:-2]:
+                if int(old_ck.name.split("_")[1]) % keep_every:
+                    shutil.rmtree(old_ck, ignore_errors=True)
 
     final = out_dir / "final"
     model.save_pretrained(final)
