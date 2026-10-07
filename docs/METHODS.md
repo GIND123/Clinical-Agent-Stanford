@@ -68,13 +68,13 @@ No training case shares a patient with an open-world evaluation case. The time-c
 
 **Model.** Qwen3-8B (thinking mode), LoRA r = 16, α = 32, all linear layers of the transformer blocks (the output layer is frozen).
 
-**Algorithm.** Multi-turn GRPO, one gradient step per batch of B = 12 cases × G = 8 episodes, rollout temperature 1.0. The constituent choices:
+**Algorithm.** Multi-turn GRPO on batches of B = 12 cases × G = 8 episodes, rollout temperature 1.0. Steps 1–50 take one on-policy gradient step per batch; from step 51, each batch is split into 4 PPO mini-batches with an optimizer step after each. The loss for those is the clipped ratio π_θ / π_vLLM against the sampling engine's own log-probs, which corrects both for staleness and for the engine mismatch. The constituent choices:
 
 - **Advantages:** r − mean(group), with no division by the group standard deviation (Dr. GRPO). Dividing would inflate the tiny Brier and cost differences inside all-correct groups to unit scale and distort the designed trade-offs.
 - **Group filter:** groups whose reward spread is below 0.05 are skipped (dynamic sampling).
 - **Loss:** a clipped surrogate (ε = 0.2 / 0.28, clip-higher) over every assistant turn's exact sampled tokens, averaged at the token level over the batch (DAPO).
 - **Engine correction:** truncated importance sampling (cap 2) against the sampling engine's own token log-probs.
-- **Optimiser:** AdamW, gradient-norm clip 1.0, no KL term. Learning rate 1 × 10⁻⁵ for steps 1–25 (after 5 warm-up steps), then 5 × 10⁻⁵. After 25 steps at 1 × 10⁻⁵ the adapter had moved the weights by only ~1.3 × 10⁻⁴ of their norm and batch metrics were flat, so the rate was raised. The schedule is part of the config (`lr_milestones`), so the control arm and every ablation follow it exactly.
+- **Optimiser:** AdamW, gradient-norm clip 1.0, no KL term. Learning rate 1 × 10⁻⁵ for steps 1–25 (after 5 warm-up steps), then 5 × 10⁻⁵. After 25 steps at 1 × 10⁻⁵ the adapter had moved the weights by only ~1.3 × 10⁻⁴ of their norm and batch metrics were flat, so the rate was raised. Both schedules (`lr_milestones`, `ppo_minibatch_milestones`) are part of the config, so the control arm and every ablation follow them exactly. After 50 steps the update had grown 4.6× (still ~6 × 10⁻⁴ of the weights' norm) with dev metrics flat within noise; mini-batching multiplies the updates per rollout at almost no extra compute.
 - **Curricula:** τ is annealed 0.95 → 0.85 over 100 steps (deferral cheap early, §5.4 of the plan), with a small terminal-action entropy bonus (0.02) for the first 30 steps.
 
 **Turns.** Qwen3's chat template strips earlier `<think>` blocks, so every assistant turn is trained against exactly the prompt it was generated from.
