@@ -44,7 +44,7 @@ step eval_gptoss deferdx eval-suite --model openai/gpt-oss-20b --name gptoss_nod
 step eval_deferdx_step100 deferdx eval-suite --model $M --adapter outputs/runs/deferdx/checkpoints/step_0100 \
   --name deferdx_step100 "${SEEDS[@]}"
 
-for abl in std_norm cdm_only no_constraint forced_loo; do
+for abl in std_norm constant_defer cdm_only forced_loo; do
   [[ -d outputs/runs/abl_$abl/final ]] && touch outputs/queue/train_abl_$abl.done
   step train_abl_$abl deferdx train grpo-vllm --config configs/ablations/$abl.yaml
   step eval_abl_$abl deferdx eval-suite --model $M --adapter outputs/runs/abl_$abl/final --name abl_$abl "${SEEDS[@]}"

@@ -25,7 +25,8 @@ SURFACE, INK, INK2, MUTED, GRID, AXIS = "#fcfcfb", "#0b0b0b", "#52514e", "#89878
 SLOTS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"]
 LABELS = {"deferdx": "DEFER-Dx", "nodefer": "GRPO control (no DEFER)", "abl_std_norm": "+ group std normalisation",
           "abl_cdm_only": "CDM-only training", "abl_no_constraint": "no coverage constraint",
-          "abl_forced_loo": "leave-one-out p-hat", "deferdx_seed1": "DEFER-Dx, seed 1"}
+          "abl_forced_loo": "leave-one-out p-hat", "abl_constant_defer": "constant deferral reward",
+          "deferdx_seed1": "DEFER-Dx, seed 1"}
 
 
 def smooth(y, k=9):

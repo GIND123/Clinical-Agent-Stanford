@@ -24,11 +24,13 @@ python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outp
 
 ## Ablations (scripts/queue_ablations.sh; 100 steps, compared with the main run's step-100 checkpoint)
 
+The no-coverage-constraint ablation (configs/ablations/no_constraint.yaml) was dropped. The constraint never bound in the main run (in-set deferral stayed at 22–25%, under ρ_max = 0.30, and ν ≈ 0), so that run would have replicated the main one.
+
 | Ablation | Config | Question |
 |---|---|---|
 | group std normalisation | configs/ablations/std_norm.yaml | Does deferral collapse as Che et al. (2026) predict when advantages are std-normalised? |
 | CDM-only training | configs/ablations/cdm_only.yaml | Does deferral learned from in-set difficulty alone transfer to out-of-set presentations? |
-| no coverage constraint | configs/ablations/no_constraint.yaml | What does the Lagrangian floor prevent? |
+| constant deferral reward | configs/ablations/constant_defer.yaml | Does the group-consensus signal matter, against a flat abstention reward (Chow's rule, the setting of Che et al.) matched to the same nominal operating point? |
 | leave-one-out p̂ | configs/ablations/forced_loo.yaml | Does removing p̂'s commit-selection bias change deferral quality? |
 | training seed 1 | configs/ablations/seed1.yaml | Training-seed variance of the main result (150 steps) |
 

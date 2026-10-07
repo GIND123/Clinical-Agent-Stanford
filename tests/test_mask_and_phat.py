@@ -63,3 +63,21 @@ def test_p_hat_mode_changes_only_deferral_rewards():
     assert c[2].total == pytest.approx(b[2].total)
     with pytest.raises(ValueError):
         group_rewards(group, RewardConfig(p_hat_mode="bogus"))
+
+
+def test_constant_defer_mode_is_flat_and_matched(severity):
+    from deferdx.rewards.scoring import crossover_p_hat, expected_commit_reward, matched_defer_constant
+
+    cfg = RewardConfig(severity=severity, defer_mode="constant")
+    easy = [_res("commit", dx="appendicitis") for _ in range(3)] + [_res("defer", diff=["appendicitis"])]
+    hard = [_res("commit", dx="cholecystitis") for _ in range(3)] + [_res("defer", diff=["appendicitis"])]
+    a, b = group_rewards(easy, cfg)[3], group_rewards(hard, cfg)[3]
+    assert a.total == pytest.approx(b.total)  # same deferral reward whatever the group's accuracy
+    c = matched_defer_constant(cfg)
+    q = crossover_p_hat(RewardConfig(severity=severity))
+    assert c - cfg.handoff_mu == pytest.approx(expected_commit_reward(q, cfg), abs=1e-9)
+    assert cfg.defer_mode == "constant"  # matched_defer_constant restores the mode it borrowed
+    fixed = RewardConfig(severity=severity, defer_mode="constant", defer_constant=0.3)
+    assert group_rewards(hard, fixed)[3].consensus == pytest.approx(0.3)
+    with pytest.raises(ValueError):
+        group_rewards(hard, RewardConfig(severity=severity, defer_mode="bogus"))

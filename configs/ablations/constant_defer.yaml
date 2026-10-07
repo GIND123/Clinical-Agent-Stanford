@@ -1,0 +1,9 @@
+# Ablation of the core contribution: deferral earns a CONSTANT reward on in-set cases (standard
+# abstention / Chow's rule, the setting of Che et al. 2026) instead of the group-consensus signal.
+# The constant is matched each step to the consensus reward's crossover at the current tau (0.503 at
+# tau 0.95 -> 0.412 at tau 0.85), so both agents should defer below the same estimated success
+# probability; only the case-level information in p_hat differs.
+base: ../grpo_deferdx.yaml
+reward: {defer_mode: constant}
+steps: 100
+output_dir: outputs/runs/abl_constant_defer

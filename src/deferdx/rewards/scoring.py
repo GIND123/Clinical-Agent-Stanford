@@ -78,6 +78,11 @@ class RewardConfig:
     #                top of a deferral differential). Unbiased by which rollouts chose to
     #                commit, and defined even when most of the group defers.
     p_hat_mode: str = "commits"
+    # "consensus": R_defer = gamma * (tau - p_hat) - mu (the DEFER-Dx reward).
+    # "constant":  R_defer = defer_constant - mu on in-set cases: the standard abstention reward
+    #              (Chow's rule; the setting analysed by Che et al. 2026). Ablation of the consensus signal.
+    defer_mode: str = "consensus"
+    defer_constant: float | None = None  # None: matched to the consensus reward's crossover at tau (see matched_defer_constant)
     # Group-level terminal-action entropy bonus (cold-start exploration, §5.4). 0 = off.
     action_entropy_coef: float = 0.0
     severity: SeverityMatrix = field(default_factory=SeverityMatrix.uniform, repr=False)
@@ -137,12 +142,38 @@ def commit_reward(res: EpisodeResult, cfg: RewardConfig) -> RewardBreakdown:
     return RewardBreakdown(total=acc + calib + sev + cost, accuracy=acc, calibration=calib, severity=sev, cost=cost)
 
 
+def expected_commit_reward(q: float, cfg: "RewardConfig", severity_cost: float | None = None) -> float:
+    """Expected COMMIT reward of a calibrated committer with success probability q (no test cost)."""
+    if severity_cost is None:
+        m = cfg.severity.m[:4, :4]
+        severity_cost = float(m[~np.eye(4, dtype=bool)].mean())
+    return q * (cfg.alpha + cfg.calib_lambda * calibration_score(q, 1.0, cfg)) + (1 - q) * (
+        cfg.calib_lambda * calibration_score(q, 0.0, cfg) - cfg.severity_kappa * severity_cost)
+
+
+def matched_defer_constant(cfg: "RewardConfig") -> float:
+    """The constant deferral reward whose crossover equals the consensus reward's at the current tau:
+    an agent that defers below the same estimated success probability, but is told nothing about
+    which cases its own group gets wrong."""
+    mode = cfg.defer_mode
+    cfg.defer_mode = "consensus"
+    try:
+        q = crossover_p_hat(cfg)
+    finally:
+        cfg.defer_mode = mode
+    return expected_commit_reward(q if q is not None else 1.0, cfg) + cfg.handoff_mu
+
+
 def defer_reward(res: EpisodeResult, p_hat: float, cfg: RewardConfig) -> RewardBreakdown:
     cost = -cfg.cost_scale * res.total_cost
     if res.label == OTHER:
         consensus = cfg.openworld_defer_reward
-    else:
+    elif cfg.defer_mode == "constant":
+        consensus = cfg.defer_constant if cfg.defer_constant is not None else matched_defer_constant(cfg)
+    elif cfg.defer_mode == "consensus":
         consensus = cfg.gamma * (cfg.tau - p_hat)
+    else:
+        raise ValueError(f"unknown defer_mode {cfg.defer_mode!r}")
     return RewardBreakdown(
         total=consensus - cfg.handoff_mu + cost, consensus=consensus, handoff=-cfg.handoff_mu, cost=cost, p_hat=p_hat
     )
