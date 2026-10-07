@@ -216,7 +216,23 @@ python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outp
 deferdx crossover                                                   # tau -> effective deferral threshold
 ```
 
-**After a reboot,** relaunch the queue command above. Steps marked done in `outputs/queue/*.done` are skipped, and training resumes from its newest checkpoint (one is saved every 5 steps).
+**Keeping GitHub and the Hugging Face Hub in sync** (a CPU-only process alongside the queue):
+```bash
+setsid nohup python scripts/sync_daemon.py --interval 900 >> outputs/logs/sync.log 2>&1 &
+python scripts/push_hf.py --run cev          # or push one run by hand
+```
+- **GitHub:** every 15 minutes the regenerated, aggregate-only results (`docs/RESULTS.md`, `docs/results.json`, `docs/figures/`) are committed and pushed to `main`. An allow-list means nothing else can be staged.
+- **Hugging Face:** each finished run's LoRA adapter goes to a **private** model repo under the account of the `hf` token in `.env`, with a model card (provenance, DUA status, intended use, held-out metrics) and the numbers-only training log. Cards refresh whenever results change.
+- **Why private:** the weights derive from PhysioNet credentialed data, so a public release belongs on PhysioNet's credentialed channel. Rollouts, cases and MIMIC text are never uploaded.
+
+| Run | Hugging Face repo (private) |
+|---|---|
+| Comparator (case-level consensus) | `GOVINDFROM/deferdx-consensus-qwen3-8b-lora` |
+| DEFER-Dx (counterfactual escalation) | `GOVINDFROM/deferdx-cev-qwen3-8b-lora` (when trained) |
+| No-defer control | `GOVINDFROM/deferdx-nodefer-control-qwen3-8b-lora` (when trained) |
+| Ablations | `GOVINDFROM/deferdx-abl-*-qwen3-8b-lora` (when trained) |
+
+**After a reboot,** relaunch the queue command and the sync command above. Steps marked done in `outputs/queue/*.done` are skipped, and training resumes from its newest checkpoint (one is saved every 5 steps).
 
 **Synthetic smoke tests (no MIMIC data):** `bash scripts/smoke_synthetic.sh`; `deferdx data synth`.
 
