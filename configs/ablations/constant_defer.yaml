@@ -5,5 +5,6 @@
 # probability; only the case-level information in p_hat differs.
 base: ../grpo_deferdx.yaml
 reward: {defer_mode: constant}
+constraint: {kp: 1.5, ki: 0.2, nu_max: 2.0}   # same coverage controller as the method it is compared with
 steps: 100
 output_dir: outputs/runs/abl_constant_defer

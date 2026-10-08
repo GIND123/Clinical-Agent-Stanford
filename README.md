@@ -107,7 +107,7 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
   - E = V_τ (OTHER: 1.2) + η·S(handoff) − μ − ν, with S the normalised Brier score of the handed-over differential, η = 0.3, μ = 0.1.
   - τ is annealed 0.95 → 0.85.
 - **Comparator arm (published mechanism):** a case-level reward γ(τ − p̂) − μ, with p̂ the group's commit accuracy.
-- **Coverage constraint:** in-set deferral ≤ 30% by projected dual ascent; ν is charged to deferring rollouts only.
+- **Coverage constraint:** in-set deferral ≤ 30%; ν is charged to deferring rollouts only. Projected dual ascent for the comparator; a PI Lagrangian (K_p 1.5, K_i 0.2, ν ≤ 2) for the escalation-value arms, where plain dual ascent wound up and collapsed deferral.
 - **Training:** multi-turn GRPO, B = 12 cases × G = 8.
   - Dr. GRPO advantages (r − mean, no std division); groups with reward spread < 0.05 are skipped.
   - Clip-higher (0.2 / 0.28), DAPO token-level loss, no KL.

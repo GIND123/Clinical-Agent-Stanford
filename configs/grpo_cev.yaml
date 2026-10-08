@@ -13,6 +13,10 @@
 base: grpo_deferdx.yaml
 env: {handoff_probs: true}
 reward: {defer_mode: cev, cev_eta: 0.3}
+# PI Lagrangian for the coverage cap (src/deferdx/rewards/constraint.py). With plain dual ascent (lr 2.0,
+# nu_max 5) the cap bound for the first time at step 44, nu wound up to 4.6 while the policy lagged, and
+# in-set deferral then collapsed to ~5% (out-of-set with it) until nu had integrated back to 0 at step 72.
+constraint: {kp: 1.5, ki: 0.2, nu_max: 2.0}
 cev_k: 3
 cev_max_roots: 32
 output_dir: outputs/runs/cev

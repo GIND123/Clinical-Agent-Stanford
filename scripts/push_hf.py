@@ -69,8 +69,9 @@ def metrics_table(system: str) -> str:
     return "\n".join(rows)
 
 
-def model_card(run: str, repo: str, steps: int | None) -> str:
+def model_card(run: str, repo: str, steps: int | None, note: str = "") -> str:
     _, system, title, desc = RUNS[run]
+    note = f"\n> {note}\n" if note else ""
     return f"""---
 base_model: Qwen/Qwen3-8B
 library_name: peft
@@ -78,7 +79,7 @@ tags: [lora, medical, clinical-decision-support, reinforcement-learning, grpo, d
 ---
 
 # {title}
-
+{note}
 LoRA adapter (r 16, alpha 32, all linear layers) for **Qwen/Qwen3-8B** from the DEFER-Dx project: an interactive
 diagnostic agent that can ASK, TEST, COMMIT (with a stated probability) or DEFER to a clinician, on abdominal-pain
 admissions (appendicitis, cholecystitis, diverticulitis, pancreatitis, or OTHER).
@@ -116,8 +117,9 @@ The agent expects the DEFER-Dx environment's system prompt and action format (se
 """
 
 
-def stage(run: str, repo: str) -> Path:
-    src = ROOT / "outputs" / "runs" / run / "final"
+def stage(run: str, repo: str, run_dir: str | None = None, checkpoint: str | None = None, note: str = "") -> Path:
+    base = ROOT / "outputs" / "runs" / (run_dir or run)
+    src = base / "checkpoints" / checkpoint if checkpoint else base / "final"
     if not (src / "adapter_model.safetensors").exists():
         raise SystemExit(f"no trained adapter at {src}")
     tmp = Path(tempfile.mkdtemp(prefix=f"hf_{run}_"))
@@ -127,26 +129,31 @@ def stage(run: str, repo: str) -> Path:
                 continue
             shutil.copy2(f, tmp / f.name)
     steps = None
-    log = ROOT / "outputs" / "runs" / run / "train_log.jsonl"
+    log = base / "train_log.jsonl"
     if log.exists():
         rows = {}
         for line in log.read_text().splitlines():
             if line.strip():
                 r = json.loads(line)
                 rows[r["step"]] = {k: v for k, v in r.items() if isinstance(v, (int, float))}  # numbers only
+        if checkpoint:
+            rows = {k: v for k, v in rows.items() if k <= int(checkpoint.split("_")[1])}
         steps = max(rows) if rows else None
         (tmp / "train_log.jsonl").write_text("\n".join(json.dumps(rows[k]) for k in sorted(rows)) + "\n")
-    cks = sorted((ROOT / "outputs" / "runs" / run / "checkpoints").glob("step_*/trainer_state.pt"))
+    cks = [src / "trainer_state.pt"] if checkpoint else sorted((base / "checkpoints").glob("step_*/trainer_state.pt"))
     if cks:  # hyper-parameters and file paths only
         import torch
 
         cfg = torch.load(cks[-1], map_location="cpu", weights_only=False).get("config", {})
         (tmp / "training_config.json").write_text(json.dumps(cfg, indent=2, default=str))
-    (tmp / "README.md").write_text(model_card(run, repo, steps))
+    (tmp / "README.md").write_text(model_card(run, repo, steps, note))
     return tmp
 
 
-def push(run: str, card_only: bool = False, private: bool = True) -> str:
+def push(run: str, card_only: bool = False, private: bool = True, run_dir: str | None = None,
+         checkpoint: str | None = None, revision: str | None = None, note: str = "") -> str:
+    """Upload a run's final adapter (or `checkpoint`, e.g. step_0075, of outputs/runs/<run_dir>) to the run's
+    repo, on branch `revision` when given so the main branch keeps the final adapter."""
     from huggingface_hub import HfApi
 
     api = HfApi()
@@ -156,9 +163,13 @@ def push(run: str, card_only: bool = False, private: bool = True) -> str:
         api.upload_file(path_or_fileobj=model_card(run, repo, None).encode(), path_in_repo="README.md", repo_id=repo,
                         commit_message="Update model card with held-out results")
         return repo
-    folder = stage(run, repo)
+    folder = stage(run, repo, run_dir, checkpoint, note)
+    if revision:
+        api.create_branch(repo, branch=revision, exist_ok=True)
+    what = f"{run_dir or run} {checkpoint}" if checkpoint else run
     try:
-        api.upload_folder(folder_path=str(folder), repo_id=repo, commit_message=f"Upload {run} LoRA adapter and model card")
+        api.upload_folder(folder_path=str(folder), repo_id=repo, revision=revision,
+                          commit_message=f"Upload {what} LoRA adapter and model card")
     finally:
         shutil.rmtree(folder, ignore_errors=True)
     return repo
@@ -169,9 +180,15 @@ def main():
     ap.add_argument("--run", required=True, choices=sorted(RUNS))
     ap.add_argument("--card-only", action="store_true", help="refresh the model card (results) only")
     ap.add_argument("--public", action="store_true", help="NOT recommended: weights derive from credentialed data")
+    ap.add_argument("--run-dir", help="directory under outputs/runs (default: --run)")
+    ap.add_argument("--checkpoint", help="push outputs/runs/<run-dir>/checkpoints/<this> instead of final/")
+    ap.add_argument("--revision", help="branch to push to (default: main)")
+    ap.add_argument("--note", default="", help="line shown at the top of the model card")
     args = ap.parse_args()
-    repo = push(args.run, args.card_only, private=not args.public)
-    print(f"pushed {args.run} -> https://huggingface.co/{repo} ({'public' if args.public else 'private'})")
+    repo = push(args.run, args.card_only, private=not args.public, run_dir=args.run_dir, checkpoint=args.checkpoint,
+                revision=args.revision, note=args.note)
+    print(f"pushed {args.run} -> https://huggingface.co/{repo}{'/tree/' + args.revision if args.revision else ''} "
+          f"({'public' if args.public else 'private'})")
 
 
 if __name__ == "__main__":

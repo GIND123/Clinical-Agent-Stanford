@@ -603,7 +603,8 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
             model.save_pretrained(ck_dir)
             tokenizer.save_pretrained(ck_dir)
             torch.save({"step": step, "optimizer": opt.state_dict(), "scheduler": sched.state_dict(),
-                        "constraint": {"nu": constraint.nu, "_violations": constraint._violations},
+                        "constraint": {"nu": constraint.nu, "_violations": constraint._violations,
+                                       "_integral": constraint._integral},
                         "config": cfg}, ck_dir / "trainer_state.pt")
             # keep every `keep_every`-th checkpoint (used for evaluation) plus the latest two (for resume)
             keep_every = int(cfg.get("keep_every", 25))

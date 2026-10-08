@@ -76,6 +76,18 @@ def test_constraint_dual_ascent():
     assert c.nu == 0.0
 
 
+def test_constraint_pi():
+    c = CoverageConstraint(rho_max=0.3, kp=2.0, ki=0.5, nu_max=2.0)
+    assert c.update(0.1) == 0.0  # satisfied, nothing integrated
+    assert c.update(0.5) == pytest.approx(2.0 * 0.2 + 0.5 * 0.2)  # reacts on the first violation
+    assert c.update(0.3) == pytest.approx(0.5 * 0.2)  # proportional part vanishes with the violation
+    for _ in range(50):
+        c.update(1.0)
+    assert c.nu == 2.0 and c._integral == pytest.approx(4.0)  # integral clipped at nu_max / ki
+    assert c.update(0.0) == pytest.approx(2.0 * -0.3 + 0.5 * 3.7)  # no windup: falls at once
+    assert CoverageConstraint.from_dict({"kp": 1.5, "ki": 0.2}).kp == 1.5
+
+
 def test_failures_penalised(reward_cfg):
     rbs = group_rewards([EpisodeResult("c", "appendicitis", "timeout"), EpisodeResult("c", "appendicitis", "invalid")], reward_cfg)
     assert all(rb.total == -1.0 for rb in rbs)
