@@ -59,6 +59,11 @@ SYSTEMS = [  # eval-suite directory name, label
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
 ]
 MAIN = ("cev", "deferdx")  # the reference system: the first one that has been evaluated
+# Systems that state no probability (DiagAgent: every commit is 1.0). Metrics that rank or bin by stated
+# confidence are undefined for them and shown as "–" rather than as tie-broken numbers.
+NO_CONFIDENCE = {"diagagent_nodefer"}
+CONFIDENCE_METRICS = {"ml": ("aurc", "ece", "brier", "acc@70", "acc@80", "acc@90"), "clinical": ("confident_errors",),
+                      "eval_other_seen": ("confident_false_commit",), "eval_other_unseen": ("confident_false_commit",)}
 PCT = {"acc_full", "mean_class_acc", "macro_f1", "acc_diverticulitis", "acc_appendicitis", "acc_cholecystitis",
        "acc_pancreatitis", "coverage", "selective_acc", "acc@70", "acc@80", "acc@90", "confident_errors",
        "unsafe_errors", "false_commit", "commit_other", "defer", "invalid", "handoff_contains_truth",
@@ -199,6 +204,10 @@ def main() -> None:
             labels[key] = f"{labels[base]} + SGR (5% risk, delta 0.05)"
 
     tables = {k: tables_for(v, sev, args.n_boot) for k, v in suites.items()}
+    for k in NO_CONFIDENCE & set(tables):
+        for section, keys in CONFIDENCE_METRICS.items():
+            for key in keys:
+                tables[k].get(section, {}).pop(key, None)
     paired: dict = {}
     comparisons = []
     if main:
