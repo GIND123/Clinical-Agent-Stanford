@@ -1,0 +1,57 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{deferdx-figures}[2026/10/08 DEFER-Dx figure styles]
+% Shared colours, type and node styles for the DEFER-Dx schematic figures (fig_*.tex here).
+% The colours are the hexes of scripts/make_figures.py, a validated categorical order, so a
+% system keeps one colour in every figure: DEFER-Dx blue, group-consensus orange, GRPO control aqua.
+% Build: scripts/build_tikz.sh (pdflatex, then pdftocairo to SVG and PNG).
+\RequirePackage[scaled=0.92]{helvet}
+\RequirePackage{sansmath}
+\RequirePackage{amsmath}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,decorations.pathreplacing,shapes.misc}
+
+\definecolor{dfxblue}{HTML}{2A78D6}     % DEFER-Dx (the method)
+\definecolor{dfxorange}{HTML}{EB6834}   % group-consensus comparator
+\definecolor{dfxaqua}{HTML}{1BAF7A}     % GRPO control (no DEFER)
+\definecolor{dfxyellow}{HTML}{EDA100}   % zero-shot, forced choice
+\definecolor{dfxmagenta}{HTML}{E87BA4}  % zero-shot, prompted DEFER
+\definecolor{dfxgreen}{HTML}{008300}
+\definecolor{dfxviolet}{HTML}{4A3AA7}
+\definecolor{dfxred}{HTML}{E34948}
+\definecolor{dfxink}{HTML}{0B0B0B}
+\definecolor{dfxinktwo}{HTML}{52514E}
+\definecolor{dfxmuted}{HTML}{898781}
+\definecolor{dfxaxis}{HTML}{C3C2B7}
+\definecolor{dfxgrid}{HTML}{E1E0D9}
+\definecolor{dfxplane}{HTML}{F6F6F3}
+\colorlet{dfxbluewash}{dfxblue!9!white}
+
+\tikzset{
+  dfx/.style={
+    font=\sffamily\footnotesize, text=dfxink, draw=dfxinktwo, line width=0.6pt,
+    line cap=round, line join=round, >={Stealth[length=4.5pt,width=3.6pt]},
+    execute at begin picture={\sansmath\thickmuskip=5mu\medmuskip=4mu\thinmuskip=3mu},
+    every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}},
+    background rectangle/.style={fill=white}, show background rectangle, inner frame sep=4pt},
+  box/.style={draw=dfxaxis, fill=white, rounded corners=2.5pt, align=left, inner xsep=5pt, inner ysep=4pt,
+    text width=#1},
+  box/.default=3.4cm,
+  plane/.style={box=#1, fill=dfxplane},
+  plane/.default=3.4cm,
+  method/.style={box=#1, draw=dfxblue, fill=dfxbluewash, line width=0.8pt},
+  method/.default=3.4cm,
+  head/.style={font=\sffamily\bfseries\footnotesize},
+  note/.style={font=\sffamily\scriptsize, text=dfxinktwo, align=left},
+  arr/.style={->, draw=dfxinktwo},
+  marr/.style={->, draw=dfxblue, line width=0.8pt},
+  cf/.style={->, draw=dfxmuted, dash pattern=on 2.4pt off 1.6pt},
+  state/.style={circle, draw=dfxinktwo, fill=white, minimum size=15pt, inner sep=0pt, font=\sffamily\scriptsize},
+  dstate/.style={state, draw=dfxblue, fill=dfxblue, text=white, line width=0.8pt},
+  chip/.style={draw=dfxaxis, fill=white, rounded corners=1.5pt, inner xsep=3pt, inner ysep=1.8pt,
+    font=\sffamily\scriptsize},
+  section/.style={font=\sffamily\bfseries\scriptsize, text=dfxinktwo, anchor=south west, inner sep=1pt},
+  brace/.style={decorate, decoration={brace, amplitude=4pt, raise=1pt}, draw=dfxmuted},
+}
+
+% action names, set the same way everywhere (Helvetica has no small capitals)
+\newcommand{\act}[1]{\textsf{\bfseries #1}}

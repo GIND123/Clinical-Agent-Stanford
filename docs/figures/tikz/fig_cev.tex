@@ -1,0 +1,70 @@
+% Figure 2. The counterfactual escalation value (CEV): a DEFER is credited with the value of
+% escalating minus the value of not escalating, estimated by forced continuations branched
+% from the exact state where the agent escalated.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{deferdx-figures}
+\begin{document}
+\begin{tikzpicture}[dfx]
+  % the episode, up to the escalation
+  \node[state] (s0) at (0.45,0) {$s_0$};
+  \node[state] (s1) at (2.65,0) {$s_1$};
+  \node[state] (s2) at (4.85,0) {$s_2$};
+  \node[dstate] (s) at (7.05,0) {$s$};
+  \draw[arr] (s0) -- node[note, above] {\act{ASK}(exam)} (s1);
+  \draw[arr] (s1) -- node[note, above] {\act{TEST}(lipase)} (s2);
+  \draw[arr] (s2) -- node[note, above] {\act{TEST}(CT)} (s);
+  \node[note, below=1pt of s0] {history};
+
+  % value of escalating (what the agent did)
+  \node[method=3.9cm] (E) at (15.05,0) {%
+    {\bfseries Escalate} {\scriptsize\color{dfxinktwo}(what the agent did)}\\[2pt]
+    $E=V_\tau+\eta\,S(q,y)-\mu-\nu$};
+  \draw[marr] (s) -- node[note, above, text=dfxblue] {\act{DEFER}$(q)$, the handoff} (E.west);
+
+  % forced continuations from the same state
+  \node[note, anchor=south west] at (7.45,-1.33) {forced continuations from $s$, $k=1,\dots,K$};
+  \node[chip, anchor=west] (a1) at (7.55,-1.6) {\act{TEST}(ultrasound)};
+  \node[chip, right=0.3cm of a1] (b1) {\act{COMMIT}$(d_1,p_1)$};
+  \node[chip, anchor=west] (b2) at (7.55,-2.35) {\act{COMMIT}$(d_2,p_2)$};
+  \node[chip, anchor=west] (a3) at (7.55,-3.1) {\act{TEST}(CBC)};
+  \node[chip, right=0.3cm of a3] (b3) {\act{COMMIT}$(d_3,p_3)$};
+  \foreach \k in {1,2,3} \node[anchor=west] (r\k) at (12.0,{-1.6-0.75*(\k-1)}) {$R_\k$};
+  \draw[cf] (a1) -- (b1);  \draw[cf] (b1) -- (r1);
+  \draw[cf] (b2) -- (r2);
+  \draw[cf] (a3) -- (b3);  \draw[cf] (b3) -- (r3);
+  \draw[cf] (s.south) |- (a1.west);
+  \draw[cf] (s.south) |- (b2.west);
+  \draw[cf] (s.south) |- (a3.west);
+
+  % value of not escalating
+  \draw[brace] (12.5,-1.4) -- (12.5,-3.3);
+  \node[plane=3.9cm] (V) at (15.05,-2.35) {%
+    {\bfseries Continue} {\scriptsize\color{dfxinktwo}(no escalation)}\\[2pt]
+    $\hat V(s)=\frac{1}{K}\sum_{k}R_k$};
+  \draw[arr] (12.72,-2.35) -- (V.west);
+
+  % the credit
+  \node[method=3.1cm, align=center] (A) at (15.05,-1.17) {%
+    $A=E-\hat V(s)$\\[1pt] {\scriptsize\color{dfxinktwo}credit on the \act{DEFER} turn}};
+  \draw[marr] (E) -- (A);
+  \draw[arr] (V) -- (A);
+
+  % what the credit separates
+  \node[box=6.3cm, anchor=north west] (red) at (0.1,-1.0) {%
+    {\bfseries Reducible uncertainty.} The continuations order the test that settles the case and
+    commit correctly: $\hat V(s)$ is high and $A<0$, so the agent learns to investigate.};
+  \node[method=6.3cm, anchor=north west] (irr) at ([yshift=-0.15cm]red.south west) {%
+    {\bfseries Irreducible uncertainty.} The continuations err even after testing, or the case is OTHER:
+    $\hat V(s)$ is low and $A>0$, so the escalation is credited.};
+
+  % definitions
+  \path (irr.south) ++(0,-0.18) coordinate (band);
+  \draw[dfxgrid, line width=0.5pt] (0.1,0 |- band) -- (17.2,0 |- band);
+  \node[note, anchor=north west, text width=17.0cm] at ([yshift=-0.05cm]0.1,0 |- band) {%
+    $R_k=\alpha\,\mathbf{1}[d_k{=}y]-\lambda\,(p_k-\mathbf{1}[d_k{=}y])^2-\kappa\,C[y,d_k]-c\cdot\mathrm{cost}(\text{tests after } s)$;
+    $K=3$. In a forced continuation, a \act{DEFER} is executed as \act{COMMIT} of its differential's top; tests remain allowed.
+    $V_\tau$: reward of a calibrated decision that succeeds with probability $\tau$ (1.2 on OTHER cases).
+    $S$: normalised multi-class Brier score of the handed-over differential $q$ (strictly proper).
+    $\mu=0.1$: handoff cost. $\nu$: coverage multiplier (Fig.~S1).};
+\end{tikzpicture}
+\end{document}

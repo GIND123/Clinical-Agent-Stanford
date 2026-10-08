@@ -1,0 +1,60 @@
+% Figure 1. DEFER-Dx: an interactive diagnostic agent that can ask, test, commit or defer.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{deferdx-figures}
+\begin{document}
+\begin{tikzpicture}[dfx]
+  % the case
+  \node[plane=3.5cm] (case) at (1.85,0) {%
+    {\bfseries Admission}\\[2pt]
+    The agent sees the history at presentation: present illness; past, social and family history.\\[4pt]
+    Hidden diagnosis\\ $y\in\mathcal{D}\cup\{\text{OTHER}\}$\\[2pt]
+    {\scriptsize\color{dfxinktwo}$\mathcal{D}$: appendicitis, cholecystitis, diverticulitis, pancreatitis}};
+
+  % the investigation loop
+  \node[method=3.3cm] (agent) at (6.45,1.3) {%
+    {\bfseries Agent $\pi_\theta$}\\[1pt]
+    Qwen3-8B + LoRA; reasons, then emits one action per turn.};
+  \node[plane=3.3cm] (env) at (6.45,-1.3) {%
+    {\bfseries Patient record}\\[1pt]
+    Returns what was recorded for this admission; nothing is generated.};
+  \draw[arr] ([xshift=5mm]agent.south) -- node[note, right] {\act{ASK}, \act{TEST}$(x)$} ([xshift=5mm]env.north);
+  \draw[arr] ([xshift=-5mm]env.north) -- node[note, left] {finding $o_t$} ([xshift=-5mm]agent.south);
+  \node[note, below=2pt of env, text width=3.3cm] (inv) {%
+    \act{ASK}(exam) is free; \act{TEST}$(x)$ orders one of 22 tests at its price; at most 8 investigations.};
+  \draw[arr] (case.east) -- ++(0.32,0) |- (agent.west);
+
+  % terminal actions
+  \node[box=3.0cm] (commit) at (10.75,1.3) {%
+    \act{COMMIT}$(d,p)$\\[1pt]
+    names a diagnosis $d$ with a stated probability $p$.};
+  \node[method=3.0cm] (defer) at (10.75,-1.3) {%
+    \act{DEFER}$(q,\ \text{reason})$\\[1pt]
+    hands the case to a clinician with a ranked, probabilistic differential $q$.};
+  \draw[arr] (agent.east) -- (commit.west);
+  \coordinate (fork) at ($(agent.east)!0.5!(commit.west)$);
+  \draw[marr] (fork) |- (defer.west);
+  \fill[dfxblue] (fork) circle (1.1pt);
+
+  % how each ending is scored
+  \node[box=4.55cm] (rc) at (15.2,1.3) {%
+    {\bfseries Scored in clinical units}\\[2pt]
+    $R=\alpha\,\mathbf{1}[d{=}y]-\lambda\,(p-\mathbf{1}[d{=}y])^2$\\
+    \hspace*{1.9em}$-\,\kappa\,C[y,d]-c\textstyle\sum_t\mathrm{cost}(a_t)$\\[2pt]
+    {\scriptsize\color{dfxinktwo}accuracy, Brier score, severity of the error, test cost}};
+  \node[method=4.55cm] (rd) at (15.2,-1.3) {%
+    {\bfseries Credited against the counterfactual}\\[2pt]
+    $A=E-\hat V(s)$: the value of escalating minus the value of not escalating, from the same state (Fig.~2).\\[2pt]
+    {\scriptsize\color{dfxinktwo}The handoff $q$ is scored with a proper scoring rule.}};
+  \draw[arr] (commit.east) -- (rc.west);
+  \draw[marr] (defer.east) -- (rd.west);
+
+  % evaluation band
+  \path (inv.south) ++(0,-0.12) coordinate (band);
+  \draw[dfxgrid, line width=0.5pt] (0.1,0 |- band) -- (17.45,0 |- band);
+  \node[note, anchor=north west, text width=17.2cm] at ([yshift=-0.05cm]0.1,0 |- band) {%
+    {\bfseries\color{dfxink}Evaluated on}\quad
+    closed world: MIMIC-IV-Ext-CDM val + test (480)\quad$\cdot$\quad
+    open world: OTHER from groups seen in training (206) and from time-critical groups never seen in training (187)\quad$\cdot$\quad
+    same-pipeline in-set controls (258)};
+\end{tikzpicture}
+\end{document}

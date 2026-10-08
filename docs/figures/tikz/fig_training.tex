@@ -1,0 +1,40 @@
+% Figure S1. One training step: multi-turn GRPO with the counterfactual escalation value, and the
+% PI controller that holds in-set deferral at or below the cap.
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{deferdx-figures}
+\begin{document}
+\begin{tikzpicture}[dfx]
+  \node[plane=2.75cm, minimum height=2.15cm] (batch) at (1.7,0) {%
+    {\bfseries Batch}\\[1pt] $B=12$ cases drawn by weight: CDM 0.75, OTHER 0.15, controls 0.10};
+  \node[box=2.75cm, minimum height=2.15cm] (roll) at (5.15,0) {%
+    {\bfseries Rollouts}\\[1pt] $G=8$ multi-turn episodes per case, sampled by vLLM with the current adapter};
+  \node[method=2.75cm, minimum height=2.15cm] (rew) at (8.6,0) {%
+    {\bfseries Rewards}\\[1pt] the commit reward; for each \act{DEFER}, $K=3$ forced continuations from its state};
+  \node[method=2.75cm, minimum height=2.15cm] (adv) at (12.05,0) {%
+    {\bfseries Advantages}\\[1pt] $r-\overline{r}_{\text{group}}$ on every turn; the \act{DEFER} turn takes $A=E-\hat V(s)$};
+  \node[box=2.75cm, minimum height=2.15cm] (upd) at (15.5,0) {%
+    {\bfseries Policy update}\\[1pt] clipped token-level surrogate; truncated importance weights against the engine};
+  \draw[arr] (batch) -- (roll);
+  \draw[arr] (roll) -- (rew);
+  \draw[marr] (rew) -- (adv);
+  \draw[arr] (adv) -- (upd);
+  \draw[arr] (upd.north) -- ++(0,0.42) -| node[note, pos=0.25, above] {%
+    new LoRA adapter served to vLLM (generation and training share one GPU)} (roll.north);
+
+  % coverage controller
+  \node[plane=2.75cm] (rate) at (5.15,-2.55) {%
+    {\bfseries In-set deferral rate}\\[1pt] $\rho_k$: share of the batch's in-set episodes that end in \act{DEFER}};
+  \node[method=5.6cm] (pi) at (10.3,-2.55) {%
+    {\bfseries PI coverage controller} {\scriptsize\color{dfxinktwo}(Stooke et al., 2020)}\\[2pt]
+    $e_k=\rho_k-\rho_{\max}$\\[1pt]
+    $I_k=\mathrm{clip}(I_{k-1}+e_k,\ 0,\ \nu_{\max}/K_i)$\\[1pt]
+    $\nu_k=\mathrm{clip}(K_p\,e_k+K_i\,I_k,\ 0,\ \nu_{\max})$\\[2pt]
+    {\scriptsize\color{dfxinktwo}$\rho_{\max}=0.30$,\ $K_p=1.5$,\ $K_i=0.2$,\ $\nu_{\max}=2$}};
+  \node[note, text width=3.0cm, anchor=west] (pinote) at ([xshift=0.25cm]pi.east) {%
+    $\nu_k$ is charged to \act{DEFER} on in-set cases only; deferring an OTHER case is never rationed.\\[2pt]
+    The comparator arm uses plain dual ascent:\\ $\nu\leftarrow\max(0,\,\nu+2\,e_k)$.};
+  \draw[arr] (roll) -- node[note, right] {measure} (rate);
+  \draw[arr] (rate) -- (pi);
+  \draw[marr] (pi.north -| rew.south) -- node[note, right, text=dfxblue] {$\nu_k$ enters $E$} (rew.south);
+\end{tikzpicture}
+\end{document}

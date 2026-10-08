@@ -1,0 +1,75 @@
+% Figure 3. Data and evaluation design: two sources, patient-disjoint cohorts, and what is measured.
+% Counts are those of data/cohorts/*.jsonl (docs/METHODS.md section 3).
+\documentclass[tikz,border=0pt]{standalone}
+\usepackage{deferdx-figures}
+\begin{document}
+\begin{tikzpicture}[dfx]
+  % column heads
+  \node[section] at (0.1,1.3) {SOURCES};
+  \node[section] at (5.75,1.3) {PATIENT-DISJOINT COHORTS};
+  \node[section] at (12.25,1.3) {MEASURED};
+
+  % sources
+  \node[plane=4.55cm, anchor=north west] (cdm) at (0.1,0.9) {%
+    {\bfseries MIMIC-IV-Ext-CDM 1.1}\\[1pt]
+    2,400 admissions with one of four conditions; LA-CDM's 80/10/10 split\\[1pt]
+    {\scriptsize\color{dfxinktwo}appendicitis 957, cholecystitis 648, pancreatitis 538, diverticulitis 257}};
+  \node[method=4.55cm, anchor=north west] (ow) at ([yshift=-0.35cm]cdm.south west) {%
+    {\bfseries MIMIC-CDM-OW} {\scriptsize\color{dfxinktwo}(this work)}\\[1pt]
+    MIMIC-IV 2.2 + Note admissions with abdominal pain, built with CDM's own text pipeline\\[1pt]
+    {\scriptsize\color{dfxinktwo}713 OTHER cases in 9 non-CDM diagnosis groups; 648 same-pipeline in-set controls}};
+
+  % training cohorts
+  \node[box=5.2cm, anchor=north west] (train) at (5.9,0.75) {%
+    {\bfseries RL train} \hfill 2,404\\[1pt]
+    {\scriptsize\color{dfxinktwo}1,760 CDM + 279 OTHER (seen groups) + 365 controls}};
+  \node[box=5.2cm, anchor=north west] (dev) at ([yshift=-0.12cm]train.south west) {%
+    {\bfseries Dev} {\scriptsize\color{dfxinktwo}monitoring only} \hfill 212};
+  \node[fit=(train)(dev), draw=dfxaxis, rounded corners=3pt, inner sep=3.5pt] (tr) {};
+  \node[note, anchor=south west] at (tr.north west) {training};
+
+  % evaluation cohorts
+  \node[box=5.2cm, anchor=north west] (e1) at ([yshift=-0.75cm]dev.south west) {%
+    {\bfseries CDM val + test} \hfill 480\\[1pt]
+    {\scriptsize\color{dfxinktwo}closed world; never used for a training decision}};
+  \node[box=5.2cm, anchor=north west] (e2) at ([yshift=-0.12cm]e1.south west) {%
+    {\bfseries OTHER, seen groups} \hfill 206\\[1pt]
+    {\scriptsize\color{dfxinktwo}bowel obstruction, gastroenteritis or colitis, GI bleed, urolithiasis}};
+  \node[box=5.2cm, anchor=north west, draw=dfxink, line width=0.8pt] (e3) at ([yshift=-0.12cm]e2.south west) {%
+    {\bfseries OTHER, unseen time-critical groups} \hfill 187\\[1pt]
+    {\scriptsize\color{dfxinktwo}mesenteric ischaemia, perforated or bleeding ulcer, ruptured AAA, DKA, ectopic pregnancy;
+    held out of training entirely}};
+  \node[box=5.2cm, anchor=north west] (e4) at ([yshift=-0.12cm]e3.south west) {%
+    {\bfseries In-set controls} \hfill 258\\[1pt]
+    {\scriptsize\color{dfxinktwo}same pipeline as OTHER: the source-shortcut check}};
+  \node[fit=(e1)(e2)(e3)(e4), draw=dfxaxis, rounded corners=3pt, inner sep=3.5pt] (ev) {};
+  \node[note, anchor=south west] at (ev.north west) {evaluation: every model, 3 seeds per case};
+  \node[note, anchor=north west, text width=6.4cm] at ([yshift=-0.06cm]ev.south west) {%
+    No training case shares a patient with an evaluation case.};
+
+  % sources -> cohorts
+  % the open-world source feeds training and the three open-world sets (bus nearer the cohorts)
+  \draw[arr] (ow.east) -- ++(0.55,0) |- ([yshift=-1.5mm]tr.west);
+  \foreach \t in {e2,e3,e4} \draw[arr] (ow.east) -- ++(0.55,0) |- (\t.west);
+  % CDM feeds training and the closed-world set; it crosses the open-world bus with a gap
+  \draw[arr] (cdm.east) -- ++(0.3,0) |- ([yshift=1.5mm]tr.west);
+  \draw[arr, preaction={draw=white, line width=3pt, -}] (cdm.east) -- ++(0.3,0) |- (e1.west);
+
+  % what is measured
+  \node[box=4.55cm, anchor=north west] (m1) at (12.4,0.75) {%
+    {\bfseries Closed world}\\[1pt]
+    accuracy, mean-class accuracy, coverage, selective accuracy, risk-coverage (AURC), ECE, Brier};
+  \node[box=4.55cm, anchor=north west] (m2) at ([yshift=-0.12cm]m1.south west) {%
+    {\bfseries Clinical safety}\\[1pt]
+    unflagged and confident errors, severity-weighted error, deferral precision and recall, tests and dollars per case};
+  \node[box=4.55cm, anchor=north west] (m3) at ([yshift=-0.12cm]m2.south west) {%
+    {\bfseries Open world}\\[1pt]
+    false commits, deferral, naming OTHER, OOD AUROC; per diagnosis group};
+  \node[plane=4.55cm, anchor=north west] (m4) at ([yshift=-0.12cm]m3.south west) {%
+    {\bfseries Statistics}\\[1pt]
+    95\% case-level bootstrap intervals (2,000 resamples); paired bootstrap for every comparison};
+  \draw[dfxaxis, line width=0.8pt] ([xshift=-0.15cm]m1.north west) -- ([xshift=-0.15cm]m4.south west);
+  \coordinate (mbar) at ([xshift=-0.15cm]m1.west);
+  \draw[arr] (ev.east) -- (ev.east -| mbar);
+\end{tikzpicture}
+\end{document}
