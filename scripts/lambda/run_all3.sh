@@ -32,9 +32,10 @@ da() { python scripts/lambda/diagagent_adapter.py --model "$DA" --open-world --c
 run smoke_da da --suite smoke_da --limit 3 \
   && run diagagent_nodefer da --suite diagagent_nodefer
 
-# 2. Qwen3-14B zero-shot, forced choice (thresholded post hoc in the report) and prompted DEFER; 3 seeds each
+# 2. Qwen3-14B zero-shot: forced choice, 3 seeds (thresholded post hoc in the report), and prompted DEFER,
+#    1 seed (budget: on a 40 GB A100 each seed of the five sets is about 1.2 h)
 run smoke_q14 deferdx eval-suite --model "$Q14" --name smoke_q14 --no-defer --seeds 0 --limit 3 --out "$O" \
   && run qwen14b_nodefer deferdx eval-suite --model "$Q14" --name qwen14b_nodefer --no-defer --out "$O" \
-  && run qwen14b_defer deferdx eval-suite --model "$Q14" --name qwen14b_defer --out "$O"
+  && run qwen14b_defer deferdx eval-suite --model "$Q14" --name qwen14b_defer --seeds 0 --out "$O"
 
 phase ALL DONE
