@@ -51,6 +51,7 @@ SYSTEMS = [  # eval-suite directory name, label
     ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
     ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
     ("cev_step100", "DEFER-Dx at step 100"),
+    ("cev_dualascent", "DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled)"),
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
 ]
@@ -164,7 +165,7 @@ def main() -> None:
     comparisons = []
     if main:
         comparisons += [(main, ("grpo_nodefer+thr", "zs_nodefer+thr", "grpo_nodefer+sgr", "deferdx", "zs_defer",
-                                "grpo_nodefer")),
+                                "grpo_nodefer", "cev_dualascent")),
                         (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc"))]
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
     for ref, comps in comparisons:
