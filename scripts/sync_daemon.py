@@ -75,10 +75,13 @@ def sync_git() -> None:
     if (ROOT / ".git" / "index.lock").exists():
         log("git: index locked, skipping this cycle")
         return
-    changed = git("status", "--porcelain", "--", *GIT_ALLOW).stdout.strip()
+    paths = [p for p in GIT_ALLOW if (ROOT / p).exists()]  # git add fails on a missing pathspec
+    if not paths:
+        return
+    changed = git("status", "--porcelain", "--", *paths).stdout.strip()
     if not changed:
         return
-    git("add", "--", *GIT_ALLOW)
+    git("add", "--", *paths)
     staged = git("diff", "--cached", "--name-only").stdout.split()
     if any(not any(f == a or f.startswith(a + "/") for a in GIT_ALLOW) for f in staged):
         log(f"git: refusing to commit, unexpected staged files: {staged}")

@@ -171,7 +171,7 @@ def main() -> None:
         if ref not in suites:
             continue
         for other in comps:
-            if other not in suites:
+            if other not in suites or other == ref:
                 continue
             a, b = cdm_pooled(suites[ref]), cdm_pooled(suites[other])
             d = {k: S.paired_bootstrap(a, b, f, args.n_boot) for k, f in {
@@ -249,7 +249,9 @@ def main() -> None:
         for comp, d in paired.items():
             for m, v in d.items():
                 pct = m.split(":")[0] in PCT or m.startswith("false_commit")
-                L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {v['p']:.3g} |")
+                # p = 0 means no resample crossed zero: below the bootstrap's resolution of 2 / n_boot
+                p = f"< {2 / args.n_boot:.2g}" if v["p"] == 0 else f"{v['p']:.3g}"
+                L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {p} |")
     (out / "RESULTS.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"wrote {out / 'RESULTS.md'} and {out / 'results.json'} ({len(tables)} systems)")
 
