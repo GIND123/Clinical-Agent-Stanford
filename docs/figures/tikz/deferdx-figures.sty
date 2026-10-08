@@ -4,6 +4,8 @@
 % The colours are the hexes of scripts/make_figures.py, a validated categorical order, so a
 % system keeps one colour in every figure: DEFER-Dx blue, group-consensus orange, GRPO control aqua.
 % Build: scripts/build_tikz.sh (pdflatex, then pdftocairo to SVG and PNG).
+% reproducible PDFs without local paths: no trailer ID, dates or PTEX.FileName
+\ifdefined\pdftrailerid \pdftrailerid{}\pdfinfoomitdate=1 \pdfsuppressptexinfo=-1 \fi
 \RequirePackage[scaled=0.92]{helvet}
 \RequirePackage{sansmath}
 \RequirePackage{amsmath}
