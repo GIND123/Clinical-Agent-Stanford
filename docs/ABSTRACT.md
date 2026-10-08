@@ -22,7 +22,7 @@ Status: **DRAFT. Every `[[...]]` is a placeholder filled only from docs/RESULTS.
 [[Cut from the full version once the numbers are in.]]
 
 ## Novelty wording (docs/RESEARCH.md §9)
-Claim: escalation trained against a state-level counterfactual of not escalating (branched forced continuations), valued in clinical units, with a properly scored probabilistic handoff. Do NOT claim a group-statistics or case-difficulty deferral reward (TIAR, KARL, AWA-RL) or the first RL-trained clinical deferral (TrustMed-RL). Re-check novelty within 72 hours of submission.
+Claim: escalation trained against a state-level counterfactual of not escalating (branched forced continuations), valued in clinical units, with a properly scored probabilistic handoff. Do NOT claim a group-statistics or case-difficulty deferral reward (TIAR, KARL, AWA-RL), the first RL-trained clinical deferral (TrustMed-RL), branched rollouts for credit assignment as such (VinePPO, TreeRL/Tree-GRPO), or counterfactual rollouts in sequential diagnosis (CDPR, which scores test choices and has no deferral). Re-check novelty within 72 hours of submission.
 
 ## Claims checklist (each must trace to docs/RESULTS.md)
 - [ ] Selective accuracy and coverage of DEFER-Dx, with 95% CI (Table 1)
@@ -31,6 +31,6 @@ Claim: escalation trained against a state-level counterfactual of not escalating
 - [ ] Handoff quality (proper score of the handed-over differential)
 - [ ] Unflagged / confident errors (Table 2)
 - [ ] Diverticulitis accuracy (Table 2; n = 51 in val + test)
-- [ ] Time-critical false commits, unseen groups (Table 3b)
+- [ ] Time-critical false commits, unseen groups (Table 3b). Ruptured AAA and ectopic pregnancy have fewer than 10 cases each: they count in the pooled unseen numbers, but no per-group claim; per-group numbers exist only for mesenteric ischaemia, perforated/bleeding ulcer and DKA
 - [ ] LA-CDM-split context row (Table 4), stated as context, not head-to-head
 - [ ] The 93.4 / 78.8 LDTL numbers are quoted "as reported" (different split, case-weighted metric)

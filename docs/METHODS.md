@@ -74,7 +74,7 @@ The build is deterministic and byte-identical across runs. Same-pipeline **contr
 | dev | 212 = 160 CDM + 32 OTHER + 20 controls | monitoring only |
 | CDM val + test | 240 + 240 | evaluation; never seen in training |
 | OTHER, seen groups | 206 (bowel obstruction, gastroenteritis/colitis, GI bleed, urolithiasis) | evaluation |
-| OTHER, unseen groups | 187 (mesenteric ischaemia, perforated/bleeding ulcer, AAA, DKA, ectopic) | evaluation; groups never seen in training |
+| OTHER, unseen groups | 187 (mesenteric ischaemia, perforated/bleeding ulcer, AAA, DKA, ectopic) | evaluation; groups never seen in training. AAA and ectopic pregnancy have fewer than 10 cases each: pooled, never reported separately |
 | controls | 258 | evaluation (source-shortcut check) |
 
 No training case shares a patient with an open-world evaluation case. The time-critical groups are held out entirely, so the open-world evaluation separates recognising a group seen in training from escalating an unfamiliar, dangerous presentation. Training on controls removes the shortcut "built by the open-world pipeline ⇒ OTHER". Cases are drawn from source pools by weight (CDM 0.75, OTHER 0.15, controls 0.10), which also keeps the controls' cholecystitis-heavy mix from shifting the class balance.

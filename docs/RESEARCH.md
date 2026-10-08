@@ -135,7 +135,7 @@ Targeted searches on abstention rewards from within-group statistics turned up t
 - E includes a strictly proper score of the handed-over probabilistic differential.
 
 What the searches on 2026-10-07 found nearby, and the differences:
-- **Generic tree or branched rollouts for step-level credit** (TreeRL / Tree-GRPO, SIPO, belief-shift branching, Counterfactual Rollout Replay, ASCT, CIPO): none targets an escalation or abstention action, and none values it against continuation in clinical-value units.
+- **Generic tree or branched rollouts for step-level credit** (VinePPO, arXiv 2410.01679, Monte Carlo values from reset intermediate states; TreeRL / Tree-GRPO, SIPO, belief-shift branching, Counterfactual Rollout Replay, ASCT, CIPO): none targets an escalation or abstention action, and none values it against continuation in clinical-value units.
 - **CDPR** (2608.28599): counterfactual short rollouts score the chosen investigative action against its alternatives. It has no deferral action and no handoff.
 - **Signed Rescue Routing** (2609.07786): escalation value in model cascades, from a second model's correctness. Inference-time routing, not RL training of an agent's escalation.
 - **Decide/Ask/Defer** (2610.04542): separates asking from deferring conceptually, in evaluation only.
