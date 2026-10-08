@@ -264,7 +264,8 @@ def turn_advantages(groups: list[list[Rollout]], rcfg, nu: float, in_set_only: b
     DEFER turn of that rollout instead gets the STATE-LEVEL advantage
         A = E(handoff) - V_hat(continue from the same state),
     E = escalation value - handoff cost - coverage multiplier. Groups whose rewards have no spread
-    contribute only these escalation turns (None = rollout skipped)."""
+    contribute only these escalation turns (None = rollout skipped). Under defer_mode "cev", a deferral
+    with no continuation value (not branched: over cev_max_roots) gets no update on its DEFER turn."""
     cont_values = cont_values or {}
     out, st = [], Counter()
     for grp in groups:
@@ -292,6 +293,12 @@ def turn_advantages(groups: list[list[Rollout]], rcfg, nu: float, in_set_only: b
                 st["cev_V"] += cont_values[id(ro)]
                 st["cev_A"] += a
                 st["cev_A_pos"] += float(a > 0)
+            elif rcfg.defer_mode == "cev" and ro.result.terminal == "defer" and per_turn:
+                # A deferral not branched this step (more deferrals than cev_max_roots). Its group advantage
+                # comes from E alone, which is nearly constant (the constant-deferral ablation), so the DEFER
+                # turn gets no update; the turns before it keep their group advantage.
+                per_turn[-1] = None
+                st["cev_unscored"] += 1
             out.append((ro, per_turn))
     return out, st
 
@@ -571,7 +578,7 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
                "reward_mean": float(np.mean(all_rewards)),
                **{k: v / max(1, len(rollouts)) for k, v in comp.items() if k.startswith("r_")},
                "handoff_score": float(np.mean([handoff_score(r) for r in defers])) if defers else math.nan,
-               "cev_roots": comp["cev_n"], "cev_E": comp["cev_E"] / n_cev, "cev_V": comp["cev_V"] / n_cev,
+               "cev_roots": comp["cev_n"], "cev_unscored": comp["cev_unscored"], "cev_E": comp["cev_E"] / n_cev, "cev_V": comp["cev_V"] / n_cev,
                "cev_A": comp["cev_A"] / n_cev, "cev_A_pos": comp["cev_A_pos"] / n_cev,
                "cev_cont_acc": cev_stats["cont_commit_correct"] / max(1, cev_stats["cont_n"]),
                "cev_cont_tests": cev_stats["cont_tests"] / max(1, cev_stats["cont_n"]),

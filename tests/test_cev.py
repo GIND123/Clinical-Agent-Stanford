@@ -145,3 +145,37 @@ def test_turn_advantages_assign_state_level_escalation_advantage(catalog, severi
     assert st["cev_n"] == 2
     # identical episodes -> no reward spread: only the escalation turns carry an advantage
     assert adv[id(roots[2])] is None and adv[id(roots[0])][0] is None
+
+
+class CommitPolicy(ScriptPolicy):
+    """Turn 1: TEST cbc. Turn 2: COMMIT (never defers)."""
+
+    def generate(self, conversations, contexts=None):
+        out = []
+        for conv in conversations:
+            n = sum(m["role"] == "assistant" for m in conv)
+            d = {"type": "TEST", "test": "cbc"} if n == 0 else {"type": "COMMIT", "diagnosis": self.commit_dx,
+                                                               "probability": 0.9}
+            out.append(Generation(_act(d)))
+        return out
+
+
+def test_unbranched_deferral_gets_no_update_on_its_defer_turn(catalog, severity):
+    from deferdx.training.grpo_vllm import turn_advantages
+
+    cfg = EnvConfig(max_steps=4, max_invalid=1, handoff_probs=True)
+    rcfg = RewardConfig(severity=severity, defer_mode="cev")
+    defers = run_episodes(ScriptPolicy(), catalog, cfg, [_case()], n_samples=2)
+    commits = run_episodes(CommitPolicy(commit_dx="appendicitis"), catalog, cfg, [_case()], n_samples=2)
+    group = defers + commits  # deferrals and wrong commits: the group has reward spread
+    vals = {id(defers[0]): 0.2}  # only the first deferral was branched (cev_max_roots reached)
+    assigned, st = turn_advantages(group_by_case(group), rcfg, 0.0, True, 0.05, False, vals)
+    adv = {id(ro): pt for ro, pt in assigned}
+    assert st["cev_n"] == 1 and st["cev_unscored"] == 1
+    assert adv[id(defers[0])][-1] == pytest.approx(escalation_value(defers[0].result, rcfg) - rcfg.handoff_mu - 0.2)
+    assert adv[id(defers[1])][-1] is None  # its E-only group advantage would be a near-constant deferral reward
+    assert adv[id(defers[1])][0] == pytest.approx(adv[id(defers[0])][0])  # the TEST turn keeps its group advantage
+    assert all(a is not None for a in adv[id(commits[0])])  # commits are unaffected
+    # outside cev mode nothing is withheld
+    _, st2 = turn_advantages(group_by_case(group), RewardConfig(severity=severity), 0.0, True, 0.05, False, {})
+    assert st2["cev_unscored"] == 0
