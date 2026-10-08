@@ -1,6 +1,6 @@
 # Training Clinical Agents to Ask, Test, Commit, and Defer
 
-*Draft for a journal submission (and the source of the Stanford AI+HEALTH abstract). Every `[[...]]` is a placeholder that is filled only from `docs/RESULTS.md`. Methods are written from the code; see `docs/METHODS.md` for every constant.*
+*Draft for a journal submission (and the source of the Stanford AI+HEALTH abstract). Figures: `docs/figures/` (vector PDFs; TikZ sources in `docs/figures/tikz/`), numbered and captioned in README §3. Every `[[...]]` is a placeholder that is filled only from `docs/RESULTS.md`. Methods are written from the code; see `docs/METHODS.md` for every constant.*
 
 ## Abstract
 [[Written last, from the results. See docs/ABSTRACT.md for the conference version.]]
@@ -28,12 +28,12 @@ We ask whether an agent can *learn* when to defer, without collapsing, and wheth
 
 ## 3. Problem formulation
 
-[[From docs/METHODS.md §1: the POMDP over a single admission; hidden state y ∈ D ∪ {OTHER}; reveal-on-request observations from the record; the action table; the 8-investigation budget.]]
+[[From docs/METHODS.md §1: the POMDP over a single admission; hidden state y ∈ D ∪ {OTHER}; reveal-on-request observations from the record; the action table; the 8-investigation budget.]] Figure 1 (`docs/figures/fig_overview.pdf`).
 
 ## 4. Method
 
 ### 4.1 Rewards
-[[docs/METHODS.md §2: the counterfactual escalation value (branching, V̂(s), E, the state-level advantage); the scored handoff; the case-level consensus comparator arm and why it is prior art (TIAR is identical at τ = 0.5).]]
+[[docs/METHODS.md §2: the counterfactual escalation value (branching, V̂(s), E, the state-level advantage); the scored handoff; the case-level consensus comparator arm and why it is prior art (TIAR is identical at τ = 0.5).]] Figure 2 (`fig_cev.pdf`).
 
 [[docs/METHODS.md §2: commit reward; group-consensus deferral reward; the τ → crossover table (τ = 0.85 ⇒ defer when the estimated success probability is below 0.645); the open-world deferral reward; the coverage constraint.]]
 
@@ -46,10 +46,10 @@ We ask whether an agent can *learn* when to defer, without collapsing, and wheth
 Every commitment still carries a proper-scored probability, so the agent can also be thresholded after training: DEFER-Dx contains the recommended repair as a special case.
 
 ### 4.2 Training
-[[docs/METHODS.md §4: Qwen3-8B + LoRA; colocated vLLM/PEFT GRPO on one GPU; turn-level samples; truncated importance sampling; curricula.]]
+[[docs/METHODS.md §4: Qwen3-8B + LoRA; colocated vLLM/PEFT GRPO on one GPU; turn-level samples; truncated importance sampling; curricula; the PI coverage controller and why plain dual ascent failed under CEV.]] Figure S1 (`fig_training.pdf`); Figure 8 (`fig_training_dynamics.pdf`).
 
 ## 5. Data
-[[docs/METHODS.md §3, with the cohort table and the parity rules that keep OTHER cases indistinguishable from CDM cases by format.]]
+[[docs/METHODS.md §3, with the cohort table and the parity rules that keep OTHER cases indistinguishable from CDM cases by format.]] Figure 3 (`fig_data.pdf`).
 
 ## 6. Experimental setup
 
@@ -79,13 +79,13 @@ DiagAgent-14B, LA-CDM and LDTL appear as context (§7.4).
 ## 7. Results
 
 ### 7.1 Closed world
-[[Table 1 (ML) and Table 2 (clinical) from docs/RESULTS.md. Lead with the paired matched-coverage comparison of DEFER-Dx against the thresholded control.]]
+[[Table 1 (ML) and Table 2 (clinical) from docs/RESULTS.md. Lead with the paired matched-coverage comparison of DEFER-Dx against the thresholded control.]] Figure 5 (`fig_paired_differences.pdf`), Figure 6 (`fig_clinical_safety.pdf`), Figure S3 (`fig_per_class.pdf`).
 
 ### 7.2 Open world
-[[Tables 3a–3d: seen vs never-seen groups, the per-group breakdown, and the controls. Figure: fig_open_world_other_unseen.]]
+[[Tables 3a–3d: seen vs never-seen groups, the per-group breakdown, and the controls.]] Figure 7 (`fig_open_world.pdf`), Figure S4 (`fig_unseen_groups.pdf`).
 
 ### 7.3 Risk-coverage and calibration
-[[Figures fig_risk_coverage and fig_reliability.]]
+Figure 4 (`fig_risk_coverage.pdf`), Figure S2 (`fig_reliability.pdf`). Ablations: Figure S5 (`fig_ablations.pdf`).
 
 ### 7.4 Context against published systems
 [[Table 4. LA-CDM rows are on the same test split but in a different environment; LDTL numbers come from its own unpublished split and are case-weighted. Neither is a head-to-head.]]

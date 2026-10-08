@@ -255,6 +255,12 @@ def main() -> None:
                 L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {p} |")
     (out / "RESULTS.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"wrote {out / 'RESULTS.md'} and {out / 'results.json'} ({len(tables)} systems)")
+    try:  # the data figures follow the tables (a figure failure must not lose the report)
+        import make_figures
+
+        make_figures.main(["--eval-dir", str(ev), "--results", str(out / "results.json"), "--out", str(out / "figures")])
+    except Exception as e:
+        print(f"figures not regenerated: {type(e).__name__}: {e}")
 
 
 if __name__ == "__main__":

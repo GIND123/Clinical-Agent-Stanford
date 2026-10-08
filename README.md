@@ -2,16 +2,18 @@
 
 An interactive clinical diagnostic agent trained with reinforcement learning over four actions: **ASK, TEST, COMMIT, DEFER**. Deferring to a clinician is a learned action. Its reward is the **counterfactual escalation value (CEV)**: at the exact state where the agent escalates, forced continuations branched from that state estimate the clinical value of *not* escalating, by deciding now or investigating further. The DEFER turn is credited with the difference. The handoff is a probabilistic differential trained with a strictly proper scoring rule. The label space is open-world: the four MIMIC-CDM abdominal conditions plus **OTHER**.
 
+![DEFER-Dx: an agent that asks, tests, commits or defers; commitments are scored in clinical units and deferrals are credited against the counterfactual of not deferring](docs/figures/fig_overview.png)
+
 - Research plan: [stanford_idea_md.md](stanford_idea_md.md) (target: Stanford AI+HEALTH 2026 abstract, due Oct 15, 2026)
 - The method as implemented, with every constant: [docs/METHODS.md](docs/METHODS.md)
 - Paper draft: [docs/PAPER.md](docs/PAPER.md) · abstract scaffold: [docs/ABSTRACT.md](docs/ABSTRACT.md)
-- Results: [docs/RESULTS.md](docs/RESULTS.md) (generated as evaluations finish)
+- Results: [docs/RESULTS.md](docs/RESULTS.md) (generated as evaluations finish) · all figures with captions: [§3](#3-results-and-figures), sources in [docs/figures/](docs/figures/)
 
 > **PhysioNet DUA.** MIMIC text never reaches a third-party service. Every model runs on local weights (`transformers` / `vllm`), and the repo has no hosted-API clients. `.gitignore` excludes `data/`, `outputs/`, `.env`, `*.jsonl`, `*.csv*` and `*.pkl`. Rollout files contain MIMIC text, so treat them as credentialed data. Committed documents hold aggregates only, and patient-derived counts of 1–9 are suppressed. Weights trained on MIMIC are not pushed to public hubs; PhysioNet's credentialed hosting is the DUA-consistent release route.
 
 ---
 
-## 1. Status (2026-10-07)
+## 1. Status (2026-10-08)
 
 | Component | State |
 |---|---|
@@ -19,14 +21,15 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Open-world set MIMIC-CDM-OW: 713 OTHER + 648 same-pipeline controls | built; deterministic (byte-identical rebuilds) |
 | Patient-disjoint cohorts (`data/cohorts/`) | built |
 | Single-GPU colocated GRPO trainer | built, tested and in use |
-| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | **running**: resumed at step 76 after a reboot; ends around Oct 7, 22:30 IST |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | implemented and unit-tested; queued next (`scripts/queue_v2.sh`): smoke test, then 150 steps, around Oct 8–9 |
-| Held-out evaluation of the consensus arm and the zero-shot baselines | queued; first numbers around Oct 8, 01:30 |
-| GRPO control (no DEFER), the key comparator | queued; around Oct 9, 01:00 |
-| Ablations of what is new: CEV without the scored handoff; a constant deferral reward. Robustness and gpt-oss-20b | queued (`scripts/queue_v2.sh`); through about Oct 11 |
-| Tests | 108 pass (`pytest`; CPU only) |
+| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
+| Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | The first run used a plain dual-ascent coverage cap. Its multiplier ran a limit cycle (Fig. 8) and deferral collapsed after each overshoot, so that run is kept as a comparison (`cev_dualascent`). The method is **retrained with a PI coverage controller** (`scripts/queue_v3.sh`, from Oct 8, about 23:00 IST; about 22 h), with held-out numbers around Oct 10. |
+| GRPO control (no DEFER), the key comparator | queued after the method; around Oct 10 |
+| Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v3.sh`); through about Oct 12 |
+| Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
+| Tests | 109 pass (`pytest`; CPU only) |
 
-**No held-out result exists yet.** The numbers in §3 are the interim training and dev-set signals and earlier zero-shot baselines. Read them as such.
+Held-out numbers exist for the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). DEFER-Dx's are pending. Until they exist, the paired figure (Fig. 5) uses the comparator arm as its reference system.
 
 ## 2. Is it novel? Is it beating SOTA? (honest assessment)
 
@@ -55,48 +58,113 @@ The method was therefore redesigned around a quantity none of them uses.
 
 ### 2.2 SOTA
 
-Published MIMIC-CDM numbers use different splits, metrics and environments, so only some comparisons are like-for-like. What exists today (held-out numbers are from earlier zero-shot runs, [docs/BASELINES.md](docs/BASELINES.md)):
+Published MIMIC-CDM numbers use different splits, metrics and environments, so only some comparisons are like-for-like. Rows marked "this protocol" are the held-out evaluation of this repository ([docs/RESULTS.md](docs/RESULTS.md) §1 and §4; 3 seeds, 95% bootstrap intervals). The closed-world zero-shot row comes from earlier runs ([docs/BASELINES.md](docs/BASELINES.md)); it is re-run under this protocol in the queue (`eval_zs_closed`).
 
-| System | Split | Mean-class acc | Case-weighted acc | Diverticulitis | Selective (coverage) |
+| System | Split | Mean-class acc | Case-weighted acc | Diverticulitis | Selective acc (coverage), CDM val + test |
 |---|---|---|---|---|---|
 | LA-CDM, trained (ICLR 2026, reported) | LA-CDM test | 81.3 | – | 75.0 | – |
 | LDTL (reported; current SOTA) | own unpublished 70/10/20 | – | **93.4** | 78.8 | – |
 | Random planner (from LDTL) | own split | – | 84.8 | 90.4 | – |
 | DiagAgent-14B (run here) | LA-CDM test | 71.9 | 77.9 | 56.0 | – |
-| **Qwen3-8B zero-shot in this environment** (run here, 3 seeds) | LA-CDM test | **87.2 ± 2.4** | 88.3 ± 1.1 | 84.8 (all 2,400 cases) | **95.5 ± 0.7 (85.8%)** with a post-hoc threshold |
-| Case-level consensus arm (published mechanism) | LA-CDM val + test | pending | pending | pending | pending |
-| **DEFER-Dx (CEV)** | LA-CDM val + test | pending | pending | pending | pending |
+| Qwen3-8B zero-shot, **closed world** (4 classes; earlier runs) | LA-CDM test | 87.2 ± 2.4 | 88.3 ± 1.1 | 84.8 (all 2,400 cases) | – |
+| Qwen3-8B zero-shot, open world, forced choice (this protocol) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | 75.5 (98.4%) |
+| Qwen3-8B zero-shot, open world, prompted DEFER (this protocol) | LA-CDM test | 78.3 (73.7–82.4) | 79.2 (75.1–83.1) | 82.7 (70.7–92.4) | 87.9 (75.1%) |
+| Case-level consensus arm, open world (published mechanism; this protocol) | LA-CDM test | **86.3** (82.2–90.2) | 87.1 (83.5–90.6) | **90.7** (79.4–98.6) | **94.0** (82.6%) |
+| **DEFER-Dx (CEV)**, open world | LA-CDM test | pending | pending | pending | pending |
 
 **Verdict so far:**
-- **Above LA-CDM:** the environment plus an untrained Qwen3-8B already exceeds LA-CDM's 81.3 on its own test split. The environment differs, though: full history versus a summary, 22 tests versus 12, and a different base model.
-- **Above LDTL on diverticulitis:** 84.8 versus 78.8, on a different split.
-- **Meets the plan's selective target:** "> 95 at 85% coverage" is already met by a post-hoc threshold.
-- **Below LDTL's 93.4 at full coverage:** this is the one SOTA number not yet beaten, and LDTL's split is unpublished, so no head-to-head is possible.
-- **Undecided:** whether learned deferral beats thresholding is the central claim. It is decided only by the DEFER-Dx versus thresholded-control paired comparison (around Oct 9).
+- **Open world costs accuracy.** Offering OTHER as a fifth answer costs the untrained model about 13 points: 87.2 closed world against 74.4 open world on the same test split, because it answers OTHER on many in-set cases. Every trained system here works in the open world.
+- **Above LA-CDM:** the trained comparator arm reaches 86.3 mean-class accuracy on LA-CDM's test split in the open world, against LA-CDM's 81.3 in its closed world. The environments differ (full history versus a summary, 22 tests versus 12, a different base model), so this is context, not a head-to-head.
+- **Above LDTL on diverticulitis:** 90.7 versus 78.8, on a different split.
+- **Below LDTL's 93.4 at full coverage:** the comparator's case-weighted 87.1 is the one SOTA number not reached, and LDTL's split is unpublished.
+- **Selective target ("> 95 at 85% coverage"):** not met yet in the open world. The comparator arm reaches 94.0 at 82.6% coverage.
+- **Undecided:** whether learned deferral beats thresholding is the central claim. It is decided only by the paired DEFER-Dx versus thresholded-GRPO-control comparison (around Oct 10).
 
 The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; the pitch is a Pareto improvement on safety axes nobody else reports.
 
-## 3. Interim training results (not held-out)
+## 3. Results and figures
 
-**Dev set** (212 cases held out of RL: 160 CDM, 32 OTHER, 20 controls; one sample at T = 0.6, so differences under ~3 points are noise):
+**Held-out so far** (CDM val + test, 480 cases × 3 seeds; paired bootstrap on the same cases, [docs/RESULTS.md](docs/RESULTS.md) §5):
+- **Against prompted deferral.** The trained consensus arm answers more cases than zero-shot prompted DEFER (coverage +7.5 points, 4.7–10.2). It is also more accurate on them (+6.1, 3.8–8.6) and makes fewer unflagged errors (−4.2, −6.0 to −2.3).
+- **Against a threshold.** With a post-hoc threshold on the zero-shot model's stated probability, the comparison is not at matched coverage. Its stated probabilities tie, so the cross-fitted threshold lands at 92.6% coverage, not 82.6%. Compared with both systems under self-consistency over three samples, where agreement serves as the zero-shot model's confidence, coverage does match (−0.8 points, −5.0 to 3.3). The consensus arm is still +11.1 points (7.3–14.9) more accurate on answered cases.
+- **DEFER-Dx.** The method's own comparisons, against the identically trained GRPO control with a threshold (the test of learned versus post-hoc deferral) and against this consensus arm, are pending. They fill Figs. 4–7 automatically.
 
-| Step | Acc (full cov.) | Mean-class | Coverage | Selective acc | Diverticulitis (n = 18) | AURC ↓ | ECE ↓ | Brier ↓ | OOD defer | OOD false commit | Tests/case |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| 25 | 77.2 | 73.2 | 75.0 | 89.6 | 61.1 | 0.078 | 0.043 | 0.096 | 53.1 | 9.4 | 1.65 |
-| 50 | 77.8 | 74.1 | 73.9 | 87.2 | 66.7 | 0.089 | 0.054 | 0.121 | 59.4 | 12.5 | 2.15 |
-| 75 | **84.4** | **82.2** | 76.1 | **95.6** | **83.3** | **0.047** | 0.063 | **0.063** | **71.9** | 9.4 | 2.37 |
+**The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
+- **Data figures:** drawn by [scripts/make_figures.py](scripts/make_figures.py) from aggregates only (`docs/results.json`, numbers-only training logs). They are regenerated with every report, so they fill in as runs finish. A figure whose inputs don't exist yet shows a labelled placeholder.
+- **Schematics:** TikZ, in [docs/figures/tikz/](docs/figures/tikz/), with shared styles in `deferdx-figures.sty`; build with `bash scripts/build_tikz.sh`.
+- **Colour:** each system has one colour in every figure, and DEFER-Dx is always blue. Every series also has a label and its own marker.
+- **Intervals:** all are 95% case-level bootstrap intervals (2,000 resamples).
 
-**Training batches** (12 cases × 8 rollouts per step, T = 1.0; window means):
+**Figure 1 | DEFER-Dx.**
+- **The episode:** one admission. The agent sees the history at presentation. Turn by turn it asks for the examination, orders one of 22 individual tests (each charged at its price, at most 8 investigations), commits to a diagnosis with a stated probability, or defers to a clinician with a ranked, probabilistic differential.
+- **Scoring:** a commitment is scored in clinical units: accuracy, Brier score, severity of the error and test cost. A deferral is credited against the counterfactual of not deferring (Fig. 2).
+- **Label space:** open, the four MIMIC-CDM conditions or OTHER.
 
-| Steps | Commit accuracy | Full-coverage acc | In-set deferral | OTHER said on in-set cases | OOD deferral | OOD false commit | Tests/case | Entropy |
-|---|---|---|---|---|---|---|---|---|
-| 1–25 | 85.7 | 77.7 | 22.5 | 6.1 | 41.3 | 8.7 | 1.80 | 0.31 |
-| 26–50 | 87.0 | 76.9 | 24.0 | 6.4 | 38.9 | 5.1 | 1.87 | 0.31 |
-| 51–75 | 91.1 | 81.4 | 23.2 | 3.0 | 65.5 | 9.1 | 2.24 | 0.36 |
-| 76–86 | **94.7** | **83.8** | 25.4 | **1.0** | **78.4** | **2.5** | 2.32 | 0.45 |
+![Figure 1](docs/figures/fig_overview.png)
 
-- **No deferral collapse:** in-set deferral stays at 22–25%, under the 30% cap, and the coverage multiplier ν ≈ 0.
-- **Watched:** rising tests per case (cost) and rising entropy.
+**Figure 2 | The counterfactual escalation value.**
+- **Branching:** when an episode ends in DEFER at state *s*, the environment is replayed to *s*. K = 3 forced continuations are sampled in which escalation is disabled (a DEFER executes as COMMIT of the differential's top) and further tests stay allowed.
+- **Credit:** their mean clinical return *V̂(s)* is the value of not escalating from *s*. The DEFER turn's advantage is *A = E − V̂(s)*, where *E* values the escalation itself, including a strictly proper score of the handed-over differential.
+- **Effect:** escalation is credited where continuing would err, and discouraged where another test would settle the case.
+
+![Figure 2](docs/figures/fig_cev.png)
+
+**Figure 3 | Data and evaluation design.** Two sources, patient-disjoint cohorts, and what is measured. MIMIC-CDM-OW, built here with MIMIC-CDM's own text pipeline, supplies the OTHER cases and same-pipeline in-set controls. The five time-critical OTHER groups are held out of training entirely.
+
+![Figure 3](docs/figures/fig_data.png)
+
+**Figure 4 | Risk–coverage on CDM val + test.**
+- **a:** accuracy on answered in-set cases as the stated-probability threshold is lowered. Each curve ends (filled marker) at the system's own coverage, because a deferral never counts as answered. Hollow markers are forced-choice systems with a post-hoc threshold cross-fitted at the reference system's coverage (vertical line).
+- **b:** area under the risk–coverage curve (lower is better).
+
+![Figure 4](docs/figures/fig_risk_coverage.png)
+
+**Figure 5 | Paired differences on the same cases.**
+- **Panels:** each compares the reference system (DEFER-Dx once evaluated; until then the consensus arm) with one comparator.
+- **Points:** paired bootstrap differences in percentage points (AURC and ECE × 100). They are oriented so that positive values favour the reference system: the sign is flipped for lower-is-better metrics (↓). Filled points have an interval that excludes 0.
+
+![Figure 5](docs/figures/fig_paired_differences.png)
+
+**Figure 6 | Clinical safety on CDM val + test.**
+- **a:** unflagged errors, wrong commitments per case.
+- **b:** confident errors, wrong commitments stated with p > 0.8.
+- **c:** severity-weighted error, from the time-to-harm severity matrix.
+- **d:** tests ordered per case.
+
+Hollow markers: forced choice with a post-hoc threshold at matched coverage.
+
+![Figure 6](docs/figures/fig_clinical_safety.png)
+
+**Figure 7 | Open world.** Outcomes on OTHER cases from (a) diagnosis groups seen in training and (b) five time-critical groups never seen in training. The four outcomes are a false commitment to one of the four conditions, a confident false commitment (p > 0.8), deferral to a clinician, and naming OTHER.
+
+![Figure 7](docs/figures/fig_open_world.png)
+
+**Figure 8 | Training dynamics and the coverage controller.**
+- **Panels:** (a) coverage multiplier ν; (b) in-set deferral rate in training batches (5-step mean) against the 30% cap; (c) out-of-set deferral rate; (d) in-set coverage on the 212-case dev set at each evaluation.
+- **Dual ascent:** with plain dual ascent, ν wound up while the policy lagged, and in-set deferral collapsed after each overshoot: a limit cycle. Dev coverage then depended on where an evaluation fell in the cycle.
+- **PI controller:** the method is trained with a PI controller instead (Fig. S1). The consensus arm's cap barely bound.
+
+![Figure 8](docs/figures/fig_training_dynamics.png)
+
+**Figure S1 | One training step.** Multi-turn GRPO with the counterfactual escalation value, and the PI controller that holds in-set deferral at or below the cap.
+
+![Figure S1](docs/figures/fig_training.png)
+
+**Figure S2 | Reliability of stated probabilities** on committed CDM val + test cases. Only bins with at least 10 commitments are drawn, and the diagonal is perfect calibration. ECE is shown with its 95% interval.
+
+![Figure S2](docs/figures/fig_reliability.png)
+
+**Figure S3 | Accuracy at full coverage by condition**, CDM val + test. A deferral counts through the top of its differential.
+
+![Figure S3](docs/figures/fig_per_class.png)
+
+**Figure S4 | Unseen time-critical OTHER groups.** False commitments and deferral by diagnosis group, for groups with at least 10 cases. Ruptured AAA and ectopic pregnancy have fewer and are suppressed under the small-cell rule.
+
+![Figure S4](docs/figures/fig_unseen_groups.png)
+
+**Figure S5 | Ablations at 100 training steps.** DEFER-Dx against the same training without the scored handoff (η = 0), and with a constant deferral reward. Written when the ablations finish.
+
+![Figure S5](docs/figures/fig_ablations.png)
 
 ## 4. Method in brief
 
@@ -204,14 +272,15 @@ deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir d
 deferdx data cohorts                      # -> data/cohorts/*.jsonl + manifest.json
 
 # Everything else runs through one idempotent queue (waits for a free GPU; resumes after crashes or reboots):
-setsid nohup bash scripts/queue_v2.sh >> outputs/logs/queue_v2.log 2>&1 &
+setsid nohup bash scripts/queue_v3.sh >> outputs/logs/queue_v3.log 2>&1 &
 
 # Single pieces:
 deferdx train grpo-vllm --config configs/grpo_cev.yaml            # DEFER-Dx, counterfactual escalation (the method)
 deferdx train grpo-vllm --config configs/grpo_deferdx.yaml         # case-level consensus comparator arm
 deferdx train grpo-vllm --config configs/grpo_nodefer.yaml         # control
 deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx/final --name deferdx
-python scripts/make_report.py && python scripts/make_figures.py    # docs/RESULTS.md, docs/figures/
+python scripts/make_report.py              # docs/RESULTS.md, docs/results.json and the data figures in docs/figures/
+bash scripts/build_tikz.sh                 # the TikZ schematics (pdflatex with tikz, standalone, sansmath)
 python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outputs/runs/nodefer
 deferdx crossover                                                   # tau -> effective deferral threshold
 ```
@@ -228,7 +297,7 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 | Run | Hugging Face repo (private) |
 |---|---|
 | Comparator (case-level consensus) | `GOVINDFROM/deferdx-consensus-qwen3-8b-lora` |
-| DEFER-Dx (counterfactual escalation) | `GOVINDFROM/deferdx-cev-qwen3-8b-lora` (when trained) |
+| DEFER-Dx (counterfactual escalation) | `GOVINDFROM/deferdx-cev-qwen3-8b-lora` (when trained); the first, dual-ascent run's checkpoints are on its `dual-ascent-*` branches |
 | No-defer control | `GOVINDFROM/deferdx-nodefer-control-qwen3-8b-lora` (when trained) |
 | Ablations | `GOVINDFROM/deferdx-abl-*-qwen3-8b-lora` (when trained) |
 
@@ -250,7 +319,8 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 | [src/deferdx/baselines/](src/deferdx/baselines/) | Post-hoc threshold and SGR |
 | [configs/](configs/) | Environment, reward, catalog, severity matrix, ICD lists; `grpo_deferdx.yaml`, `grpo_nodefer.yaml`, `ablations/` |
 | [scripts/](scripts/) | Queues, report, figures, training plots, data audit, downloads, Lambda baseline jobs |
-| [tests/](tests/) | 108 CPU tests (`pytest`) |
+| [docs/figures/](docs/figures/) | Publication figures (PDF, SVG, PNG); TikZ sources and shared styles in `tikz/` |
+| [tests/](tests/) | 109 CPU tests (`pytest`) |
 
 ## 9. Documents
 
@@ -258,6 +328,7 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 |---|---|
 | [docs/METHODS.md](docs/METHODS.md) | Environment, reward with constants, cohorts, training, evaluation protocol |
 | [docs/RESULTS.md](docs/RESULTS.md) | ML-benchmark and clinical tables with intervals, open world, published context, paired tests (generated) |
+| [docs/figures/](docs/figures/) | All figures; captions in §3 of this README |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | The run grid, queues, ablations and the question each answers |
 | [docs/PAPER.md](docs/PAPER.md), [docs/ABSTRACT.md](docs/ABSTRACT.md) | Paper draft and abstract scaffold (placeholders until results) |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Facts checked against primary sources; literature re-checks and the narrowed novelty claim |
