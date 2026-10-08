@@ -40,6 +40,7 @@ CDM_SETS=(data/cohorts/eval_cdm_val.jsonl data/cohorts/eval_cdm_test.jsonl)
 
 # 0. wait for whatever queue_v2 left running (the dual-ascent CEV run, or an evaluation of it), then
 #    move that run and anything evaluated from it aside, once
+echo "$(date -Is) queue v3 started; waiting for a free GPU"
 gpu_free
 if [[ ! -f outputs/queue/archive_cev_dualascent.done ]]; then
   if [[ -e outputs/runs/cev_dualascent ]]; then
