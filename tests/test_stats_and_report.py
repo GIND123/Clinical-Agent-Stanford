@@ -72,3 +72,30 @@ def test_crossfit_threshold_never_uses_the_case_it_scores():
     for orig, r in zip(val, out["eval_cdm_val"]):
         assert r.terminal == ("commit" if orig.probability >= 0.9 else "defer")
     assert thr["fit_on_val"] < thr["fit_on_test"]
+
+
+def test_reprice_changes_only_charged_tests(tmp_path):
+    import importlib.util
+    from pathlib import Path
+
+    from deferdx.env.environment import StepLog
+
+    spec = importlib.util.spec_from_file_location("make_report", Path(__file__).resolve().parents[1] / "scripts" / "make_report.py")
+    mr = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mr)
+    r = EpisodeResult("c", "appendicitis", "commit", diagnosis="appendicitis", probability=0.9, total_cost=171.0,
+                      steps=[StepLog({"type": "TEST", "test": "cbc"}, 71.0, True),
+                             StepLog({"type": "TEST", "test": "lipase"}, 100.0, False),   # charged though unavailable
+                             StepLog({"type": "TEST", "test": "crp"}, 0.0, False),        # not charged
+                             StepLog({"type": "COMMIT", "diagnosis": "appendicitis"}, 0.0, None)])
+    csv_path = tmp_path / "prices.csv"
+    csv_path.write_text("key,reviewed_price\ncbc,50\nlipase,\ncrp,40\n")
+    prices = mr.load_prices(csv_path)
+    assert prices == {"cbc": 50.0, "crp": 40.0}  # empty reviewed_price keeps the current price
+    suite = {"eval_cdm_test": [r]}
+    mr.reprice(suite, prices)
+    assert r.total_cost == 150.0  # 50 (re-priced cbc) + 100 (lipase unchanged) + 0 (crp never charged)
+    yml = tmp_path / "p.yaml"
+    yml.write_text("lipase: 10\n")
+    mr.reprice(suite, mr.load_prices(yml))
+    assert r.total_cost == 81.0  # the trajectory's own step costs are the base: 71 + 10

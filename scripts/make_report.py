@@ -122,19 +122,54 @@ def tables_for(suite: dict, sev: SeverityMatrix, n_boot: int) -> dict:
     return out
 
 
+def load_prices(path: str | Path) -> dict[str, float]:
+    """Test/ask key -> price. YAML {key: price}, or the CSV from scripts/price_template.py (rows whose
+    reviewed_price is filled in)."""
+    path = Path(path)
+    if path.suffix == ".csv":
+        import csv
+
+        with path.open(encoding="utf-8") as f:
+            return {r["key"]: float(r["reviewed_price"]) for r in csv.DictReader(f) if (r.get("reviewed_price") or "").strip()}
+    import yaml
+
+    return {str(k): float(v) for k, v in (yaml.safe_load(path.read_text()) or {}).items()}
+
+
+def reprice(suite: dict, prices: dict[str, float]) -> None:
+    """Recompute each episode's total cost with new prices for the tests it was charged for (sensitivity
+    analysis: the trajectories are unchanged, only what they cost)."""
+    for results in suite.values():
+        for r in results:
+            total = 0.0
+            for st in r.steps:
+                a = st.action or {}
+                key = a.get("test") if a.get("type") == "TEST" else a.get("topic") if a.get("type") == "ASK" else None
+                charged = st.cost > 0 or bool(st.available)
+                total += prices.get(key, st.cost) if (key in prices and charged) else st.cost
+            r.total_cost = total
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-dir", default="outputs/eval")
     ap.add_argument("--out", default="docs")
     ap.add_argument("--n-boot", type=int, default=2000)
+    ap.add_argument("--severity", default=str(ROOT / "configs" / "severity_matrix.yaml"),
+                    help="sensitivity analysis: an alternative (e.g. clinician-built) severity matrix")
+    ap.add_argument("--prices", help="sensitivity analysis: re-price tests (YAML {test: price} or the "
+                                     "scripts/price_template.py CSV); write to another --out, not docs/")
     args = ap.parse_args()
     ev = Path(args.eval_dir)
-    sev = SeverityMatrix.from_yaml(ROOT / "configs" / "severity_matrix.yaml")
+    sev = SeverityMatrix.from_yaml(args.severity)
+    prices = load_prices(args.prices) if args.prices else None
 
     suites, labels = {}, {}
     for name, label in SYSTEMS:
         if (ev / name).exists():
             suites[name], labels[name] = load_suite(ev / name), label
+            if prices:
+                reprice(suites[name], prices)
             n_seeds = len(list((ev / name).glob("s*.jsonl")))
             if n_seeds >= 3:
                 suites[name + "@sc"] = {k: self_consistency(v) for k, v in suites[name].items()}
@@ -208,11 +243,14 @@ def main() -> None:
          "evaluation seeds; brackets are 95% case-level bootstrap intervals (2,000 resamples). CDM = LA-CDM val +",
          "test (480 cases, 51 diverticulitis), never seen by any trained model. Post-hoc thresholds are",
          "cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better."]
+    sev_name = Path(args.severity).name if Path(args.severity).resolve() != (ROOT / "configs" / "severity_matrix.yaml").resolve() \
+        else "configs/severity_matrix.yaml (a proxy)"
+    price_note = f"; costs re-priced from {Path(args.prices).name}" if prices else ""
     L += block("1. Machine-learning benchmark (CDM, val + test)", "ml", ML_COLS)
     L += block("2. Clinical safety (CDM, val + test; time-critical column from the unseen OTHER groups)",
                "clinical", CLIN_COLS,
                "Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error "
-               "uses the proxy matrix in configs/severity_matrix.yaml. Deferral precision: share of deferrals whose "
+               f"uses the matrix in {sev_name}{price_note}. Deferral precision: share of deferrals whose "
                "best guess was wrong; errors caught: share of would-be errors that were deferred.")
     L += block("3a. Open world: OTHER, diagnosis groups seen in training", "eval_other_seen", OW_COLS)
     L += block("3b. Open world: OTHER, time-critical groups never seen in training", "eval_other_unseen", OW_COLS)
