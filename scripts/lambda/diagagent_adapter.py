@@ -9,12 +9,17 @@ or "Diagnosis: Y"). Prompted with this environment's action format it produced n
   * it translates each reply into one environment action: "Diagnosis: Y" -> COMMIT (label via
     `normalize_label`), a recommended exam -> TEST/ASK via keyword rules over the catalog;
   * a diagnosis outside the four classes, or an exam no catalog test matches, becomes no action, so
-    the environment scores it as invalid, as it would any unusable reply.
+    the environment scores it as invalid, as it would any unusable reply. With --open-world, a named
+    diagnosis outside the four is an OTHER answer instead (DiagAgent has no "none of these" option).
 
 DiagAgent states no probability, so commits carry probability 1.0; its calibration metrics are
 not meaningful. The environment, catalog, prompts for other models and scoring are unchanged.
 
     python scripts/lambda/diagagent_adapter.py --cases data/cdm/all.jsonl --out outputs/da_adapter.jsonl
+    # the evaluation cohorts, open world, in eval-suite layout (outputs/eval/diagagent_nodefer/):
+    python scripts/lambda/diagagent_adapter.py --open-world --suite diagagent_nodefer --out outputs/eval \
+        --cases data/cohorts/eval_cdm_val.jsonl data/cohorts/eval_cdm_test.jsonl data/cohorts/eval_other_seen.jsonl \
+                data/cohorts/eval_other_unseen.jsonl data/cohorts/eval_controls.jsonl
 """
 
 from __future__ import annotations
@@ -30,7 +35,7 @@ from deferdx.data import load_cases  # noqa: E402
 from deferdx.data.io import write_jsonl  # noqa: E402
 from deferdx.env import EnvConfig, TestCatalog  # noqa: E402
 from deferdx.env.actions import ASK, COMMIT, TEST, Action, render_action  # noqa: E402
-from deferdx.labels import IN_SET_LABELS, normalize_label  # noqa: E402
+from deferdx.labels import IN_SET_LABELS, OTHER, normalize_label  # noqa: E402
 from deferdx.policy.base import Generation  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
@@ -108,12 +113,18 @@ def map_exam(exam: str, valid_tests: set[str], valid_topics: set[str]) -> Action
     return None
 
 
-def translate(raw: str, valid_tests: set[str], valid_topics: set[str]) -> Action | None:
-    """One DiagAgent reply -> one environment action, or None (scored invalid)."""
+def translate(raw: str, valid_tests: set[str], valid_topics: set[str], open_world: bool = False) -> Action | None:
+    """One DiagAgent reply -> one environment action, or None (scored invalid).
+
+    With open_world, a named final diagnosis outside the four is an OTHER answer (DiagAgent names a
+    specific diagnosis; it has no "none of these" option), instead of an invalid reply."""
     dx = extract_final_diagnosis(raw)
     if dx is not None:
         label = normalize_label(dx)
-        return Action(COMMIT, diagnosis=label, probability=1.0) if label in IN_SET_LABELS else None
+        if label in IN_SET_LABELS:
+            return Action(COMMIT, diagnosis=label, probability=1.0)
+        named = dx.strip() and not dx.strip().lower().startswith("reason:")  # "Diagnosis:" left empty
+        return Action(COMMIT, diagnosis=OTHER, probability=1.0) if open_world and named else None
     exam = extract_exam(raw)
     return map_exam(exam, valid_tests, valid_topics) if exam else None
 
@@ -125,13 +136,14 @@ def presentation(first_user_message: str) -> str:
 
 class DiagAgentAdapter:
     def __init__(self, model: str, valid_tests: set[str], valid_topics: set[str], max_new_tokens: int = 1024,
-                 seed: int = 0):
+                 seed: int = 0, open_world: bool = False):
         from vllm import LLM, SamplingParams
 
         self.llm = LLM(model=model, seed=seed, max_model_len=16384, gpu_memory_utilization=0.92)
         self.tok = self.llm.get_tokenizer()
         self.params = SamplingParams(temperature=0.0, max_tokens=max_new_tokens)  # DiagAgent's own decoding
         self.valid_tests, self.valid_topics = valid_tests, valid_topics
+        self.open_world = open_world
         self.history: dict[int, list[dict[str, str]]] = {}
 
     def generate(self, conversations, contexts):
@@ -150,33 +162,68 @@ class DiagAgentAdapter:
         for k, o in zip(keys, outs):
             raw = o.outputs[0].text.strip().replace("```", "")
             self.history[k].append({"role": "assistant", "content": raw})
-            action = translate(raw, self.valid_tests, self.valid_topics)
+            action = translate(raw, self.valid_tests, self.valid_topics, self.open_world)
             gens.append(Generation(text=raw + ("\n" + render_action(action) if action else "")))
         return gens
 
 
 def main() -> None:
+    import json
+    import time
+
     from deferdx.config import load_config
+    from deferdx.eval.evaluate import summarize
+    from deferdx.rewards.scoring import SeverityMatrix
     from deferdx.rollout import run_episodes
 
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--cases", nargs="+", required=True)
     ap.add_argument("--model", default="Henrychur/DiagAgent-14B")
     ap.add_argument("--config", default=str(REPO / "configs/base.yaml"))
-    ap.add_argument("--limit", type=int)
+    ap.add_argument("--limit", type=int, help="first N cases (of each set with --suite)")
+    ap.add_argument("--open-world", action="store_true", help="OTHER is a valid answer (forced choice, no DEFER)")
+    ap.add_argument("--suite", metavar="NAME", help="write <out>/<NAME>/s0.jsonl + summary.json like deferdx eval-suite")
     ap.add_argument("--out", required=True)
     args = ap.parse_args()
 
     cfg = load_config(args.config)
-    env = dict(cfg.get("env", {}), allow_defer=False, open_world=False)  # same as --no-defer --closed-world
+    env = dict(cfg.get("env", {}), allow_defer=False, open_world=args.open_world)  # --no-defer [--closed-world]
     catalog, env_cfg = TestCatalog.from_yaml(cfg["test_catalog"]), EnvConfig.from_dict(env)
-    cases = [c for p in args.cases for c in load_cases(p)][: args.limit]
+    set_of, group_of, cases = {}, {}, []
+    for path in args.cases:
+        cs = load_cases(path)[: args.limit] if args.suite else load_cases(path)
+        for c in cs:
+            set_of[c.case_id], group_of[c.case_id] = Path(path).stem, c.meta.get("group") or c.label
+        cases.extend(cs)
+    if not args.suite:
+        cases = cases[: args.limit]
     topics = set(env_cfg.ask_topics or catalog.asks)
-    policy = DiagAgentAdapter(args.model, set(catalog.tests), topics)
+    policy = DiagAgentAdapter(args.model, set(catalog.tests), topics, open_world=args.open_world)
+    t0 = time.time()
     rollouts = run_episodes(policy, catalog, env_cfg, cases, n_samples=1,
                             on_turn=lambda t, n: print(f"  turn {t}: {n} active", file=sys.stderr))
-    n = write_jsonl(args.out, (ro.to_dict() for ro in rollouts))
-    print(f"{n} rollouts -> {args.out}")
+    if not args.suite:
+        n = write_jsonl(args.out, (ro.to_dict() for ro in rollouts))
+        print(f"{n} rollouts -> {args.out}")
+        return
+    # eval-suite layout, so scripts/make_report.py reads it like any other system. Greedy decoding: one seed.
+    out = Path(args.out) / args.suite
+    out.mkdir(parents=True, exist_ok=True)
+    rows = [dict(ro.to_dict(), set=set_of[ro.case_id], seed=0, group=group_of[ro.case_id]) for ro in rollouts]
+    write_jsonl(out / "s0.jsonl", rows)
+    path = cfg.get("reward", {}).get("severity_matrix")
+    severity = SeverityMatrix.from_yaml(path) if path else SeverityMatrix.uniform()
+    sets = list(dict.fromkeys(set_of.values()))
+    per_set = {}
+    for name in sets:
+        rep = summarize([ro.result for ro in rollouts if set_of[ro.case_id] == name], severity)
+        rep.get("selective", {}).pop("curve", None)
+        per_set[name] = rep
+    summary = {"model": args.model, "adapter": "scripts/lambda/diagagent_adapter.py", "sets": sets, "seeds": [0],
+               "env": env_cfg.__dict__, "sampling": {"temperature": 0.0, "max_new_tokens": policy.params.max_tokens},
+               "results": {"s0": per_set}, "seconds": {"s0": round(time.time() - t0, 1)}}
+    (out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+    print(f"[diagagent-suite] {args.suite}: {len(rollouts)} episodes -> {out}")
 
 
 if __name__ == "__main__":

@@ -47,6 +47,9 @@ SYSTEMS = [  # eval-suite directory name, label
     ("zs_nodefer", "Qwen3-8B zero-shot, forced choice"),
     ("zs_defer", "Qwen3-8B zero-shot, prompted DEFER"),
     ("gptoss_nodefer", "gpt-oss-20b zero-shot, forced choice"),
+    ("qwen14b_nodefer", "Qwen3-14B zero-shot, forced choice"),
+    ("qwen14b_defer", "Qwen3-14B zero-shot, prompted DEFER"),
+    ("diagagent_nodefer", "DiagAgent-14B (DiagGym RL), forced choice via its format adapter"),
     ("grpo_nodefer", "GRPO control (no DEFER)"),
     ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
     ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
@@ -144,7 +147,7 @@ def main() -> None:
             continue
         target = S.coverage(cdm_pooled(suites[ref]))
         suffix = "@sc" if ref.endswith("@sc") else ""
-        for base in ("grpo_nodefer", "zs_nodefer", "gptoss_nodefer"):
+        for base in ("grpo_nodefer", "zs_nodefer", "gptoss_nodefer", "qwen14b_nodefer"):
             if base + suffix in suites:
                 key = f"{base}{suffix}+thr"
                 suites[key], thresholds[key] = crossfit_posthoc(suites[base + suffix], target)
@@ -154,7 +157,7 @@ def main() -> None:
     # selective risk is <= 5% with probability >= 95%, cross-fitted the same way
     from deferdx.baselines.selective import sgr_threshold
 
-    for base in ("grpo_nodefer", "zs_nodefer", "gptoss_nodefer"):
+    for base in ("grpo_nodefer", "zs_nodefer", "gptoss_nodefer", "qwen14b_nodefer"):
         if base in suites:
             key = f"{base}+sgr"
             suites[key], thresholds[key] = crossfit_posthoc(suites[base], fit=lambda rs: sgr_threshold(rs, 0.05, 0.05))
