@@ -59,3 +59,27 @@ def test_label_adjusted_removes_class_mix():
     one_class = frame.assign(sex=["A"] * 18 + ["B"] * 22)
     t = sg.group_table(one_class, "sex", min_cell=10, n_boot=100, weights=frame["label"].value_counts(normalize=True))
     assert t.at["A", "label-adjusted"] == "–"
+
+
+def test_deferral_by_group_and_set_filter(tmp_path):
+    def row(case, label, terminal, diag, set_name, seed):
+        return {"case_id": case, "set": set_name, "seed": seed, "messages": [],
+                "result": {"case_id": case, "label": label, "terminal": terminal, "diagnosis": diag}}
+    rows = []
+    for i in range(20):  # group A: always answers, right on 18 of 20
+        rows.append(row(f"a{i}", "appendicitis", "commit", "appendicitis" if i < 18 else "pancreatitis", "eval_cdm_test", 0))
+    for i in range(20):  # group B: defers on 10, answers 10 correctly
+        rows.append(row(f"b{i}", "appendicitis", "defer" if i < 10 else "commit", None if i < 10 else "appendicitis",
+                        "eval_cdm_test", 0))
+    rows.append(row("x", "other", "commit", "appendicitis", "eval_other_seen", 0))  # filtered out by --sets
+    path = tmp_path / "s0.jsonl"
+    path.write_text("\n".join(json.dumps(r) for r in rows))
+    frame = sg.per_case([path], sets=["eval_cdm_test"])
+    assert len(frame) == 40 and "x" not in frame.index
+    frame["insurance"] = ["A" if c.startswith("a") else "B" for c in frame.index]
+    t = sg.deferral_table(frame, "insurance", min_cell=10, n_boot=100, weights=frame["label"].value_counts(normalize=True))
+    assert t.at["A", "defer"] == "0.0" and t.at["A", "acc. answered"] == "90.0" and t.at["A", "unflagged /100"] == "10.0"
+    assert t.at["B", "defer"] == "50.0" and t.at["B", "acc. answered"] == "100.0" and t.at["B", "unflagged /100"] == "0.0"
+    assert t.at["B", "defer, label-adj."] == "50.0"
+    rep = sg.report(frame, min_cell=10, n_boot=100)
+    assert rep["deferral"]["defer"] == 0.25 and "deferral by insurance" in rep["tables"]

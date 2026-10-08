@@ -13,8 +13,15 @@ Correctness is full-coverage (`EpisodeResult.forced_prediction == label`, as in
 `accuracy_full_coverage`), averaged over samples of the same case. Output is aggregates
 only; groups with fewer than --min-cell cases are not shown.
 
+For systems that can DEFER, a second set of tables asks whether escalation is equitable: per
+group, the deferral rate, accuracy on the cases the system answered, and unflagged errors (wrong
+answers given without escalating) per 100 cases, crude and label-adjusted.
+
     python scripts/subgroup_eval.py --rollouts outputs/eval/zs.jsonl --cases data/cdm/all.jsonl \
         --out outputs/eval/zs.groups.json
+    # an eval-suite run, CDM sets only, all seeds pooled per case:
+    python scripts/subgroup_eval.py --rollouts outputs/eval/cev/s*.jsonl --sets eval_cdm_val eval_cdm_test \
+        --cases data/cohorts/eval_cdm_val.jsonl data/cohorts/eval_cdm_test.jsonl --out outputs/eval/cev.groups.json
 """
 
 from __future__ import annotations
@@ -41,15 +48,27 @@ DEMOGRAPHIC_FLOOR = {"accuracy": 0.478, "majority_accuracy": 0.399,
                      "source": "docs/DATA_AUDIT.md §7.3 (5-fold CV, all 2,400 CDM cases)"}
 
 
-def per_case(rollout_path: str | Path) -> pd.DataFrame:
-    """One row per case: mean full-coverage correctness over its samples."""
+def per_case(rollout_paths: str | Path | list, sets: list[str] | None = None) -> pd.DataFrame:
+    """One row per case, averaged over its samples (seeds): full-coverage correctness, and the share of
+    samples that deferred, committed, committed correctly, and committed wrongly (unflagged errors).
+    `sets` keeps only eval-suite rows whose "set" is listed."""
+    paths = rollout_paths if isinstance(rollout_paths, (list, tuple)) else [rollout_paths]
     rows = []
-    for r in read_jsonl(rollout_path):
-        res = EpisodeResult.from_dict(r["result"])
-        rows.append({"case_id": str(res.case_id), "label": res.label,
-                     "correct": float(res.forced_prediction == res.label)})
+    for path in paths:
+        for r in read_jsonl(path):
+            if sets and r.get("set") not in sets:
+                continue
+            res = EpisodeResult.from_dict(r["result"])
+            committed = res.terminal == "commit"
+            right = committed and res.diagnosis == res.label
+            rows.append({"case_id": str(res.case_id), "label": res.label,
+                         "correct": float(res.forced_prediction == res.label), "defer": float(res.terminal == "defer"),
+                         "committed": float(committed), "commit_correct": float(right),
+                         "unflagged": float(committed and not right)})
     df = pd.DataFrame(rows)
-    return df.groupby("case_id").agg(label=("label", "first"), correct=("correct", "mean"), samples=("correct", "size"))
+    return df.groupby("case_id").agg(label=("label", "first"), correct=("correct", "mean"), samples=("correct", "size"),
+                                     defer=("defer", "mean"), committed=("committed", "mean"),
+                                     commit_correct=("commit_correct", "mean"), unflagged=("unflagged", "mean"))
 
 
 def case_features(case_paths: list[str]) -> pd.DataFrame:
@@ -116,6 +135,48 @@ def group_table(frame: pd.DataFrame, by: str, min_cell: int, n_boot: int = 2000,
     return pd.DataFrame(rows).T
 
 
+def _selective_acc(sub: pd.DataFrame) -> float:
+    return float(sub["commit_correct"].sum() / sub["committed"].sum()) if sub["committed"].sum() > 0 else float("nan")
+
+
+def _adjusted_selective_acc(sub: pd.DataFrame, weights: pd.Series) -> float:
+    """Accuracy on committed cases, directly standardised to the cohort's class mix (NaN if a class is
+    missing from the group or never answered)."""
+    vals = {c: _selective_acc(sub[sub["label"] == c]) for c in weights.index}
+    if any(np.isnan(v) for v in vals.values()):
+        return float("nan")
+    return float(sum(weights[c] * vals[c] for c in weights.index))
+
+
+def deferral_table(frame: pd.DataFrame, by: str, min_cell: int, n_boot: int = 2000,
+                   weights: pd.Series | None = None) -> pd.DataFrame:
+    """Per group: deferral rate (95% CI), accuracy on committed cases, unflagged errors per 100 cases (95% CI),
+    and, with `weights`, label-adjusted deferral rate and accuracy on committed. Small groups are hidden
+    with the same complementary rule as group_table."""
+    audit_data.MIN_CELL = min_cell
+    shown = suppress(pd.DataFrame({"n": frame.groupby(by, sort=True).size()}))["n"]
+    rows = {}
+    for g, sub in frame.groupby(by, sort=True):
+        if len(sub) < min_cell:
+            rows[str(g)] = {"cases": f"<{min_cell}", "defer": "–", "defer 95% CI": "–", "acc. answered": "–",
+                            "unflagged /100": "–", "unflagged 95% CI": "–"}
+            if weights is not None:
+                rows[str(g)].update({"defer, label-adj.": "–", "acc. answered, label-adj.": "–"})
+            continue
+        d, dlo, dhi = bootstrap(sub["defer"].to_numpy(), n_boot)
+        u, ulo, uhi = bootstrap(sub["unflagged"].to_numpy(), n_boot)
+        acc = _selective_acc(sub)
+        rows[str(g)] = {"cases": shown[g], "defer": f"{100 * d:.1f}", "defer 95% CI": f"{100 * dlo:.1f}–{100 * dhi:.1f}",
+                        "acc. answered": "–" if np.isnan(acc) else f"{100 * acc:.1f}",
+                        "unflagged /100": f"{100 * u:.1f}", "unflagged 95% CI": f"{100 * ulo:.1f}–{100 * uhi:.1f}"}
+        if weights is not None:
+            adj_d = label_adjusted(sub.assign(correct=sub["defer"]), weights)
+            adj_a = _adjusted_selective_acc(sub, weights)
+            rows[str(g)]["defer, label-adj."] = "–" if np.isnan(adj_d) else f"{100 * adj_d:.1f}"
+            rows[str(g)]["acc. answered, label-adj."] = "–" if np.isnan(adj_a) else f"{100 * adj_a:.1f}"
+    return pd.DataFrame(rows).T
+
+
 def report(frame: pd.DataFrame, min_cell: int = 10, n_boot: int = 2000) -> dict:
     m, lo, hi = bootstrap(frame["correct"].to_numpy(), n_boot)
     out = {"cases": int(len(frame)), "accuracy": round(m, 4), "ci95": [round(lo, 4), round(hi, 4)],
@@ -127,12 +188,20 @@ def report(frame: pd.DataFrame, min_cell: int = 10, n_boot: int = 2000) -> dict:
     if "rad_mask" in frame:  # does the model do better when the mask is present, within each class?
         out["tables"]["label x rad_mask"] = group_table(
             frame.assign(stratum=frame["label"] + " / mask=" + frame["rad_mask"].astype(str)), "stratum", min_cell, n_boot)
+    if "defer" in frame and frame["defer"].sum() > 0:  # is escalation equitable?
+        out["deferral"] = {"defer": round(float(frame["defer"].mean()), 4),
+                           "accuracy_answered": round(_selective_acc(frame), 4),
+                           "unflagged_per_case": round(float(frame["unflagged"].mean()), 4)}
+        for col in ["label"] + [a for a in ATTRS if a in frame]:
+            out["tables"][f"deferral by {col}"] = deferral_table(frame, col, min_cell, n_boot,
+                                                                 shares if col in ATTRS else None)
     return out
 
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--rollouts", required=True)
+    ap.add_argument("--rollouts", nargs="+", required=True, help="rollout file(s); several seeds are pooled per case")
+    ap.add_argument("--sets", nargs="+", help="eval-suite rows: keep only these sets (e.g. eval_cdm_val eval_cdm_test)")
     ap.add_argument("--cases", nargs="+", default=["data/cdm/all.jsonl"], help="case files, for the mask stratum")
     ap.add_argument("--hosp", default="data/physionet/mimiciv/2.2/hosp", help="MIMIC-IV hosp dir, for demographics")
     ap.add_argument("--min-cell", type=int, default=10)
@@ -140,7 +209,7 @@ def main() -> None:
     ap.add_argument("--out")
     args = ap.parse_args()
 
-    frame = per_case(args.rollouts)
+    frame = per_case(args.rollouts, args.sets)
     frame = frame.join(case_features(args.cases), how="left")
     if Path(args.hosp).exists():
         frame = frame.join(demographics(Path(args.hosp), list(frame.index)), how="left")
@@ -148,6 +217,10 @@ def main() -> None:
     print(f"cases {rep['cases']}; accuracy {100 * rep['accuracy']:.1f} (95% CI {100 * rep['ci95'][0]:.1f}–"
           f"{100 * rep['ci95'][1]:.1f}); mean class accuracy {100 * rep['mean_class_accuracy']:.1f}; "
           f"demographics-only floor {100 * DEMOGRAPHIC_FLOOR['accuracy']:.1f}")
+    if "deferral" in rep:
+        dd = rep["deferral"]
+        print(f"deferred {100 * dd['defer']:.1f}%; accuracy on answered cases {100 * dd['accuracy_answered']:.1f}; "
+              f"unflagged errors {100 * dd['unflagged_per_case']:.1f} per 100 cases")
     for name, t in rep["tables"].items():
         print(f"\n{ATTRS.get(name, name)}\n{md_table(t, name)}")
     if args.out:
