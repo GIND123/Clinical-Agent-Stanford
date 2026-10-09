@@ -51,6 +51,12 @@ trained() { [[ -d "outputs/runs/$1/final" ]] && touch "outputs/queue/$2.done"; r
 
 M=Qwen/Qwen3-8B
 CDM_SETS=(data/cohorts/eval_cdm_val.jsonl data/cohorts/eval_cdm_test.jsonl)
+# The GPU is shared with a desktop session and other users, whose memory use (2-4 GiB, and growing)
+# twice pushed a job out of memory. vLLM takes a fixed share, so this run leaves more of the card free:
+# 0.72 instead of 0.80 when training and 0.78 instead of 0.88 when evaluating. Memory only: sampling,
+# seeds and the algorithm are unchanged; generation is somewhat slower.
+TRAIN_MEM=(--set vllm_gpu_memory_utilization=0.72)
+EVAL_MEM=(--gpu-memory-utilization 0.78)
 
 # 0. wait for whatever queue_v3 left on the GPU, then set the crashed attempt aside, once
 echo "$(date -Is) queue v4 started; waiting for a free GPU"
@@ -72,39 +78,39 @@ fi
 
 # 1. MAIN: DEFER-Dx (counterfactual escalation value + scored handoff, PI coverage controller)
 trained cev train_cev_v4
-step train_cev_v4 3 deferdx train grpo-vllm --config configs/grpo_cev.yaml
-step eval_cev_v4 2 deferdx eval-suite --config configs/grpo_cev.yaml --model $M --adapter outputs/runs/cev/final --name cev
+step train_cev_v4 3 deferdx train grpo-vllm --config configs/grpo_cev.yaml "${TRAIN_MEM[@]}"
+step eval_cev_v4 2 deferdx eval-suite "${EVAL_MEM[@]}" --config configs/grpo_cev.yaml --model $M --adapter outputs/runs/cev/final --name cev
 step report_v4_1 1 python scripts/make_report.py
 
 # 2. control: identical training, no DEFER action (resumes from its checkpoint if it was interrupted)
 trained nodefer train_nodefer
-step train_nodefer 3 deferdx train grpo-vllm --config configs/grpo_nodefer.yaml
-step eval_grpo_nodefer 2 deferdx eval-suite --model $M --adapter outputs/runs/nodefer/final --name grpo_nodefer --no-defer
+step train_nodefer 3 deferdx train grpo-vllm --config configs/grpo_nodefer.yaml "${TRAIN_MEM[@]}"
+step eval_grpo_nodefer 2 deferdx eval-suite "${EVAL_MEM[@]}" --model $M --adapter outputs/runs/nodefer/final --name grpo_nodefer --no-defer
 step report_v4_2 1 python scripts/make_report.py
 
 # 3. ablations of what is new (100 steps; compared with DEFER-Dx's step-100 checkpoint)
-step eval_cev_v4_step100 2 deferdx eval-suite --config configs/grpo_cev.yaml --model $M \
+step eval_cev_v4_step100 2 deferdx eval-suite "${EVAL_MEM[@]}" --config configs/grpo_cev.yaml --model $M \
   --adapter outputs/runs/cev/checkpoints/step_0100 --name cev_step100 --seeds 0 1
 for abl in cev_no_handoff constant_defer; do
   trained abl_$abl train_abl_$abl
-  step train_abl_$abl 3 deferdx train grpo-vllm --config configs/ablations/$abl.yaml
+  step train_abl_$abl 3 deferdx train grpo-vllm --config configs/ablations/$abl.yaml "${TRAIN_MEM[@]}"
   cfgflag=(); [[ $abl == cev_* ]] && cfgflag=(--config configs/grpo_cev.yaml)
-  step eval_abl_$abl 2 deferdx eval-suite "${cfgflag[@]}" --model $M --adapter outputs/runs/abl_$abl/final \
+  step eval_abl_$abl 2 deferdx eval-suite "${EVAL_MEM[@]}" "${cfgflag[@]}" --model $M --adapter outputs/runs/abl_$abl/final \
     --name abl_$abl --seeds 0 1
 done
 step report_v4_3 1 python scripts/make_report.py
 
 # 4. robustness, further baselines, and the coverage-controller comparison
-step eval_cev_v4_maskdrop 2 deferdx eval-suite --config configs/grpo_cev.yaml --model $M --adapter outputs/runs/cev/final \
+step eval_cev_v4_maskdrop 2 deferdx eval-suite "${EVAL_MEM[@]}" --config configs/grpo_cev.yaml --model $M --adapter outputs/runs/cev/final \
   --name cev_maskdrop --mask-policy drop_sentence --sets "${CDM_SETS[@]}"
-step eval_nodefer_maskdrop 2 deferdx eval-suite --model $M --adapter outputs/runs/nodefer/final --name grpo_nodefer_maskdrop \
+step eval_nodefer_maskdrop 2 deferdx eval-suite "${EVAL_MEM[@]}" --model $M --adapter outputs/runs/nodefer/final --name grpo_nodefer_maskdrop \
   --no-defer --mask-policy drop_sentence --sets "${CDM_SETS[@]}"
-step eval_zs_closed 2 deferdx eval-suite --model $M --name zs_closed --no-defer --closed-world --sets "${CDM_SETS[@]}"
-step eval_gptoss 2 deferdx eval-suite --model openai/gpt-oss-20b --name gptoss_nodefer --no-defer \
+step eval_zs_closed 2 deferdx eval-suite "${EVAL_MEM[@]}" --model $M --name zs_closed --no-defer --closed-world --sets "${CDM_SETS[@]}"
+step eval_gptoss 2 deferdx eval-suite "${EVAL_MEM[@]}" --model openai/gpt-oss-20b --name gptoss_nodefer --no-defer \
   --temperature 1.0 --top-p 1.0 --top-k 0 --max-new-tokens 2048
 da=outputs/runs/cev_dualascent/final
 [[ -d $da ]] || da=$(ls -d outputs/runs/cev_dualascent/checkpoints/step_* 2>/dev/null | tail -1)
-step eval_cev_dualascent 2 deferdx eval-suite --config configs/grpo_cev.yaml --model $M --adapter "$da" --name cev_dualascent
+step eval_cev_dualascent 2 deferdx eval-suite "${EVAL_MEM[@]}" --config configs/grpo_cev.yaml --model $M --adapter "$da" --name cev_dualascent
 step hf_cev_dualascent 2 python scripts/push_hf.py --run cev --run-dir cev_dualascent --revision dual-ascent-final \
   --note "Final adapter of the first CEV run: plain dual-ascent coverage cap (nu ran a limit cycle) and the earlier rule for unbranched deferrals. Kept for the record; the method's adapter is on main."
 step report_v4_final 1 python scripts/make_report.py
