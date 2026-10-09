@@ -99,3 +99,22 @@ def test_reprice_changes_only_charged_tests(tmp_path):
     yml.write_text("lipase: 10\n")
     mr.reprice(suite, mr.load_prices(yml))
     assert r.total_cost == 81.0  # the trajectory's own step costs are the base: 71 + 10
+
+
+def test_suite_complete_and_seed_files(tmp_path):
+    import json
+
+    from deferdx.eval.report import load_suite, suite_complete
+
+    d = tmp_path / "sys"
+    d.mkdir()
+    row = {"set": "eval_cdm_val", "result": EpisodeResult("c1", "appendicitis", "commit", diagnosis="appendicitis",
+                                                          probability=0.9).to_dict()}
+    for k in (0, 1, 2):  # a stale seed file from an earlier run is left in the directory
+        (d / f"s{k}.jsonl").write_text(json.dumps(row) + "\n")
+    assert not suite_complete(d)  # no summary.json: the run never finished a seed
+    (d / "summary.json").write_text(json.dumps({"seeds": [0, 1], "results": {"s0": {}}}))
+    assert not suite_complete(d)  # died after seed 0
+    (d / "summary.json").write_text(json.dumps({"seeds": [0, 1], "results": {"s0": {}, "s1": {}}}))
+    assert suite_complete(d)
+    assert len(load_suite(d)["eval_cdm_val"]) == 2  # only the requested seeds, not the stale s2

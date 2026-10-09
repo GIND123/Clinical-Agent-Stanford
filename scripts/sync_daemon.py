@@ -30,6 +30,9 @@ import push_hf  # noqa: E402
 
 STATE = ROOT / "outputs" / "sync_state.json"
 GIT_ALLOW = ["docs/RESULTS.md", "docs/results.json", "docs/figures"]
+# While a GPU queue runs, remote changes to these paths are not rebased into the working tree: every
+# job of a run must use one version of the code. Results stay committed locally until the queue ends.
+CODE_PATHS = ("src/", "configs/", "scripts/", "pyproject.toml")
 
 
 def log(msg: str) -> None:
@@ -95,7 +98,25 @@ def sync_git() -> None:
            f"Regenerated docs/RESULTS.md, docs/results.json and figures from the evaluation suites "
            f"(aggregates only). Systems: {', '.join(s for s in systems if '@' not in s and '+' not in s) or 'n/a'}.")
     git("commit", "-q", "-m", msg)
+
+
+def queue_running() -> bool:
+    return subprocess.run(["pgrep", "-f", r"^(/usr)?(/bin/)?bash [^ ]*scripts/queue_v[0-9]+\.sh"],
+                          capture_output=True).returncode == 0
+
+
+def push_pending() -> None:
+    """Rebase local result commits onto origin/main and push them, unless that would bring remote code
+    changes into the working tree while a queue is running."""
     git("fetch", "-q", "origin")
+    if git("rev-list", "--count", "origin/main..HEAD").stdout.strip() in ("", "0"):
+        return
+    incoming = git("diff", "--name-only", "HEAD...origin/main").stdout.split()
+    code = [f for f in incoming if f.startswith(CODE_PATHS)]
+    if code and queue_running():
+        log(f"git: origin/main changes code ({', '.join(code[:4])}{', ...' if len(code) > 4 else ''}); "
+            "results kept locally until the queue finishes")
+        return
     rb = git("rebase", "-q", "origin/main", check=False)
     if rb.returncode != 0:
         git("rebase", "--abort", check=False)
@@ -116,6 +137,7 @@ def main():
         STATE.write_text(json.dumps(state, indent=2))
         try:
             sync_git()
+            push_pending()
         except subprocess.CalledProcessError as e:
             log(f"git: {e.cmd} failed: {(e.stderr or '').strip()[:200]}")
         if args.once:

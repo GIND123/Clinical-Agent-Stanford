@@ -13,7 +13,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ---
 
-## 1. Status (2026-10-08)
+## 1. Status (2026-10-09)
 
 | Component | State |
 |---|---|
@@ -23,13 +23,17 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Single-GPU colocated GRPO trainer | built, tested and in use |
 | Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | The first run used a plain dual-ascent coverage cap. Its multiplier ran a limit cycle (Fig. 8) and deferral collapsed after each overshoot, so that run is kept as a comparison (`cev_dualascent`). The method is **retrained with a PI coverage controller** (`scripts/queue_v3.sh`, from Oct 8, about 23:00 IST; about 22 h), with held-out numbers around Oct 10. |
-| GRPO control (no DEFER), the key comparator | queued after the method; around Oct 10 |
-| Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v3.sh`); through about Oct 12 |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Final run (`scripts/queue_v4.sh`), trained from step 1 on the final code from Oct 9; held-out numbers around Oct 10, 13:00 IST.** Earlier attempts are kept for the record, not used as the method. The first run used a plain dual-ascent coverage cap, which ran a limit cycle (Fig. 8); it is a comparison row (`cev_dualascent`). The PI-controller retrain died of a CUDA out-of-memory error at step 29, after another process took 4.6 GiB of the GPU; it is `cev_pi_crashed`. 6 of its 28 steps had also used the earlier rule for unbranched deferrals (commit 416ed87). |
+| GRPO control (no DEFER), the key comparator | paused at its last checkpoint; resumes after the method, around Oct 11, 08:00 |
+| Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v4.sh`); through about Oct 12, 21:00 |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 109 pass (`pytest`; CPU only) |
 
 Held-out numbers exist for the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). DEFER-Dx's are pending. Until they exist, the paired figure (Fig. 5) uses the comparator arm as its reference system.
+
+**This is the final run.** Every step is retried from its newest checkpoint, and the report counts only evaluations whose every seed finished. Until `outputs/logs/queue_v4.log` says `queue v4 finished`:
+- **Keep the GPU free.** Run nothing else on it, including `pytest` without `CUDA_VISIBLE_DEVICES=`.
+- **Don't `git pull` on this machine.** While a queue runs, the sync daemon keeps result commits local rather than pull remote code changes, so every job uses one version of the code.
 
 ## 2. Is it novel? Is it beating SOTA? (honest assessment)
 
@@ -272,7 +276,7 @@ deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir d
 deferdx data cohorts                      # -> data/cohorts/*.jsonl + manifest.json
 
 # Everything else runs through one idempotent queue (waits for a free GPU; resumes after crashes or reboots):
-setsid nohup bash scripts/queue_v3.sh >> outputs/logs/queue_v3.log 2>&1 &
+setsid nohup bash scripts/queue_v4.sh >> outputs/logs/queue_v4.log 2>&1 &
 
 # Single pieces:
 deferdx train grpo-vllm --config configs/grpo_cev.yaml            # DEFER-Dx, counterfactual escalation (the method)
@@ -290,7 +294,7 @@ deferdx crossover                                                   # tau -> eff
 setsid nohup python scripts/sync_daemon.py --interval 900 >> outputs/logs/sync.log 2>&1 &
 python scripts/push_hf.py --run cev          # or push one run by hand
 ```
-- **GitHub:** every 15 minutes the regenerated, aggregate-only results (`docs/RESULTS.md`, `docs/results.json`, `docs/figures/`) are committed and pushed to `main`. An allow-list means nothing else can be staged.
+- **GitHub:** every 15 minutes the regenerated, aggregate-only results (`docs/RESULTS.md`, `docs/results.json`, `docs/figures/`) are committed and pushed to `main`. An allow-list means nothing else can be staged. While a queue runs, a push that would rebase remote code changes into the working tree is held back until the queue ends.
 - **Hugging Face:** each finished run's LoRA adapter goes to a **private** model repo under the account of the `hf` token in `.env`, with a model card (provenance, DUA status, intended use, held-out metrics) and the numbers-only training log. Cards refresh whenever results change.
 - **Why private:** the weights derive from PhysioNet credentialed data, so a public release belongs on PhysioNet's credentialed channel. Rollouts, cases and MIMIC text are never uploaded.
 

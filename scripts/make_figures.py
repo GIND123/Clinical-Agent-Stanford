@@ -43,7 +43,7 @@ from matplotlib.ticker import FormatStrFormatter, MaxNLocator  # noqa: E402
 
 from deferdx.eval import stats as S  # noqa: E402
 from deferdx.eval.evaluate import selective_score  # noqa: E402
-from deferdx.eval.report import cdm_pooled, load_groups, load_suite  # noqa: E402
+from deferdx.eval.report import cdm_pooled, load_groups, load_suite, suite_complete  # noqa: E402
 from deferdx.labels import IN_SET_LABELS, OTHER  # noqa: E402
 
 SURFACE, INK, INK2, MUTED, GRID, AXIS = "#ffffff", "#0b0b0b", "#52514e", "#898781", "#e1e0d9", "#c3c2b7"
@@ -510,7 +510,7 @@ def main(argv=None):
     ev, out = Path(args.eval_dir), Path(args.out)
     results = json.loads(Path(args.results).read_text()) if Path(args.results).exists() else {}
     tables = results.get("tables") or {}
-    suites = {n: load_suite(ev / n) for n in CURVE_SYSTEMS if (ev / n).exists()}
+    suites = {n: load_suite(ev / n) for n in CURVE_SYSTEMS if suite_complete(ev / n)}
     fig_risk_coverage(suites, tables, out)
     fig_paired(results, out)
     fig_clinical_safety(tables, out)

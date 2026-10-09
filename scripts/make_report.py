@@ -39,6 +39,8 @@ from deferdx.eval.report import (  # noqa: E402
     load_suite,
     per_group,
     self_consistency,
+    suite_complete,
+    suite_seeds,
 )
 from deferdx.labels import OTHER  # noqa: E402
 from deferdx.rewards.scoring import SeverityMatrix  # noqa: E402
@@ -171,11 +173,13 @@ def main() -> None:
 
     suites, labels = {}, {}
     for name, label in SYSTEMS:
-        if (ev / name).exists():
+        if (ev / name).exists() and not suite_complete(ev / name):
+            print(f"skipping {name}: its evaluation did not finish every seed")
+        elif (ev / name).exists():
             suites[name], labels[name] = load_suite(ev / name), label
             if prices:
                 reprice(suites[name], prices)
-            n_seeds = len(list((ev / name).glob("s*.jsonl")))
+            n_seeds = len(suite_seeds(ev / name) or list((ev / name).glob("s*.jsonl")))
             if n_seeds >= 3:
                 suites[name + "@sc"] = {k: self_consistency(v) for k, v in suites[name].items()}
                 labels[name + "@sc"] = f"{label}, self-consistency over {n_seeds} samples"

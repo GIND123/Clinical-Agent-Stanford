@@ -9,6 +9,7 @@ open-world sets (disjoint from CDM) the threshold is fit on all CDM evaluation c
 
 from __future__ import annotations
 
+import json
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
@@ -59,10 +60,29 @@ def self_consistency(results: list[EpisodeResult]) -> list[EpisodeResult]:
     return out
 
 
+def suite_seeds(path: str | Path) -> list[int] | None:
+    """The seeds an eval-suite run asked for (its summary.json), or None for a directory without one."""
+    f = Path(path) / "summary.json"
+    return list(json.loads(f.read_text(encoding="utf-8")).get("seeds") or []) if f.exists() else None
+
+
+def suite_complete(path: str | Path) -> bool:
+    """True when every requested seed finished. eval-suite rewrites summary.json after each seed, so a run
+    that died part-way leaves a directory with fewer seeds than it asked for; it must not be reported."""
+    f = Path(path) / "summary.json"
+    if not f.exists():
+        return False
+    s = json.loads(f.read_text(encoding="utf-8"))
+    return bool(s.get("seeds")) and all(f"s{k}" in (s.get("results") or {}) for k in s["seeds"])
+
+
 def load_suite(path: str | Path) -> dict[str, list[EpisodeResult]]:
-    """{set name: episodes over all seeds} from an eval-suite directory."""
+    """{set name: episodes over all seeds} from an eval-suite directory. With a summary.json, only the
+    seeds that run asked for are read, so a seed file left over from an earlier run is never mixed in."""
     out: dict[str, list[EpisodeResult]] = defaultdict(list)
-    for f in sorted(Path(path).glob("s*.jsonl")):
+    seeds = suite_seeds(path)
+    files = [Path(path) / f"s{k}.jsonl" for k in seeds] if seeds else sorted(Path(path).glob("s*.jsonl"))
+    for f in files:
         for row in iter_jsonl(f):
             out[row.get("set", "all")].append(EpisodeResult.from_dict(row["result"]))
     return dict(out)
