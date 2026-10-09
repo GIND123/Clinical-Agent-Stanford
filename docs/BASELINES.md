@@ -205,7 +205,7 @@ I rebuilt them with the README's commands, and every set has exactly the size th
 | Qwen3-8B zero-shot, 3 seeds † | 74.3 (70.9–77.6) | 73.9 (63.5–83.7) | 24.1 (21.0–27.4) | 17.6 (13.0–22.6) | 12.8 (9.2–16.5) | 88.1 | 1.93 | 1,158 |
 | **DiagAgent-14B**, through its format adapter, greedy | 76.2 (72.5–80.1) | 58.8 (46.2–72.5) | 22.9 (19.2–26.6) | **9.6 (5.9–14.4)** | 12.6 (8.3–17.0) | 85.3 | 5.64 | 2,693 |
 | Group-consensus deferral arm, trained, defers † | 85.8 (83.1–88.4) | 85.6 (76.9–93.2) | 4.9 (3.4–6.6) | 11.4 (7.8–15.3) | 13.4 (9.4–17.6) | 88.2 | 1.83 | 1,298 |
-| Qwen3-14B zero-shot | *running: 3 seeds of forced choice and 1 of prompted DEFER; added when finished* | | | | | | | |
+| **Qwen3-14B** zero-shot, 3 seeds | 74.2 (70.8–77.5) | 68.6 (56.6–80.0) | 24.7 (21.5–28.0) | **10.3 (7.1–14.1)** | **8.1 (5.2–11.2)** | 90.3 | 2.18 | 1,228 |
 
 How the adapter handles the open world: DiagAgent names a specific diagnosis and has no "none of these" option. So `--open-world` counts any named diagnosis outside the four as OTHER. On an in-set case that includes near-misses such as "biliary colic", which count as wrong. Confidence-based metrics (AURC, ECE, Brier, confident errors) aren't reported for DiagAgent, because every one of its answers carries probability 1.0.
 
@@ -213,8 +213,53 @@ How to read this:
 - **A domain-trained model with no DEFER action misses fewer time-critical OTHER cases than untrained Qwen3-8B** (9.6 against 17.6), and its interval overlaps the trained consensus arm's (11.4). Naming specific diagnoses is enough to recognise "none of the four" on these presentations. On its own, "time-critical OTHER missed" doesn't show what deferral adds, so report it next to this row.
 - **It doesn't defer, and it pays for that on in-set cases.** It makes 22.9 unflagged errors per 100 cases, against 4.9 for the trained arm. It gets 58.8% on diverticulitis and orders three times as many tests ($2,693 per case).
 - **DiagAgent was trained on MIMIC-IV records.** Its overlap with these admissions can't be checked ([BENCHMARKS.md](BENCHMARKS.md) §3.2 item 6).
+- **Qwen3-14B diagnoses the four conditions no better than Qwen3-8B** (74.2 against 74.3), the same finding as on all 2,400 cases in §1. **But it is much better at recognising "none of the four":** it misses 10.3% of time-critical OTHER cases against 17.6, and falsely commits on 8.1% of the seen OTHER groups against 12.8.
 
-Cost: one A100 40 GB in us-west-2, plus $1.78 for an A6000 whose network failed before anything ran. The final total is added with the Qwen3-14B results.
+**Learned deferral against a bigger model with a confidence threshold.** This uses the report's own cross-fitted post-hoc threshold (`crossfit_posthoc`), with the target set to the trained arm's coverage. Qwen3-14B states 0.7 on so many cases that the closest achievable coverage is 86.2%, not 82.6%.
+
+| At about the trained arm's coverage | Coverage | Accuracy on answered cases | Unflagged errors / 100 | Time-critical OTHER missed |
+|---|---|---|---|---|
+| Qwen3-14B zero-shot + threshold ≥ 0.7 | 86.2 (83.9–88.3) | 77.7 (74.1–81.0) | 19.2 (16.4–22.2) | **6.6 (3.9–9.8)** |
+| Group-consensus deferral arm, trained † | 82.6 (79.5–85.6) | **94.0 (92.0–95.9)** | **4.9 (3.4–6.6)** | 11.4 (7.8–15.3) |
+
+- **On the four conditions, training wins clearly:** 94.0% accuracy on the cases answered, against 77.7. It makes 4.9 unflagged errors per 100 cases, against 19.2.
+- **On unseen time-critical presentations, it doesn't.** A thresholded zero-shot Qwen3-14B misses 6.6% of them, against the trained 8B arm's 11.4%, with overlapping intervals. The open-world claim therefore needs the trained method's own threshold comparison, against its 8B no-DEFER control. A bigger untrained model already closes most of this particular gap.
+
+**Prompted DEFER: a bigger model asked to defer, against the trained arm.** Qwen3-14B ran once with DEFER offered in the prompt (seed 0 only, to stay within budget). Qwen3-8B's row and the trained arm's are from main's report.
+
+| CDM val + test (480) | Coverage | Accuracy on answered cases | Unflagged errors / 100 | Time-critical OTHER missed | Deferral precision | Errors caught |
+|---|---|---|---|---|---|---|
+| Qwen3-8B zero-shot, prompted DEFER, 3 seeds † | 75.1 (72.0–78.1) | 87.9 (85.2–90.4) | 9.1 (7.2–11.1) | 14.4 (10.2–19.1) | 51.9 (44.8–58.2) | 53.5 (46.7–59.8) |
+| Qwen3-14B zero-shot, prompted DEFER, 1 seed | 65.2 (61.0–69.4) | 89.5 (86.0–92.7) | 6.9 (4.8–9.4) | **6.4 (3.2–10.2)** | 45.0 (37.2–52.6) | 64.3 (55.8–73.0) |
+| Group-consensus deferral arm, trained † | **82.6 (79.5–85.6)** | **94.0 (92.0–95.9)** | **4.9 (3.4–6.6)** | 11.4 (7.8–15.3) | 52.2 (44.0–60.5) | 62.7 (52.9–71.2) |
+
+- **Prompted to defer, Qwen3-14B gets close to the trained arm's unflagged-error rate** (6.9 against 4.9 per 100), but by deferring on 35% of in-set cases rather than 17%. The trained arm answers 17 more cases in every 100 at higher accuracy. That coverage, at the same safety, is what training buys here.
+- **It also defers on 42–51% of OTHER cases** (seen: 51.0; unseen: 42.2), so its low time-critical miss rate comes partly from deferring broadly.
+
+**Is deferral equitable?** These are `scripts/subgroup_eval.py`'s new deferral tables for Qwen3-14B prompted DEFER, on CDM val + test (480 cases, one seed). Groups with fewer than 10 cases are hidden.
+
+| Group | Deferred | Accuracy on answered cases | Unflagged errors / 100 |
+|---|---|---|---|
+| Age 18–29 / 30–44 / 45–64 / 65–79 / 80+ | 29.2 / 38.9 / 31.6 / 32.0 / 36.4 | 88.2 / 86.6 / 94.0 / 84.0 / 92.9 | 8.3 / 8.0 / 3.9 / 10.7 / 4.5 |
+| Insurance Medicaid / Medicare / Other | 34.0 / 35.4 / 32.6 | **77.4** / 90.0 / 91.0 | **14.0 (6.0–24.0)** / 6.2 / 6.0 (3.6–8.7) |
+| Sex Female / Male | 34.2 / 32.2 | 89.4 / 89.6 | 6.8 / 6.9 |
+| Race Black / Hispanic-Latino / White | 22.8 / 32.6 / 35.0 | 88.4 / 89.3 / 89.6 | 8.8 / 7.0 / 6.6 |
+
+- **Deferral is spread fairly evenly across age, insurance and sex** (29–39% of cases; sexes within 2 points). By race, Black patients are deferred least: 22.8% (95% CI 12.3–33.3, 57 cases), with similar accuracy on the cases answered.
+- **Deferring at even rates does not even out the errors.** Medicaid patients get the least accurate answers when the model does answer (77.4 against 90–91), with about twice the unflagged errors. The interval is wide: 50 Medicaid cases and one seed.
+- This is the analysis to run on the trained models' evaluation output:
+
+  ```
+  python scripts/subgroup_eval.py --rollouts outputs/eval/<system>/s*.jsonl --sets eval_cdm_val eval_cdm_test --cases data/cohorts/eval_cdm_val.jsonl data/cohorts/eval_cdm_test.jsonl
+  ```
+
+  A learned deferral policy should defer more where it is wrong more, not uniformly.
+
+Cost for this round: about $13.70 of GPU in total.
+- One A100 40 GB in us-west-2 for 6.0 h, about $11.94.
+- $1.78 for an A6000 (us-south-2) whose network failed before anything ran.
+
+Run times: DiagAgent 35 min; Qwen3-14B 77 min for each seed of the five sets.
 
 ## Reproduce
 ```bash
