@@ -190,15 +190,47 @@ How to read this:
    - a full gpt-oss-20b run and MedGemma-27B;
    - frontier models through a PhysioNet-approved route.
 
+## 7. Round 3: zero-shot baselines on the trained models' evaluation cohorts (2026-10-09)
+
+Sections 1–6 used all 2,400 CDM cases and an earlier open-world build. The trained models are evaluated on `data/cohorts` instead (`deferdx data cohorts`):
+- CDM val + test, 480 cases;
+- OTHER, groups seen in training, 206;
+- OTHER, time-critical groups never seen in training, 187;
+- same-pipeline controls, 258.
+
+I rebuilt them with the README's commands, and every set has exactly the size the trained models were evaluated on. The systems below run through the same evaluation suite, with OTHER allowed and DEFER off, and are scored by `scripts/make_report.py`. Rows marked † come from `docs/results.json` on main (`301e60f`), with the same cohorts and scoring. Intervals are 95% case-level bootstraps.
+
+| System | Accuracy, CDM (480) | Diverticulitis | Unflagged errors / 100 | Time-critical OTHER missed (187) | False commit, seen OTHER (206) | OOD AUROC | Tests / case | $ / case |
+|---|---|---|---|---|---|---|---|---|
+| Qwen3-8B zero-shot, 3 seeds † | 74.3 (70.9–77.6) | 73.9 (63.5–83.7) | 24.1 (21.0–27.4) | 17.6 (13.0–22.6) | 12.8 (9.2–16.5) | 88.1 | 1.93 | 1,158 |
+| **DiagAgent-14B**, through its format adapter, greedy | 76.2 (72.5–80.1) | 58.8 (46.2–72.5) | 22.9 (19.2–26.6) | **9.6 (5.9–14.4)** | 12.6 (8.3–17.0) | 85.3 | 5.64 | 2,693 |
+| Group-consensus deferral arm, trained, defers † | 85.8 (83.1–88.4) | 85.6 (76.9–93.2) | 4.9 (3.4–6.6) | 11.4 (7.8–15.3) | 13.4 (9.4–17.6) | 88.2 | 1.83 | 1,298 |
+| Qwen3-14B zero-shot | *running: 3 seeds of forced choice and 1 of prompted DEFER; added when finished* | | | | | | | |
+
+How the adapter handles the open world: DiagAgent names a specific diagnosis and has no "none of these" option. So `--open-world` counts any named diagnosis outside the four as OTHER. On an in-set case that includes near-misses such as "biliary colic", which count as wrong. Confidence-based metrics (AURC, ECE, Brier, confident errors) aren't reported for DiagAgent, because every one of its answers carries probability 1.0.
+
+How to read this:
+- **A domain-trained model with no DEFER action misses fewer time-critical OTHER cases than untrained Qwen3-8B** (9.6 against 17.6), and its interval overlaps the trained consensus arm's (11.4). Naming specific diagnoses is enough to recognise "none of the four" on these presentations. On its own, "time-critical OTHER missed" doesn't show what deferral adds, so report it next to this row.
+- **It doesn't defer, and it pays for that on in-set cases.** It makes 22.9 unflagged errors per 100 cases, against 4.9 for the trained arm. It gets 58.8% on diverticulitis and orders three times as many tests ($2,693 per case).
+- **DiagAgent was trained on MIMIC-IV records.** Its overlap with these admissions can't be checked ([BENCHMARKS.md](BENCHMARKS.md) §3.2 item 6).
+
+Cost: one A100 40 GB in us-west-2, plus $1.78 for an A6000 whose network failed before anything ran. The final total is added with the Qwen3-14B results.
+
 ## Reproduce
 ```bash
 # on a CUDA 12.8 GPU machine with ~/payload laid out as in the job scripts
 bash scripts/lambda/setup.sh && bash scripts/lambda/run_all.sh                                   # round 1
 bash scripts/lambda/setup.sh Qwen/Qwen3-8B Qwen/Qwen3-14B Henrychur/DiagAgent-14B openai/gpt-oss-20b \
   && bash scripts/lambda/run_all2.sh                                                             # round 2
+# round 3: build the cohorts locally, upload only data/cohorts/eval_*.jsonl as ~/payload/cohorts
+deferdx data build-openworld --mimic-dir data/physionet/mimiciv/2.2 --note-dir data/physionet/mimic-iv-note/2.2 \
+  --exclude-cases data/cdm/all.jsonl --controls --controls-per-label 3000 --n 2400 --out data/openworld_xl
+deferdx data cohorts
+bash scripts/lambda/setup.sh Qwen/Qwen3-14B Henrychur/DiagAgent-14B && bash scripts/lambda/run_all3.sh
 # locally, after copying ~/outputs back
 deferdx evaluate --rollouts outputs/lambda/cdm_qwen8b_all_s0.jsonl
 python scripts/subgroup_eval.py --rollouts outputs/lambda2/cdm_da_adapter_all.jsonl --cases data/cdm/all.jsonl
 deferdx evaluate --rollouts outputs/lambda2/ow_qwen8b_defer.jsonl
 deferdx baseline --method coverage --target 0.8 --val <non-test rollouts> --test <test rollouts>
+python scripts/make_report.py --eval-dir outputs/eval --out outputs/report_round3      # round 3 (not docs/)
 ```
