@@ -23,16 +23,16 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Single-GPU colocated GRPO trainer | built, tested and in use |
 | Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Final run (`scripts/queue_v4.sh`), trained from step 1 on the final code from Oct 9; held-out numbers around Oct 10, 13:00 IST.** Earlier attempts are kept for the record, not used as the method. The first run used a plain dual-ascent coverage cap, which ran a limit cycle (Fig. 8); it is a comparison row (`cev_dualascent`). The PI-controller retrain died of a CUDA out-of-memory error at step 29, after another process took 4.6 GiB of the GPU; it is `cev_pi_crashed`. 6 of its 28 steps had also used the earlier rule for unbranched deferrals (commit 416ed87). |
-| GRPO control (no DEFER), the key comparator | paused at its last checkpoint; resumes after the method, around Oct 11, 08:00 |
-| Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v4.sh`); through about Oct 12, 21:00 |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Final run (`scripts/queue_v4.sh`), trained from step 1 on the final code since Oct 9, 15:12 IST; held-out numbers around Oct 10, 16:00.** Earlier attempts are kept for the record, not used as the method. The first run used a plain dual-ascent coverage cap, which ran a limit cycle (Fig. 8); it is a comparison row (`cev_dualascent`). The PI-controller retrain died of a CUDA out-of-memory error at step 29, after another process took 4.6 GiB of the GPU; it is `cev_pi_crashed`. 6 of its 28 steps had also used the earlier rule for unbranched deferrals (commit 416ed87). |
+| GRPO control (no DEFER), the key comparator | paused at step 20 (an out-of-memory crash at step 24); resumes after the method; held-out numbers and the learned-versus-threshold comparison around Oct 11, 10:30 |
+| Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v4.sh`); everything done around Oct 13, 00:00 (± about 5 h) |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 109 pass (`pytest`; CPU only) |
 
 Held-out numbers exist for the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). DEFER-Dx's are pending. Until they exist, the paired figure (Fig. 5) uses the comparator arm as its reference system.
 
 **This is the final run.** Every step is retried from its newest checkpoint, and the report counts only evaluations whose every seed finished. Until `outputs/logs/queue_v4.log` says `queue v4 finished`:
-- **Keep the GPU free.** Run nothing else on it, including `pytest` without `CUDA_VISIBLE_DEVICES=`.
+- **Keep the GPU free.** The card is shared with the desktop session and other users, and two jobs have already died of out-of-memory errors. Run nothing else on it, including `pytest` without `CUDA_VISIBLE_DEVICES=`. The queue now leaves about 4 GB free and resumes any crashed step from its checkpoint, but a larger job would still stop it.
 - **Don't `git pull` on this machine.** While a queue runs, the sync daemon keeps result commits local rather than pull remote code changes, so every job uses one version of the code.
 
 ## 2. Is it novel? Is it beating SOTA? (honest assessment)
