@@ -15,8 +15,10 @@ cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | 81.7 (78.1–84.8) | 80.8 (76.9–84.5) | 85.4 (82.1–88.4) | 79.0 (75.2–82.7) | 90.0 (86.9–92.8) | 89.6 (85.7–93.0) | 0.061 (0.041–0.088) | 0.058 (0.035–0.088) | 0.079 (0.059–0.102) | 87.8 (85.6–89.8) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | 85.8 (83.1–88.4) | 84.1 (81.0–87.2) | 86.8 (84.0–89.2) | 82.6 (79.5–85.6) | 94.0 (92.0–95.9) | 94.4 (92.2–96.2) | 0.045 (0.030–0.063) | 0.030 (0.020–0.047) | 0.055 (0.041–0.071) | 88.2 (86.3–90.0) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 88.3 (85.4–91.0) | 86.8 (83.3–90.0) | 88.0 (84.8–90.9) | 83.3 (79.8–86.5) | 94.2 (91.9–96.5) | 96.1 (93.2–98.2) | 0.023 (0.014–0.037) | 0.027 (0.013–0.048) | 0.044 (0.029–0.062) | 89.1 (87.1–91.1) |
-| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (83%) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 92.6 (91.0–94.0) | 77.6 (74.3–80.7) | 81.3 (78.0–84.9) | 0.129 (0.102–0.161) | 0.089 (0.065–0.121) | 0.160 (0.140–0.182) | 88.1 (86.1–89.9) |
-| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (83%) | 77.9 (74.2–81.7) | 75.9 (71.4–80.0) | 83.7 (80.1–86.7) | 84.2 (80.8–87.5) | 83.2 (79.2–86.8) | 83.9 (79.9–87.5) | 0.078 (0.059–0.101) | 0.144 (0.110–0.184) | 0.160 (0.127–0.196) | 90.6 (88.6–92.5) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 78.2 (75.0–81.4) | 74.3 (70.5–78.1) | 81.4 (78.0–84.3) | 77.6 (74.3–80.6) | 95.2 (93.4–96.8) | 93.0 (89.1–96.2) | 0.052 (0.038–0.072) | 0.042 (0.027–0.059) | 0.047 (0.034–0.061) | 86.8 (85.0–88.7) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 80.8 (77.3–84.4) | 76.5 (72.4–80.7) | 82.6 (78.9–86.1) | 79.8 (76.0–83.3) | 95.3 (93.1–97.3) | 95.1 (91.1–97.7) | 0.039 (0.026–0.062) | 0.043 (0.024–0.064) | 0.044 (0.029–0.060) | 88.3 (86.4–90.4) |
+| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 92.6 (91.0–94.0) | 77.6 (74.3–80.7) | 81.3 (78.0–84.9) | 0.129 (0.102–0.161) | 0.089 (0.065–0.121) | 0.160 (0.140–0.182) | 88.1 (86.1–89.9) |
+| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 77.9 (74.2–81.7) | 75.9 (71.4–80.0) | 83.7 (80.1–86.7) | 80.0 (76.7–83.5) | 83.9 (79.9–87.5) | 83.9 (79.7–87.5) | 0.079 (0.060–0.102) | 0.150 (0.115–0.190) | 0.158 (0.124–0.196) | 90.4 (88.3–92.3) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 0.0 (0.0–0.0) | – | 74.2 (70.6–77.8) | 0.246 (0.211–0.306) | – | – | 50.0 (50.0–50.0) |
 
 ## 2. Clinical safety (CDM, val + test; time-critical column from the unseen OTHER groups)
@@ -31,8 +33,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | 86.3 (76.0–94.7) | 7.9 (5.6–10.4) | 3.1 (1.7–4.8) | 0.040 (0.028–0.053) | 0.160 (0.112–0.214) | 48.5 (38.5–58.1) | 54.5 (43.6–64.4) | 1.921 (1.822–2.013) | 1096.933 (1029.585–1167.524) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | 85.6 (76.9–93.2) | 4.9 (3.4–6.6) | 2.9 (1.9–4.0) | 0.025 (0.017–0.033) | 0.114 (0.078–0.153) | 52.2 (44.0–60.5) | 62.7 (52.9–71.2) | 1.826 (1.742–1.908) | 1298.064 (1231.852–1365.625) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 88.2 (78.4–96.2) | 4.8 (2.9–6.9) | 1.9 (0.8–3.3) | 0.024 (0.015–0.035) | 0.118 (0.075–0.171) | 32.9 (21.8–44.2) | 41.1 (28.1–54.4) | 1.826 (1.742–1.908) | 1298.064 (1231.852–1365.625) |
-| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (83%) | 73.9 (63.5–83.7) | 20.7 (17.8–23.7) | 7.9 (6.3–9.6) | 0.098 (0.085–0.113) | 0.152 (0.109–0.198) | 58.3 (46.9–69.2) | 13.2 (9.7–17.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
-| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (83%) | 80.4 (68.9–90.7) | 14.2 (11.0–17.5) | 11.0 (8.3–14.0) | 0.066 (0.051–0.081) | 0.118 (0.075–0.171) | 50.0 (38.2–61.5) | 35.8 (26.6–45.3) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 69.3 (58.1–80.0) | 3.8 (2.4–5.1) | 2.3 (1.3–3.4) | 0.019 (0.013–0.027) | 0.068 (0.043–0.100) | 80.5 (75.1–85.5) | 82.8 (77.3–88.3) | 0.835 (0.787–0.883) | 1012.624 (945.867–1082.370) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 70.6 (57.9–82.7) | 3.8 (2.1–5.6) | 1.7 (0.6–2.9) | 0.020 (0.011–0.029) | 0.059 (0.027–0.096) | 76.3 (67.4–84.5) | 80.4 (71.8–88.1) | 0.835 (0.787–0.883) | 1012.624 (945.867–1082.370) |
+| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 73.9 (63.5–83.7) | 20.7 (17.8–23.7) | 7.9 (6.3–9.6) | 0.098 (0.085–0.113) | 0.152 (0.109–0.198) | 58.3 (46.9–69.2) | 13.2 (9.7–17.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
+| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 80.4 (68.9–90.7) | 12.9 (10.0–16.0) | 11.0 (8.3–14.0) | 0.060 (0.046–0.075) | 0.102 (0.064–0.150) | 45.8 (35.6–56.9) | 41.5 (31.8–51.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 73.9 (63.5–83.7) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 0.000 (0.000–0.000) | 0.000 (0.000–0.000) | 24.5 (21.4–27.8) | 93.8 (91.0–96.4) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
 
 ## 3a. Open world: OTHER, diagnosis groups seen in training
@@ -45,8 +49,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | 10.2 (6.3–14.6) | 4.9 (1.9–7.8) | 40.8 (34.5–47.6) | 48.5 (41.7–55.3) | 73.0 (64.0–81.2) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | 13.4 (9.4–17.6) | 7.4 (4.5–10.7) | 13.3 (9.9–17.0) | 73.1 (68.3–77.8) | 15.0 (11.4–18.8) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 13.1 (8.7–18.0) | 10.7 (6.8–15.0) | 11.2 (7.3–15.5) | 58.7 (51.9–65.5) | 52.1 (42.3–60.9) |
-| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (83%) | 11.2 (7.8–14.6) | 4.0 (2.1–6.1) | 78.5 (73.9–82.7) | 7.3 (5.2–9.7) | 77.8 (65.3–89.7) |
-| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (83%) | 6.3 (3.4–9.7) | 4.9 (1.9–7.8) | 75.2 (69.4–81.1) | 18.0 (13.1–23.3) | 67.6 (51.5–81.8) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 6.5 (3.7–9.4) | 4.0 (2.3–6.2) | 4.5 (3.1–6.3) | 89.0 (85.8–92.2) | 95.6 (93.9–97.2) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 5.8 (2.9–9.2) | 3.9 (1.5–6.8) | 2.4 (0.5–4.9) | 91.7 (87.9–95.1) | 97.4 (94.8–99.5) |
+| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 11.2 (7.8–14.6) | 4.0 (2.1–6.1) | 78.5 (73.9–82.7) | 7.3 (5.2–9.7) | 77.8 (65.3–89.7) |
+| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 5.3 (2.4–8.7) | 4.9 (1.9–7.8) | 74.8 (68.9–80.6) | 19.4 (14.1–24.8) | 65.0 (50.0–80.0) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 96.9 (95.0–98.4) | 86.8 (83.0–90.5) |
 
 ## 3b. Open world: OTHER, time-critical groups never seen in training
@@ -59,8 +65,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | 16.0 (11.2–21.4) | 10.7 (6.4–15.5) | 56.1 (49.2–63.1) | 26.7 (20.9–33.2) | 72.0 (58.7–83.7) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | 11.4 (7.8–15.3) | 7.8 (4.8–11.2) | 16.8 (12.8–20.7) | 70.4 (65.4–75.0) | 14.7 (10.9–18.7) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 11.8 (7.5–17.1) | 7.0 (3.7–10.7) | 13.9 (8.6–19.3) | 65.2 (58.3–71.7) | 44.3 (35.4–53.5) |
-| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (83%) | 15.2 (10.9–19.8) | 5.5 (3.4–8.0) | 75.8 (70.2–80.7) | 6.1 (4.1–8.2) | 58.8 (41.9–74.3) |
-| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (83%) | 11.8 (7.5–17.1) | 9.1 (5.3–13.9) | 73.8 (66.8–80.2) | 14.4 (9.6–19.8) | 63.0 (44.4–80.6) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 6.8 (4.3–10.0) | 3.9 (2.1–6.1) | 6.2 (4.1–8.6) | 87.0 (83.2–90.4) | 93.9 (91.5–96.1) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 5.9 (2.7–9.6) | 3.7 (1.6–7.0) | 2.7 (0.5–5.3) | 91.4 (87.2–95.2) | 91.2 (86.8–95.3) |
+| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 15.2 (10.9–19.8) | 5.5 (3.4–8.0) | 75.8 (70.2–80.7) | 6.1 (4.1–8.2) | 58.8 (41.9–74.3) |
+| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 10.2 (6.4–15.0) | 9.1 (5.3–13.9) | 71.1 (64.2–77.5) | 18.7 (13.4–24.6) | 62.9 (46.2–78.6) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 97.0 (95.4–98.4) | 81.8 (76.7–86.5) |
 
 ## 3c. Same-pipeline in-set controls (source-shortcut check)
@@ -73,8 +81,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | 66.3 (60.5–72.1) | 72.5 (67.1–77.9) | 69.5 (62.7–75.8) | 12.4 (8.5–16.7) | 27.5 (22.1–32.9) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | 76.6 (72.0–80.9) | 71.6 (66.9–76.0) | 85.6 (80.8–89.6) | 1.2 (0.5–2.1) | 28.3 (23.9–32.9) |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 81.8 (76.7–86.0) | 73.3 (67.4–78.7) | 87.8 (82.9–92.1) | 0.4 (0.0–1.2) | 26.0 (20.9–31.4) |
-| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (83%) | 57.6 (52.6–62.7) | 87.5 (84.6–90.1) | 60.3 (54.8–65.5) | 26.0 (21.7–30.4) | 10.3 (7.9–12.9) |
-| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (83%) | 62.4 (56.2–67.8) | 74.0 (68.6–79.5) | 63.4 (56.2–70.2) | 18.6 (14.0–23.6) | 26.0 (20.5–31.4) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 70.7 (65.8–75.3) | 70.0 (65.5–74.5) | 88.7 (84.3–92.5) | 0.3 (0.0–0.6) | 29.8 (25.5–34.5) |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 73.6 (68.2–78.7) | 71.3 (65.5–76.7) | 89.1 (84.4–93.5) | 0.0 (0.0–0.0) | 28.7 (23.3–34.5) |
+| Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 57.6 (52.6–62.7) | 87.5 (84.6–90.1) | 60.3 (54.8–65.5) | 26.0 (21.7–30.4) | 10.3 (7.9–12.9) |
+| Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 62.4 (56.2–67.8) | 69.8 (64.0–75.2) | 64.4 (57.4–71.0) | 16.3 (12.0–20.9) | 30.2 (24.8–36.0) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 57.6 (52.6–62.7) | 0.0 (0.0–0.0) | – | 0.0 (0.0–0.0) | 97.8 (96.6–98.8) |
 
 ## 4. Context: published systems (as reported) and ours on the exact LA-CDM test split
@@ -92,6 +102,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, prompted DEFER, self-consistency over 3 samples | LA-CDM test | 82.4 (77.3–87.2) | 82.5 (77.5–87.1) | 92.0 (80.0–100.0) | this report |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | LA-CDM test | 86.3 (82.2–90.2) | 87.1 (83.5–90.6) | 90.7 (79.4–98.6) | this report |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | LA-CDM test | 89.6 (85.4–93.6) | 90.0 (86.2–93.8) | 96.0 (86.7–100.0) | this report |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | LA-CDM test | 76.4 (71.1–81.0) | 79.0 (74.3–83.2) | 77.3 (63.0–90.3) | this report |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | LA-CDM test | 79.2 (73.1–84.4) | 82.1 (77.1–86.2) | 80.0 (63.2–94.7) | this report |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | this report |
 
 Environments differ across rows (history summary vs full history, 12 vs 22 tests, different base models); LDTL's split is unpublished. Read rows from other papers as context, not as head-to-head.
@@ -109,52 +121,77 @@ Environments differ across rows (history summary vs full history, 12 vs 22 tests
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | diabetic ketoacidosis | 17 | 3.9 | 64.7 |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | mesenteric ischemia | 91 | 17.2 | 68.5 |
 | Group-consensus deferral reward (case-level; TIAR/KARL-style) | peptic ulcer perforation or bleed | 69 | 7.2 | 70.5 |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | diabetic ketoacidosis | 17 | 2.0 | 90.2 |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | mesenteric ischemia | 91 | 8.1 | 89.0 |
+| DEFER-Dx: counterfactual escalation value + scored handoff (ours) | peptic ulcer perforation or bleed | 69 | 6.8 | 82.6 |
 
 ## 5. Paired differences, reference system minus comparator (same cases)
 
 | Comparison | Metric | Difference (95% CI) | p |
 |---|---|---|---|
-| deferdx vs zs_nodefer+thr | selective_acc | 16.4 (13.5–19.7) | < 0.001 |
-| deferdx vs zs_nodefer+thr | coverage | -9.9 (-13.1–-7.1) | < 0.001 |
-| deferdx vs zs_nodefer+thr | acc_full | 11.5 (9.0–14.2) | < 0.001 |
-| deferdx vs zs_nodefer+thr | unsafe_errors | -15.8 (-18.8–-13.1) | < 0.001 |
-| deferdx vs zs_nodefer+thr | confident_errors | -5.0 (-6.7–-3.5) | < 0.001 |
-| deferdx vs zs_nodefer+thr | acc_diverticulitis | 11.8 (4.0–20.7) | 0.001 |
-| deferdx vs zs_nodefer+thr | aurc | -0.076 (-0.111–-0.061) | < 0.001 |
-| deferdx vs zs_nodefer+thr | ece | -0.059 (-0.092–-0.024) | 0.001 |
-| deferdx vs zs_nodefer+thr | handoff_quality | 26.9 (15.1–38.4) | < 0.001 |
-| deferdx vs zs_nodefer+thr | false_commit:eval_other_seen | 2.3 (-1.0–5.5) | 0.193 |
-| deferdx vs zs_nodefer+thr | false_commit:eval_other_unseen | -3.7 (-7.1–-0.2) | 0.045 |
-| deferdx vs zs_defer | selective_acc | 6.1 (3.8–8.6) | < 0.001 |
-| deferdx vs zs_defer | coverage | 7.5 (4.7–10.2) | < 0.001 |
-| deferdx vs zs_defer | acc_full | 8.5 (6.3–11.0) | < 0.001 |
-| deferdx vs zs_defer | unsafe_errors | -4.2 (-6.0–-2.3) | < 0.001 |
-| deferdx vs zs_defer | confident_errors | -1.5 (-2.8–-0.2) | 0.029 |
-| deferdx vs zs_defer | acc_diverticulitis | 5.9 (-1.0–12.9) | 0.119 |
-| deferdx vs zs_defer | aurc | -0.052 (-0.085–-0.038) | < 0.001 |
-| deferdx vs zs_defer | ece | -0.002 (-0.026–0.017) | 0.722 |
-| deferdx vs zs_defer | handoff_quality | 4.3 (0.2–8.0) | 0.038 |
-| deferdx vs zs_defer | false_commit:eval_other_seen | 6.0 (2.6–9.2) | < 0.001 |
-| deferdx vs zs_defer | false_commit:eval_other_unseen | -3.0 (-6.6–0.4) | 0.084 |
-| deferdx@sc vs zs_nodefer@sc+thr | selective_acc | 11.1 (7.3–14.9) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | coverage | -0.8 (-5.0–3.3) | 0.71 |
-| deferdx@sc vs zs_nodefer@sc+thr | acc_full | 10.4 (7.1–14.2) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | unsafe_errors | -9.4 (-12.7–-6.0) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | confident_errors | -9.2 (-12.3–-6.5) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | acc_diverticulitis | 7.8 (-2.3–18.9) | 0.225 |
-| deferdx@sc vs zs_nodefer@sc+thr | aurc | -0.052 (-0.074–-0.039) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | ece | -0.118 (-0.155–-0.078) | < 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | handoff_quality | 22.4 (8.6–36.4) | 0.002 |
-| deferdx@sc vs zs_nodefer@sc+thr | false_commit:eval_other_seen | 6.8 (2.9–11.2) | 0.001 |
-| deferdx@sc vs zs_nodefer@sc+thr | false_commit:eval_other_unseen | 0.0 (-4.8–4.3) | 1 |
-| deferdx@sc vs zs_defer@sc | selective_acc | 4.3 (1.4–7.4) | 0.002 |
-| deferdx@sc vs zs_defer@sc | coverage | 4.4 (0.4–8.1) | 0.032 |
-| deferdx@sc vs zs_defer@sc | acc_full | 6.7 (3.8–9.6) | < 0.001 |
-| deferdx@sc vs zs_defer@sc | unsafe_errors | -3.1 (-5.6–-0.6) | 0.018 |
-| deferdx@sc vs zs_defer@sc | confident_errors | -1.2 (-2.9–0.4) | 0.173 |
-| deferdx@sc vs zs_defer@sc | acc_diverticulitis | 2.0 (-6.5–10.6) | 0.841 |
-| deferdx@sc vs zs_defer@sc | aurc | -0.037 (-0.061–-0.020) | < 0.001 |
-| deferdx@sc vs zs_defer@sc | ece | -0.031 (-0.060–-0.001) | 0.04 |
-| deferdx@sc vs zs_defer@sc | handoff_quality | 14.0 (3.5–24.2) | 0.013 |
-| deferdx@sc vs zs_defer@sc | false_commit:eval_other_seen | 2.9 (-1.5–7.3) | 0.248 |
-| deferdx@sc vs zs_defer@sc | false_commit:eval_other_unseen | -4.3 (-9.1–0.5) | 0.096 |
+| cev vs zs_nodefer+thr | selective_acc | 17.5 (14.3–21.0) | < 0.001 |
+| cev vs zs_nodefer+thr | coverage | -15.0 (-18.2–-12.0) | < 0.001 |
+| cev vs zs_nodefer+thr | acc_full | 3.9 (1.1–6.7) | 0.007 |
+| cev vs zs_nodefer+thr | unsafe_errors | -16.9 (-20.1–-14.0) | < 0.001 |
+| cev vs zs_nodefer+thr | confident_errors | -5.6 (-7.4–-3.9) | < 0.001 |
+| cev vs zs_nodefer+thr | acc_diverticulitis | -4.6 (-11.4–2.3) | 0.219 |
+| cev vs zs_nodefer+thr | aurc | -0.063 (-0.104–-0.050) | < 0.001 |
+| cev vs zs_nodefer+thr | ece | -0.047 (-0.081–-0.015) | 0.003 |
+| cev vs zs_nodefer+thr | handoff_quality | 2.4 (-9.3–13.9) | 0.647 |
+| cev vs zs_nodefer+thr | false_commit:eval_other_seen | -4.7 (-7.3–-2.1) | < 0.001 |
+| cev vs zs_nodefer+thr | false_commit:eval_other_unseen | -8.4 (-12.5–-4.6) | < 0.001 |
+| cev vs deferdx | selective_acc | 1.1 (-0.5–2.9) | 0.193 |
+| cev vs deferdx | coverage | -5.1 (-7.8–-2.6) | 0.001 |
+| cev vs deferdx | acc_full | -7.6 (-10.1–-5.3) | < 0.001 |
+| cev vs deferdx | unsafe_errors | -1.2 (-2.6–0.2) | 0.114 |
+| cev vs deferdx | confident_errors | -0.6 (-1.8–0.6) | 0.336 |
+| cev vs deferdx | acc_diverticulitis | -16.3 (-24.3–-8.8) | < 0.001 |
+| cev vs deferdx | aurc | 0.013 (-0.009–0.025) | 0.306 |
+| cev vs deferdx | ece | 0.012 (-0.009–0.026) | 0.269 |
+| cev vs deferdx | handoff_quality | -24.5 (-28.7–-19.7) | < 0.001 |
+| cev vs deferdx | false_commit:eval_other_seen | -7.0 (-9.9–-4.4) | < 0.001 |
+| cev vs deferdx | false_commit:eval_other_unseen | -4.6 (-8.0–-1.4) | 0.013 |
+| cev vs zs_defer | selective_acc | 7.3 (4.5–10.0) | < 0.001 |
+| cev vs zs_defer | coverage | 2.4 (-0.6–5.3) | 0.118 |
+| cev vs zs_defer | acc_full | 0.9 (-1.9–3.5) | 0.494 |
+| cev vs zs_defer | unsafe_errors | -5.3 (-7.5–-3.3) | < 0.001 |
+| cev vs zs_defer | confident_errors | -2.2 (-3.7–-0.6) | 0.007 |
+| cev vs zs_defer | acc_diverticulitis | -10.5 (-18.6–-2.7) | 0.01 |
+| cev vs zs_defer | aurc | -0.040 (-0.080–-0.026) | < 0.001 |
+| cev vs zs_defer | ece | 0.009 (-0.016–0.026) | 0.615 |
+| cev vs zs_defer | handoff_quality | -20.2 (-24.3–-16.0) | < 0.001 |
+| cev vs zs_defer | false_commit:eval_other_seen | -1.0 (-3.9–1.8) | 0.491 |
+| cev vs zs_defer | false_commit:eval_other_unseen | -7.7 (-11.6–-4.3) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | selective_acc | 11.4 (7.4–15.7) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | coverage | -0.2 (-4.6–4.0) | 0.948 |
+| cev@sc vs zs_nodefer@sc+thr | acc_full | 2.9 (-0.6–6.5) | 0.122 |
+| cev@sc vs zs_nodefer@sc+thr | unsafe_errors | -9.2 (-12.7–-5.8) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | confident_errors | -9.4 (-12.5–-6.5) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | acc_diverticulitis | -9.8 (-21.5–0.0) | 0.12 |
+| cev@sc vs zs_nodefer@sc+thr | aurc | -0.033 (-0.061–-0.016) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | ece | -0.107 (-0.150–-0.066) | < 0.001 |
+| cev@sc vs zs_nodefer@sc+thr | handoff_quality | -18.9 (-31.1–-6.7) | 0.006 |
+| cev@sc vs zs_nodefer@sc+thr | false_commit:eval_other_seen | 0.5 (-1.9–2.9) | 0.924 |
+| cev@sc vs zs_nodefer@sc+thr | false_commit:eval_other_unseen | -4.3 (-9.6–0.5) | 0.088 |
+| cev@sc vs deferdx@sc | selective_acc | 1.1 (-1.1–3.3) | 0.37 |
+| cev@sc vs deferdx@sc | coverage | -3.5 (-6.7–-0.4) | 0.03 |
+| cev@sc vs deferdx@sc | acc_full | -7.5 (-10.6–-4.4) | < 0.001 |
+| cev@sc vs deferdx@sc | unsafe_errors | -1.0 (-2.9–0.8) | 0.332 |
+| cev@sc vs deferdx@sc | confident_errors | -0.2 (-1.5–1.0) | 0.835 |
+| cev@sc vs deferdx@sc | acc_diverticulitis | -17.6 (-28.9–-7.8) | < 0.001 |
+| cev@sc vs deferdx@sc | aurc | 0.020 (0.006–0.033) | 0.003 |
+| cev@sc vs deferdx@sc | ece | 0.017 (-0.011–0.037) | 0.236 |
+| cev@sc vs deferdx@sc | handoff_quality | -37.1 (-47.4–-26.7) | < 0.001 |
+| cev@sc vs deferdx@sc | false_commit:eval_other_seen | -7.3 (-11.2–-3.9) | < 0.001 |
+| cev@sc vs deferdx@sc | false_commit:eval_other_unseen | -5.9 (-10.7–-1.1) | 0.018 |
+| cev@sc vs zs_defer@sc | selective_acc | 5.3 (2.2–8.6) | 0.003 |
+| cev@sc vs zs_defer@sc | coverage | 0.8 (-3.3–4.8) | 0.721 |
+| cev@sc vs zs_defer@sc | acc_full | -0.8 (-4.2–2.3) | 0.666 |
+| cev@sc vs zs_defer@sc | unsafe_errors | -4.2 (-6.9–-1.7) | 0.007 |
+| cev@sc vs zs_defer@sc | confident_errors | -1.5 (-3.3–0.4) | 0.127 |
+| cev@sc vs zs_defer@sc | acc_diverticulitis | -15.7 (-27.6–-4.4) | 0.011 |
+| cev@sc vs zs_defer@sc | aurc | -0.017 (-0.047–0.003) | 0.082 |
+| cev@sc vs zs_defer@sc | ece | -0.015 (-0.049–0.017) | 0.322 |
+| cev@sc vs zs_defer@sc | handoff_quality | -23.1 (-33.6–-12.4) | < 0.001 |
+| cev@sc vs zs_defer@sc | false_commit:eval_other_seen | -4.4 (-8.3–-0.5) | 0.039 |
+| cev@sc vs zs_defer@sc | false_commit:eval_other_unseen | -10.2 (-15.5–-5.3) | < 0.001 |
