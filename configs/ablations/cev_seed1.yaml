@@ -1,0 +1,4 @@
+# Training-seed replicate of DEFER-Dx (case order, rollout sampling, LoRA initialisation).
+base: ../grpo_cev.yaml
+seed: 1
+output_dir: outputs/runs/cev_seed1

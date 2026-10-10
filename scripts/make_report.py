@@ -55,6 +55,7 @@ SYSTEMS = [  # eval-suite directory name, label
     ("grpo_nodefer", "GRPO control (no DEFER)"),
     ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
     ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
+    ("cev_seed1", "DEFER-Dx, second training seed"),
     ("cev_step100", "DEFER-Dx at step 100"),
     ("cev_dualascent", "DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled)"),
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
@@ -196,6 +197,12 @@ def main() -> None:
                 key = f"{base}{suffix}+thr"
                 suites[key], thresholds[key] = crossfit_posthoc(suites[base + suffix], target)
                 labels[key] = f"{labels[base + suffix]} + threshold at matched coverage ({target:.0%})"
+    # the second DEFER-Dx training seed is compared with the control thresholded at its own coverage
+    if "cev_seed1" in suites and "grpo_nodefer" in suites:
+        target = S.coverage(cdm_pooled(suites["cev_seed1"]))
+        key = "grpo_nodefer+thr_seed1"
+        suites[key], thresholds[key] = crossfit_posthoc(suites["grpo_nodefer"], target)
+        labels[key] = f"{labels['grpo_nodefer']} + threshold at the second seed's coverage ({target:.0%})"
 
     # SGR (Geifman & El-Yaniv 2017; plan #7): the lowest threshold whose binomial upper bound on
     # selective risk is <= 5% with probability >= 95%, cross-fitted the same way
@@ -218,6 +225,7 @@ def main() -> None:
         comparisons += [(main, ("grpo_nodefer+thr", "zs_nodefer+thr", "grpo_nodefer+sgr", "deferdx", "zs_defer",
                                 "grpo_nodefer", "cev_dualascent")),
                         (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc"))]
+    comparisons.append(("cev_seed1", ("grpo_nodefer+thr_seed1", "deferdx")))
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
     for ref, comps in comparisons:
         if ref not in suites:

@@ -60,6 +60,7 @@ SYSTEMS = {  # eval-suite name: (label, colour slot, marker). Colour follows the
     "cev_dualascent": ("DEFER-Dx, dual-ascent cap", 6, "X"),
     "abl_constant_defer": ("Constant deferral reward", 7, "h"),
     "cev_step100": ("DEFER-Dx, step 100", 0, "o"),
+    "cev_seed1": ("DEFER-Dx, second seed", 0, "o"),
 }
 SHORT = {"grpo_nodefer+thr": "GRPO control\n+ threshold", "zs_nodefer+thr": "zero-shot\n+ threshold",
          "deferdx": "group-consensus\nreward", "zs_defer": "zero-shot,\nprompted DEFER", "grpo_nodefer": "GRPO control",
