@@ -1,51 +1,49 @@
-# Experiment runbook
+# Experiment runbook (final, as run)
 
-This is the grid that produces docs/RESULTS.md, run on one 48 GB GPU by two sequential queues. Every step is idempotent: a step whose `outputs/queue/<name>.done` marker exists is skipped, and training resumes from its latest checkpoint. Both queues wait for a free GPU.
+All runs used one shared 48 GB GPU. The compute budget ended on **Saturday, October 10, 2026, 10:00 US Eastern (19:30 IST)**. This page records what ran, what did not and why, and which comparisons the results can support. The numbers are in [RESULTS.md](RESULTS.md); figures and captions are in the README §3.
 
-```bash
-source scripts/env_gpu.sh
-setsid nohup bash scripts/queue.sh > outputs/logs/queue.log 2>&1 &                                   # main grid
-WAIT_PID=<queue.sh pid> setsid nohup bash scripts/queue_ablations.sh > outputs/logs/queue_ablations.log 2>&1 &
-python scripts/make_report.py && python scripts/make_figures.py                                      # any time
-python scripts/plot_training.py --runs deferdx=outputs/runs/deferdx nodefer=outputs/runs/nodefer
-```
+## Runs
 
-## Main grid (scripts/queue.sh)
+| Run | Config | Steps | Outcome | Role |
+|---|---|---|---|---|
+| **DEFER-Dx**: counterfactual escalation value, scored handoff, PI coverage controller | `configs/grpo_cev.yaml` | 150 | trained and evaluated on 5 sets × 3 seeds (`scripts/queue_v4.sh`, then `queue_v5.sh`) | the method |
+| Case-level group-consensus reward (TIAR/KARL-style) | `configs/grpo_deferdx.yaml` | 150 | trained and evaluated | the published mechanism, as comparator |
+| Zero-shot Qwen3-8B, forced choice and prompted DEFER | (none) | (none) | evaluated | baselines, plus cross-fitted post-hoc thresholds, SGR and self-consistency |
+| Zero-shot Qwen3-8B, closed world (4 labels, as in prior work) | (none) | (none) | `queue_v5.sh`, CDM sets only | context against published closed-world numbers |
+| DEFER-Dx with every sentence containing CDM's `____` mask removed | (none) | (none) | `queue_v5.sh`, CDM sets only | robustness to the mask cue |
+| GRPO control, identical training without DEFER | `configs/grpo_nodefer.yaml` | 150 | **not completed.** Stopped at step 24 by an out-of-memory error on the shared GPU; about 17 h of training was left when the budget ended. | (would answer learned vs post-hoc deferral on an identically trained model) |
+| Ablations: no scored handoff (η = 0); constant deferral reward | `configs/ablations/{cev_no_handoff,constant_defer}.yaml` | 100 | **not run** (the first stopped at step 8) | — |
+| gpt-oss-20b zero-shot; held-out evaluation of the dual-ascent run; DEFER-Dx at step 100 | (none) | (none) | **not run** | — |
 
-| Step | What | Time (approx.) |
+**Records, not results.** These two runs appear only through their training logs (README Fig. 8).
+- `cev_dualascent` is the first CEV run. Its plain dual-ascent coverage cap ran a limit cycle. It also predates the rule that deferrals left unbranched get no DEFER-turn update.
+- `cev_pi_crashed` is the first PI-controller attempt, which died of an out-of-memory error at step 29.
+
+## How the queues evolved
+
+| Queue | Dates (IST) | Why it was replaced |
 |---|---|---|
-| `train_deferdx` | DEFER-Dx, 150 GRPO steps, B = 12 cases × G = 8 (configs/grpo_deferdx.yaml) | ~18 h |
-| `eval_deferdx` | 5 evaluation sets × 3 seeds | ~1 h |
-| `eval_zs_nodefer`, `eval_zs_defer` | zero-shot Qwen3-8B: forced choice; prompted DEFER | ~1 h each |
-| `train_nodefer` | control: identical, DEFER not offered (configs/grpo_nodefer.yaml) | ~18 h |
-| `eval_grpo_nodefer` | as above | ~1 h |
-| `eval_*_maskdrop` | both trained models with every sentence containing CDM's `____` mask removed | ~30 min each |
-| `eval_zs_closed` | zero-shot, closed world (four labels only, as in prior work) | ~30 min |
+| `queue.sh`, `queue_ablations.sh` | Oct 6–7 | The consensus reward turned out to be published (TIAR, KARL, AWA-RL). The method became the counterfactual escalation value (CEV). |
+| `queue_v2.sh` | Oct 7–8 | Under CEV, plain dual ascent on the coverage multiplier wound up and collapsed deferral, so it was replaced by a PI controller. |
+| `queue_v3.sh` | Oct 8–9 | The CEV run died of an out-of-memory error (another process on the shared GPU), and the queue moved on without the method. |
+| `queue_v4.sh` | Oct 9–10 | Final code; every step retried from its checkpoint; vLLM memory share lowered (0.72 training, 0.78 evaluation; memory only). It trained DEFER-Dx. |
+| `queue_v5.sh` | Oct 10 | Fits the budget: evaluates DEFER-Dx, runs two cheap CDM-only evaluations, stops by 19:00 IST. |
 
-## Ablations (scripts/queue_ablations.sh; 100 steps, compared with the main run's step-100 checkpoint)
+## Comparisons the results support
 
-The no-coverage-constraint ablation (configs/ablations/no_constraint.yaml) was dropped. The constraint never bound in the main run (in-set deferral stayed at 22–25%, under ρ_max = 0.30, and ν ≈ 0), so that run would have replicated the main one.
+- **Against the published mechanism.** DEFER-Dx against the case-level consensus arm, paired on the same cases. This is the novelty claim.
+- **Learned against prompted deferral.** DEFER-Dx against zero-shot Qwen3-8B with DEFER in the prompt, paired.
+- **Learned deferral against a post-hoc threshold on a zero-shot model.**
+  - **Setup:** DEFER-Dx against zero-shot forced choice with a confidence threshold cross-fitted at DEFER-Dx's own coverage (fit on val, applied to test and vice versa), paired.
+  - **Single sample:** tied stated probabilities can keep the threshold from reaching the target coverage. RESULTS.md reports the coverage actually reached.
+  - **Self-consistency:** with agreement over three samples as the confidence, coverage can be matched.
+- **Open world.** False commitments, deferral and naming OTHER on 206 OTHER cases from groups seen in training and 187 from five time-critical groups never seen. Ruptured AAA and ectopic pregnancy have fewer than 10 cases each: they are pooled, never reported separately.
 
-| Ablation | Config | Question |
-|---|---|---|
-| group std normalisation | configs/ablations/std_norm.yaml | Does deferral collapse as Che et al. (2026) predict when advantages are std-normalised? |
-| CDM-only training | configs/ablations/cdm_only.yaml | Does deferral learned from in-set difficulty alone transfer to out-of-set presentations? |
-| constant deferral reward | configs/ablations/constant_defer.yaml | Does the group-consensus signal matter, against a flat abstention reward (Chow's rule, the setting of Che et al.) matched to the same nominal operating point? |
-| leave-one-out p̂ | configs/ablations/forced_loo.yaml | Does removing p̂'s commit-selection bias change deferral quality? |
-| training seed 1 | configs/ablations/seed1.yaml | Training-seed variance of the main result (150 steps) |
-
-## Evaluation sets (data/cohorts, built by `deferdx data cohorts`)
-
-`eval_cdm_val` (240) and `eval_cdm_test` (240) are the exact LA-CDM splits, never used for training or any training-time decision. Also evaluated: `eval_other_seen` (206), `eval_other_unseen` (187: time-critical groups held out of training) and `eval_controls` (258: same-pipeline in-set cases). Development decisions use only `dev` (212), a held-out part of the training split.
-
-## Comparisons and how they are made
-
-- **Learned vs post-hoc deferral (the critical ablation, plan §6.1 #6).** DEFER-Dx against the GRPO control plus a confidence threshold at DEFER-Dx's own coverage. The threshold is cross-fitted: fit on val and applied to test, and vice versa, so no case is scored by a threshold that saw it. The comparison is a paired bootstrap on the same cases.
-- **Conformal-style (plan #7).** SGR at 5% selective risk, δ = 0.05, cross-fitted the same way.
-- **Prompted vs learned deferral.** Zero-shot with DEFER in the prompt against DEFER-Dx.
-- **Self-consistency.** Majority vote over the 3 evaluation samples for every system. Agreement is the confidence: the inference-time version of the group-consensus signal.
-- **Published systems.** As context only (different environments or splits); see RESULTS.md §4.
+**Not answered, and said so.** The study cannot say whether learned deferral beats thresholding the confidence of an *identically trained* model (the GRPO control was not completed). It also cannot attribute the effect to the scored handoff or the counterfactual credit (no ablations).
 
 ## Reporting rules
 
-Report every number with its 95% case-level bootstrap interval. Pool val + test (480 cases) for headline numbers, and give the test-only row for comparability with LA-CDM. Per-class claims need the pooled set (51 diverticulitis cases); the test split alone has 25. Groups with fewer than 10 cases are suppressed.
+- **Intervals:** every number with its 95% case-level bootstrap interval (2,000 resamples; all seeds of a case resampled together). Comparisons are paired bootstraps on the same cases.
+- **Pooling:** val + test (480 cases) for headline numbers, with test-only rows for comparability with LA-CDM. Per-class claims use the pooled set (51 diverticulitis cases).
+- **Small cells:** groups with fewer than 10 cases are suppressed.
+- **Incomplete evaluations:** an evaluation counts only if every requested seed finished (`suite_complete`).

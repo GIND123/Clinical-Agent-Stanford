@@ -1,5 +1,7 @@
 # stanford_idea.md
 
+> **Superseded plan (kept for the record).** This is the original research plan. Its method, the group-consensus deferral reward in §3.2 and the draft abstract in §7, turned out to be published (TIAR, KARL, AWA-RL) and is now only a comparator arm. The method is the counterfactual escalation value with a scored handoff ([docs/METHODS.md](docs/METHODS.md)). What actually ran is in [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md); the submission draft is [docs/ABSTRACT.md](docs/ABSTRACT.md).
+
 **Target:** Stanford AI+HEALTH 2026 (6th annual), online, Dec 8–9, 2026
 **Deadline:** Thursday, Oct 15, 2026, 11:59pm PT
 **Format:** 5-min lightning talk; trainees get complimentary registration
@@ -106,6 +108,8 @@ At step t the policy π_θ emits one action:
 Two departures from LDTL worth stating in the abstract: the action space is **individual tests, not three coarse categories** (their stated limitation), and commitment carries a **numeric probability**, not a binary confident-YES/NO flag.
 
 ### 3.2 The reward (the actual contribution)
+
+> **Superseded:** see the note at the top; the method is the counterfactual escalation value (docs/METHODS.md §2).
 
 **On COMMIT(d, p):**
 
@@ -266,6 +270,8 @@ Note the first row carefully: you may *not* beat LDTL's raw mean accuracy, and *
 ---
 
 ## 7. DRAFT ABSTRACT
+
+> **Superseded:** see the note at the top; the method is the counterfactual escalation value (docs/METHODS.md §2).
 
 > ⚠️ Open the submission form (linked from the AIMI Call for Abstracts, forms.gle/QxXyep9hx7RymSZh9) in week 1 to confirm word limit and required fields — the public page does not publish a strict template. Draft below is ~280 words; have a 150-word cut ready.
 

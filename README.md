@@ -4,7 +4,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ![DEFER-Dx: an agent that asks, tests, commits or defers; commitments are scored in clinical units and deferrals are credited against the counterfactual of not deferring](docs/figures/fig_overview.png)
 
-- Research plan: [stanford_idea_md.md](stanford_idea_md.md) (target: Stanford AI+HEALTH 2026 abstract, due Oct 15, 2026)
+- Original research plan: [stanford_idea_md.md](stanford_idea_md.md) (its consensus-reward method is superseded; target: Stanford AI+HEALTH 2026 abstract, due Oct 15, 2026)
 - The method as implemented, with every constant: [docs/METHODS.md](docs/METHODS.md)
 - Paper draft: [docs/PAPER.md](docs/PAPER.md) · abstract scaffold: [docs/ABSTRACT.md](docs/ABSTRACT.md)
 - Results: [docs/RESULTS.md](docs/RESULTS.md) (generated as evaluations finish) · all figures with captions: [§3](#3-results-and-figures), sources in [docs/figures/](docs/figures/)
@@ -27,7 +27,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | GRPO control (no DEFER), the key comparator | paused at step 20 (an out-of-memory crash at step 24); resumes after the method; held-out numbers and the learned-versus-threshold comparison around Oct 11, 10:30 |
 | Ablations of what is new (no scored handoff; constant deferral reward), robustness, gpt-oss-20b | queued (`scripts/queue_v4.sh`); everything done around Oct 13, 00:00 (± about 5 h) |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
-| Tests | 109 pass (`pytest`; CPU only) |
+| Tests | 117 pass: 115 test functions, some parametrised (`pytest`; CPU only) |
 
 Held-out numbers exist for the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). DEFER-Dx's are pending. Until they exist, the paired figure (Fig. 5) uses the comparator arm as its reference system.
 
@@ -324,7 +324,7 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 | [configs/](configs/) | Environment, reward, catalog, severity matrix, ICD lists; `grpo_deferdx.yaml`, `grpo_nodefer.yaml`, `ablations/` |
 | [scripts/](scripts/) | Queues, report, figures, training plots, data audit, downloads, Lambda baseline jobs |
 | [docs/figures/](docs/figures/) | Publication figures (PDF, SVG, PNG); TikZ sources and shared styles in `tikz/` |
-| [tests/](tests/) | 109 CPU tests (`pytest`) |
+| [tests/](tests/) | 117 CPU tests (`pytest`) |
 
 ## 9. Documents
 
