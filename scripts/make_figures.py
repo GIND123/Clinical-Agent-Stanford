@@ -63,6 +63,7 @@ SYSTEMS = {  # eval-suite name: (label, colour slot, marker). Colour follows the
     "cev_seed1": ("DEFER-Dx, second seed", 0, "o"),
 }
 SHORT = {"grpo_nodefer+thr": "GRPO control\n+ threshold", "zs_nodefer+thr": "zero-shot\n+ threshold",
+         "zs_nodefer@sc+thr": "zero-shot + threshold\n(matched; 3-sample vote)",
          "deferdx": "group-consensus\nreward", "zs_defer": "zero-shot,\nprompted DEFER", "grpo_nodefer": "GRPO control",
          "cev_dualascent": "dual-ascent\ncoverage cap"}  # paired-difference panel titles
 MAIN_ROWS = ["cev", "deferdx", "grpo_nodefer+thr", "grpo_nodefer", "zs_nodefer+thr", "zs_nodefer", "zs_defer"]
@@ -220,7 +221,7 @@ def fig_risk_coverage(suites, tables, out):
         lo_y = min(lo_y, y)
     if thr:
         handles.append(Line2D([], [], ls="none", marker="o", ms=5, mfc=SURFACE, mec=MUTED, mew=1.1,
-                              label="Forced choice + threshold at matched coverage (hollow)"))
+                              label="Forced choice + cross-fitted threshold aimed at the reference coverage (hollow)"))
     ref = next((n for n in ("cev", "deferdx") if table(tables, n, "ml", "coverage")), None)
     if ref:
         x = table(tables, ref, "ml", "coverage")["value"] * 100
@@ -249,21 +250,29 @@ PAIRED_METRICS = [  # key, label, higher is better
     ("confident_errors", "Confident errors ↓", False), ("aurc", "AURC (×100) ↓", False), ("ece", "ECE (×100) ↓", False),
     ("handoff_quality", "Handoff quality", True), ("false_commit:eval_other_seen", "False commits, OTHER seen ↓", False),
     ("false_commit:eval_other_unseen", "False commits, OTHER unseen ↓", False)]
-COMPARATORS = ["grpo_nodefer+thr", "deferdx", "zs_defer", "cev_dualascent", "zs_nodefer+thr", "grpo_nodefer"]
+# "@sc+thr": three-sample voting for both systems, threshold at matched coverage (the single-sample threshold can
+# miss the target coverage because stated probabilities tie); compared as "<ref>@sc vs <comparator>"
+# The single-sample zero-shot threshold is left out: it missed DEFER-Dx's coverage (tied probabilities), so its
+# paired differences are not at matched coverage (RESULTS.md shows them with the coverage reached).
+COMPARATORS = ["grpo_nodefer+thr", "deferdx", "zs_defer", "zs_nodefer@sc+thr", "cev_dualascent", "grpo_nodefer"]
+
+
+def paired_key(ref: str, c: str) -> str:
+    return f"{ref}@sc vs {c}" if c.endswith("@sc+thr") else f"{ref} vs {c}"
 
 
 def fig_paired(results, out):
     paired = results.get("paired") or {}
     ref = next((n for n in ("cev", "deferdx") if any(k.startswith(f"{n} vs ") for k in paired)), None)
-    comps = [c for c in COMPARATORS if ref and c != ref and f"{ref} vs {c}" in paired][:4]
+    comps = [c for c in COMPARATORS if ref and c != ref and paired_key(ref, c) in paired][:4]
     if not comps:
         return placeholder(out, "fig_paired_differences", "Needs the paired comparisons in docs/results.json.")
     fig, axes = plt.subplots(1, len(comps), figsize=(FULL, 2.7), sharey=True, layout="constrained", squeeze=False)
     axes = axes[0]
     _, color, _, _ = style(ref)
-    rows = [m for m in PAIRED_METRICS if any(m[0] in paired[f"{ref} vs {c}"] for c in comps)]
+    rows = [m for m in PAIRED_METRICS if any(m[0] in paired[paired_key(ref, c)] for c in comps)]
     for ax, c in zip(axes, comps):
-        d = paired[f"{ref} vs {c}"]
+        d = paired[paired_key(ref, c)]
         for i, (key, _, up) in enumerate(rows):
             v = d.get(key)
             if not v or v.get("diff") is None or not np.isfinite(v["diff"]):
@@ -279,7 +288,7 @@ def fig_paired(results, out):
         ax.set_ylim(len(rows) - 0.5, -0.5)
         ax.grid(axis="y", visible=False)
         ax.tick_params(axis="y", length=0)
-        ax.set_title("vs " + SHORT.get(c, style(c)[0]), fontsize=7)
+        ax.set_title("vs " + (SHORT[c] if c in SHORT else style(c)[0]), fontsize=7)
         ax.set_xlabel("Difference (points)")
         ticks(ax, n=5)
     fig.suptitle(f"{style(ref)[0]} minus each comparator on the same cases; positive favours {style(ref)[0]}; "

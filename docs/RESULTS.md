@@ -23,7 +23,7 @@ cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better
 
 ## 2. Clinical safety (CDM, val + test; time-critical column from the unseen OTHER groups)
 
-Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred.
+Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx, 8.6% for the consensus arm).
 
 | System | Diverticulitis acc | Unflagged errors ↓ | Confident errors ↓ | Severity-wtd error ↓ | Time-critical OTHER missed ↓ | Deferral precision | Errors caught | Tests/case | $/case |
 |---|---|---|---|---|---|---|---|---|---|

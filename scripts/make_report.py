@@ -272,7 +272,9 @@ def main() -> None:
                "clinical", CLIN_COLS,
                "Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error "
                f"uses the matrix in {sev_name}{price_note}. Deferral precision: share of deferrals whose "
-               "best guess was wrong; errors caught: share of would-be errors that were deferred.")
+               "best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top "
+               "of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them "
+               "with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx, 8.6% for the consensus arm).")
     L += block("3a. Open world: OTHER, diagnosis groups seen in training", "eval_other_seen", OW_COLS)
     L += block("3b. Open world: OTHER, time-critical groups never seen in training", "eval_other_unseen", OW_COLS)
     L += block("3c. Same-pipeline in-set controls (source-shortcut check)", "eval_controls",

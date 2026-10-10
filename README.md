@@ -13,7 +13,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ---
 
-## 1. Status (2026-10-09)
+## 1. Status (2026-10-10)
 
 | Component | State |
 |---|---|
@@ -23,13 +23,13 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Single-GPU colocated GRPO trainer | built, tested and in use |
 | Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained from step 1 on the final code (Oct 9–10); held-out evaluation Oct 10, about 10:25 IST.** A second training seed (`configs/ablations/cev_seed1.yaml`) runs last in the journal queue, finishing around Oct 12, 16:00. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) runs in the journal queue. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
 | GRPO control (no DEFER), the key comparator | resumes from step 20 in `scripts/queue_v6.sh`; held-out numbers and the learned-versus-threshold comparison around Oct 11, 04:30 IST |
 | Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: around Oct 11, 20:30. **Not run** in this budget: the no-handoff ablation, a second seed of the control, gpt-oss-20b |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 117 pass: 115 test functions, some parametrised (`pytest`; CPU only) |
 
-Held-out numbers exist for the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). DEFER-Dx's are pending. Until they exist, the paired figure (Fig. 5) uses the comparator arm as its reference system.
+Held-out numbers exist for DEFER-Dx, the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
 
 **The journal run.** `scripts/queue_v6.sh` may use the GPU until **Mon Oct 12, 18:00 IST (08:30 US Eastern)**, and nothing runs after that.
 - **Fixed list:** jobs run in priority order, and none is added while it runs.
@@ -79,24 +79,40 @@ Published MIMIC-CDM numbers use different splits, metrics and environments, so o
 | Qwen3-8B zero-shot, open world, forced choice (this protocol) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | 75.5 (98.4%) |
 | Qwen3-8B zero-shot, open world, prompted DEFER (this protocol) | LA-CDM test | 78.3 (73.7–82.4) | 79.2 (75.1–83.1) | 82.7 (70.7–92.4) | 87.9 (75.1%) |
 | Case-level consensus arm, open world (published mechanism; this protocol) | LA-CDM test | **86.3** (82.2–90.2) | 87.1 (83.5–90.6) | **90.7** (79.4–98.6) | **94.0** (82.6%) |
-| **DEFER-Dx (CEV)**, open world | LA-CDM test | pending | pending | pending | pending |
+| **DEFER-Dx (CEV)**, open world (this protocol) | LA-CDM test | 76.4 (71.1–81.0) | 79.0 (74.3–83.2) | 77.3 (63.0–90.3) | **95.2** (77.6%) |
 
 **Verdict so far:**
 - **Open world costs accuracy.** Offering OTHER as a fifth answer costs the untrained model about 13 points: 87.2 closed world against 74.4 open world on the same test split, because it answers OTHER on many in-set cases. Every trained system here works in the open world.
 - **Above LA-CDM:** the trained comparator arm reaches 86.3 mean-class accuracy on LA-CDM's test split in the open world, against LA-CDM's 81.3 in its closed world. The environments differ (full history versus a summary, 22 tests versus 12, a different base model), so this is context, not a head-to-head.
 - **Above LDTL on diverticulitis:** 90.7 versus 78.8, on a different split.
 - **Below LDTL's 93.4 at full coverage:** the comparator's case-weighted 87.1 is the one SOTA number not reached, and LDTL's split is unpublished.
-- **Selective target ("> 95 at 85% coverage"):** not met yet in the open world. The comparator arm reaches 94.0 at 82.6% coverage.
-- **Undecided:** whether learned deferral beats thresholding is the central claim. It is decided only by the paired DEFER-Dx versus thresholded-GRPO-control comparison (around Oct 10).
+- **Selective target ("> 95 at 85% coverage"):** DEFER-Dx reaches 95.2 (93.4–96.8), but at 77.6% coverage, not 85%. At full coverage, counting its handoffs, it is below the comparator arm (78.2 vs 85.8), because 68% of its in-set handoffs rank OTHER first.
+- **Undecided:** whether learned deferral beats thresholding an *identically trained* model. This waits for the GRPO control (journal queue). Against a zero-shot model thresholded at matched coverage (three-sample voting), DEFER-Dx is 11.4 points (7.4–15.7) more accurate on answered cases.
 
 The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; the pitch is a Pareto improvement on safety axes nobody else reports.
 
 ## 3. Results and figures
 
-**Held-out so far** (CDM val + test, 480 cases × 3 seeds; paired bootstrap on the same cases, [docs/RESULTS.md](docs/RESULTS.md) §5):
-- **Against prompted deferral.** The trained consensus arm answers more cases than zero-shot prompted DEFER (coverage +7.5 points, 4.7–10.2). It is also more accurate on them (+6.1, 3.8–8.6) and makes fewer unflagged errors (−4.2, −6.0 to −2.3).
-- **Against a threshold.** With a post-hoc threshold on the zero-shot model's stated probability, the comparison is not at matched coverage. Its stated probabilities tie, so the cross-fitted threshold lands at 92.6% coverage, not 82.6%. Compared with both systems under self-consistency over three samples, where agreement serves as the zero-shot model's confidence, coverage does match (−0.8 points, −5.0 to 3.3). The consensus arm is still +11.1 points (7.3–14.9) more accurate on answered cases.
-- **DEFER-Dx.** The method's own comparisons, against the identically trained GRPO control with a threshold (the test of learned versus post-hoc deferral) and against this consensus arm, are pending. They fill Figs. 4–7 automatically.
+**Held-out results** (CDM val + test, 480 cases × 3 seeds; paired bootstrap on the same cases; [docs/RESULTS.md](docs/RESULTS.md)):
+
+| | DEFER-Dx | Group-consensus reward (prior work) | Zero-shot, prompted DEFER | Zero-shot, forced choice |
+|---|---|---|---|---|
+| Coverage (in-set cases answered) | 77.6 (74.3–80.6) | 82.6 (79.5–85.6) | 75.1 (72.0–78.1) | 98.4 |
+| Accuracy on answered cases | **95.2** (93.4–96.8) | 94.0 (92.0–95.9) | 87.9 (85.2–90.4) | 75.5 |
+| Unflagged errors per 100 cases ↓ | **3.8** (2.4–5.1) | 4.9 (3.4–6.6) | 9.1 (7.2–11.1) | 24.1 |
+| Wrong commitments, 187 unseen time-critical cases ↓ | **6.8** (4.3–10.0) | 11.4 (7.8–15.3) | 14.4 (10.2–19.1) | 17.6 |
+| Deferred, unseen time-critical cases | **87.0** | 70.4 | 32.8 | 0 |
+| Accuracy counting handoffs (full coverage) | 78.2 (75.0–81.4) | **85.8** (83.1–88.4) | 77.3 | 74.3 |
+| Tests per case | 0.84 | 1.83 | 1.92 | 1.93 |
+
+**What the paired comparisons support:**
+- **Against the deferral reward from prior work** (identically trained): fewer wrong commitments on never-seen time-critical diagnoses, −4.6 points (−8.0 to −1.4), and on seen OTHER groups, −7.0 (−9.9 to −4.4). Accuracy on answered cases is the same (+1.1, −0.5 to 2.9), and so are unflagged errors (−1.2, −2.6 to 0.2).
+- **The costs, against the same arm:**
+  - lower full-coverage accuracy (−7.6) and diverticulitis accuracy (−16.3);
+  - a less informative in-set handoff: 68% of DEFER-Dx's in-set handoffs rank OTHER first, against 9%;
+  - fewer tests: DEFER-Dx escalates early, so this run does not show the "investigate further" half of the mechanism.
+- **Against post-hoc thresholding of the zero-shot model at matched coverage** (three-sample voting for both): +11.4 points (7.4–15.7) accuracy on answered cases, and −9.2 (−12.7 to −5.8) unflagged errors per 100.
+- **Not yet answered:** learned deferral against thresholding an *identically trained* model. That needs the GRPO control in the journal queue.
 
 **The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
 - **Data figures:** drawn by [scripts/make_figures.py](scripts/make_figures.py) from aggregates only (`docs/results.json`, numbers-only training logs). They are regenerated with every report, so they fill in as runs finish. A figure whose inputs don't exist yet shows a labelled placeholder.
@@ -123,13 +139,13 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
 ![Figure 3](docs/figures/fig_data.png)
 
 **Figure 4 | Risk–coverage on CDM val + test.**
-- **a:** accuracy on answered in-set cases as the stated-probability threshold is lowered. Each curve ends (filled marker) at the system's own coverage, because a deferral never counts as answered. Hollow markers are forced-choice systems with a post-hoc threshold cross-fitted at the reference system's coverage (vertical line).
+- **a:** accuracy on answered in-set cases as the stated-probability threshold is lowered. Each curve ends (filled marker) at the system's own coverage, because a deferral never counts as answered. Hollow markers are forced-choice systems with a post-hoc threshold cross-fitted at the reference system's coverage (vertical line). Tied stated probabilities can keep a single-sample threshold above that coverage; the matched comparison is in Fig. 5.
 - **b:** area under the risk–coverage curve (lower is better).
 
 ![Figure 4](docs/figures/fig_risk_coverage.png)
 
 **Figure 5 | Paired differences on the same cases.**
-- **Panels:** each compares the reference system (DEFER-Dx once evaluated; until then the consensus arm) with one comparator.
+- **Panels:** each compares DEFER-Dx with one comparator. The zero-shot threshold uses three-sample voting for both systems, so that coverage is matched (−0.2 points). The single-sample threshold missed DEFER-Dx's coverage because of tied stated probabilities, so it is left out (RESULTS.md shows it with the coverage it reached).
 - **Points:** paired bootstrap differences in percentage points (AURC and ECE × 100). They are oriented so that positive values favour the reference system: the sign is flipped for lower-is-better metrics (↓). Filled points have an interval that excludes 0.
 
 ![Figure 5](docs/figures/fig_paired_differences.png)
