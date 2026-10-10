@@ -17,6 +17,10 @@ cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 88.3 (85.4–91.0) | 86.8 (83.3–90.0) | 88.0 (84.8–90.9) | 83.3 (79.8–86.5) | 94.2 (91.9–96.5) | 96.1 (93.2–98.2) | 0.023 (0.014–0.037) | 0.027 (0.013–0.048) | 0.044 (0.029–0.062) | 89.1 (87.1–91.1) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 78.2 (75.0–81.4) | 74.3 (70.5–78.1) | 81.4 (78.0–84.3) | 77.6 (74.3–80.6) | 95.2 (93.4–96.8) | 93.0 (89.1–96.2) | 0.052 (0.038–0.072) | 0.042 (0.027–0.059) | 0.047 (0.034–0.061) | 86.8 (85.0–88.7) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 80.8 (77.3–84.4) | 76.5 (72.4–80.7) | 82.6 (78.9–86.1) | 79.8 (76.0–83.3) | 95.3 (93.1–97.3) | 95.1 (91.1–97.7) | 0.039 (0.026–0.062) | 0.043 (0.024–0.064) | 0.044 (0.029–0.060) | 88.3 (86.4–90.4) |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only) | 76.7 (73.5–79.9) | 72.6 (68.8–76.4) | 80.4 (77.0–83.4) | 76.0 (72.8–79.2) | 96.2 (94.4–97.6) | 92.2 (88.2–95.7) | 0.050 (0.038–0.072) | 0.049 (0.035–0.064) | 0.039 (0.028–0.052) | – |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only), self-consistency over 3 samples | 79.4 (75.8–82.9) | 75.3 (70.9–79.6) | 82.7 (79.0–86.0) | 77.1 (73.3–80.6) | 97.0 (95.2–98.6) | 94.5 (90.1–97.7) | 0.036 (0.025–0.053) | 0.056 (0.037–0.076) | 0.039 (0.025–0.055) | – |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | 86.2 (83.4–88.8) | 84.7 (81.6–87.8) | 85.3 (82.0–88.2) | 95.8 (94.4–96.9) | 89.9 (87.5–92.1) | 94.8 (92.8–96.7) | 0.036 (0.024–0.055) | 0.077 (0.058–0.099) | 0.081 (0.068–0.093) | – |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | 88.8 (85.8–91.5) | 87.2 (83.8–90.5) | 86.4 (82.8–89.6) | 99.2 (98.3–99.8) | 89.5 (86.7–92.2) | 96.9 (94.3–98.2) | 0.024 (0.012–0.041) | 0.041 (0.030–0.071) | 0.076 (0.058–0.096) | – |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 92.6 (91.0–94.0) | 77.6 (74.3–80.7) | 81.3 (78.0–84.9) | 0.129 (0.102–0.161) | 0.089 (0.065–0.121) | 0.160 (0.140–0.182) | 88.1 (86.1–89.9) |
 | Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 77.9 (74.2–81.7) | 75.9 (71.4–80.0) | 83.7 (80.1–86.7) | 80.0 (76.7–83.5) | 83.9 (79.9–87.5) | 83.9 (79.7–87.5) | 0.079 (0.060–0.102) | 0.150 (0.115–0.190) | 0.158 (0.124–0.196) | 90.4 (88.3–92.3) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 0.0 (0.0–0.0) | – | 74.2 (70.6–77.8) | 0.246 (0.211–0.306) | – | – | 50.0 (50.0–50.0) |
@@ -35,6 +39,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | 88.2 (78.4–96.2) | 4.8 (2.9–6.9) | 1.9 (0.8–3.3) | 0.024 (0.015–0.035) | 0.118 (0.075–0.171) | 32.9 (21.8–44.2) | 41.1 (28.1–54.4) | 1.826 (1.742–1.908) | 1298.064 (1231.852–1365.625) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 69.3 (58.1–80.0) | 3.8 (2.4–5.1) | 2.3 (1.3–3.4) | 0.019 (0.013–0.027) | 0.068 (0.043–0.100) | 80.5 (75.1–85.5) | 82.8 (77.3–88.3) | 0.835 (0.787–0.883) | 1012.624 (945.867–1082.370) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 70.6 (57.9–82.7) | 3.8 (2.1–5.6) | 1.7 (0.6–2.9) | 0.020 (0.011–0.029) | 0.059 (0.027–0.096) | 76.3 (67.4–84.5) | 80.4 (71.8–88.1) | 0.835 (0.787–0.883) | 1012.624 (945.867–1082.370) |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only) | 66.7 (55.8–77.3) | 2.9 (1.8–4.2) | 1.9 (1.1–2.9) | 0.015 (0.009–0.022) | – | 85.0 (80.6–89.0) | 87.5 (82.3–92.1) | 0.852 (0.804–0.900) | 999.434 (935.448–1064.608) |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only), self-consistency over 3 samples | 70.6 (57.5–83.0) | 2.3 (1.0–3.8) | 1.5 (0.6–2.5) | 0.011 (0.005–0.018) | – | 80.0 (72.4–87.2) | 88.9 (82.0–94.6) | 0.852 (0.804–0.900) | 999.434 (935.448–1064.608) |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | 86.3 (78.4–93.5) | 9.7 (7.6–11.9) | 1.9 (1.0–3.0) | 0.053 (0.041–0.065) | – | – | 0.0 (0.0–0.0) | 2.010 (1.908–2.115) | 1282.740 (1205.303–1361.405) |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | 88.2 (79.2–96.0) | 10.4 (7.7–13.3) | 4.0 (2.3–5.8) | 0.056 (0.041–0.071) | – | – | 0.0 (0.0–0.0) | 2.010 (1.908–2.115) | 1282.740 (1205.303–1361.405) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 73.9 (63.5–83.7) | 20.7 (17.8–23.7) | 7.9 (6.3–9.6) | 0.098 (0.085–0.113) | 0.152 (0.109–0.198) | 58.3 (46.9–69.2) | 13.2 (9.7–17.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
 | Qwen3-8B zero-shot, forced choice, self-consistency over 3 samples + threshold at matched coverage (80%) | 80.4 (68.9–90.7) | 12.9 (10.0–16.0) | 11.0 (8.3–14.0) | 0.060 (0.046–0.075) | 0.102 (0.064–0.150) | 45.8 (35.6–56.9) | 41.5 (31.8–51.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | 73.9 (63.5–83.7) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 0.000 (0.000–0.000) | 0.000 (0.000–0.000) | 24.5 (21.4–27.8) | 93.8 (91.0–96.4) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
@@ -104,6 +112,10 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Group-consensus deferral reward (case-level; TIAR/KARL-style), self-consistency over 3 samples | LA-CDM test | 89.6 (85.4–93.6) | 90.0 (86.2–93.8) | 96.0 (86.7–100.0) | this report |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | LA-CDM test | 76.4 (71.1–81.0) | 79.0 (74.3–83.2) | 77.3 (63.0–90.3) | this report |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | LA-CDM test | 79.2 (73.1–84.4) | 82.1 (77.1–86.2) | 80.0 (63.2–94.7) | this report |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only) | LA-CDM test | 73.3 (67.9–78.1) | 77.1 (72.4–81.2) | 68.0 (52.8–81.8) | this report |
+| DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only), self-consistency over 3 samples | LA-CDM test | 76.1 (69.7–81.9) | 80.0 (74.6–85.0) | 72.0 (53.8–88.9) | this report |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | LA-CDM test | 86.9 (83.1–90.4) | 87.2 (83.6–90.6) | 92.0 (83.3–98.7) | this report |
+| Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | LA-CDM test | 90.9 (86.6–94.5) | 91.2 (87.5–94.6) | 96.0 (86.4–100.0) | this report |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | this report |
 
 Environments differ across rows (history summary vs full history, 12 vs 22 tests, different base models); LDTL's split is unpublished. Read rows from other papers as context, not as head-to-head.
@@ -195,3 +207,12 @@ Environments differ across rows (history summary vs full history, 12 vs 22 tests
 | cev@sc vs zs_defer@sc | handoff_quality | -23.1 (-33.6–-12.4) | < 0.001 |
 | cev@sc vs zs_defer@sc | false_commit:eval_other_seen | -4.4 (-8.3–-0.5) | 0.039 |
 | cev@sc vs zs_defer@sc | false_commit:eval_other_unseen | -10.2 (-15.5–-5.3) | < 0.001 |
+| cev vs cev_maskdrop | selective_acc | -1.0 (-2.0–0.0) | 0.056 |
+| cev vs cev_maskdrop | coverage | 1.6 (-0.2–3.5) | 0.101 |
+| cev vs cev_maskdrop | acc_full | 1.5 (0.0–3.1) | 0.057 |
+| cev vs cev_maskdrop | unsafe_errors | 0.8 (0.1–1.7) | 0.049 |
+| cev vs cev_maskdrop | confident_errors | 0.3 (-0.3–1.0) | 0.332 |
+| cev vs cev_maskdrop | acc_diverticulitis | 2.6 (-3.8–8.7) | 0.454 |
+| cev vs cev_maskdrop | aurc | 0.003 (-0.009–0.009) | 0.9 |
+| cev vs cev_maskdrop | ece | -0.007 (-0.017–0.003) | 0.178 |
+| cev vs cev_maskdrop | handoff_quality | 0.0 (-2.7–2.9) | 0.95 |

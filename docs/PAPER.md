@@ -152,7 +152,11 @@ Figure 4 (`fig_risk_coverage.pdf`), Figure S2 (`fig_reliability.pdf`). Ablations
 [[Table 4. LA-CDM rows are on the same test split but in a different environment; LDTL numbers come from its own unpublished split and are case-weighted. Neither is a head-to-head.]]
 
 ### 7.5 Robustness
-[[The mask ablation (drop every sentence containing CDM's "____" diagnosis mask) and the source-shortcut check on same-pipeline controls.]]
+**The diagnosis mask.** MIMIC-CDM replaces the case's own diagnosis with "____" in some sentences, which is a label cue. With every such sentence removed, DEFER-Dx answers 76.0% (72.8–79.2) of cases at 96.2% (94.4–97.6) accuracy, against 77.6% at 95.2%. Paired on the same cases, the differences are −1.0 points (−2.0 to 0.0) in accuracy on answered cases and +1.6 (−0.2 to 3.5) in coverage, and AURC is unchanged. The agent does not rely on the mask.
+
+**Source shortcut.** On the 258 same-pipeline in-set controls, DEFER-Dx names OTHER for 0.3% of cases and answers 70.0% at 88.7% accuracy. Its open-world behaviour is therefore not "built by the open-world pipeline, so OTHER".
+
+**Closed world.** Zero-shot Qwen3-8B restricted to the four labels, as in prior work, reaches 86.9% (83.1–90.4) mean-class accuracy on the LA-CDM test split under this protocol, against 74.4% when OTHER is offered.
 
 ## 8. Discussion
 [[What learned deferral buys over thresholding, stated only as strongly as the paired intervals allow; when it does not.]]

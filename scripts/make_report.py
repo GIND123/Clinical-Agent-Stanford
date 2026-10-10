@@ -56,6 +56,8 @@ SYSTEMS = [  # eval-suite directory name, label
     ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
     ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
     ("cev_seed1", "DEFER-Dx, second training seed"),
+    ("cev_maskdrop", "DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only)"),
+    ("zs_closed", "Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only)"),
     ("cev_step100", "DEFER-Dx at step 100"),
     ("cev_dualascent", "DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled)"),
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
@@ -226,6 +228,7 @@ def main() -> None:
                                 "grpo_nodefer", "cev_dualascent")),
                         (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc"))]
     comparisons.append(("cev_seed1", ("grpo_nodefer+thr_seed1", "deferdx")))
+    comparisons.append(("cev", ("cev_maskdrop",)))  # robustness to the mask cue, same cases
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
     for ref, comps in comparisons:
         if ref not in suites:

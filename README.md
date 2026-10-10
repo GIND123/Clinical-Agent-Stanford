@@ -67,7 +67,7 @@ The method was therefore redesigned around a quantity none of them uses.
 
 ### 2.2 SOTA
 
-Published MIMIC-CDM numbers use different splits, metrics and environments, so only some comparisons are like-for-like. Rows marked "this protocol" are the held-out evaluation of this repository ([docs/RESULTS.md](docs/RESULTS.md) §1 and §4; 3 seeds, 95% bootstrap intervals). The closed-world zero-shot row comes from earlier runs ([docs/BASELINES.md](docs/BASELINES.md)); it is re-run under this protocol in the queue (`eval_zs_closed`).
+Published MIMIC-CDM numbers use different splits, metrics and environments, so only some comparisons are like-for-like. Rows marked "this protocol" are the held-out evaluation of this repository ([docs/RESULTS.md](docs/RESULTS.md) §1 and §4; 3 seeds, 95% bootstrap intervals). The closed-world zero-shot row was re-run under this protocol (`eval_zs_closed`) and reproduces the earlier runs (87.2, [docs/BASELINES.md](docs/BASELINES.md)).
 
 | System | Split | Mean-class acc | Case-weighted acc | Diverticulitis | Selective acc (coverage), CDM val + test |
 |---|---|---|---|---|---|
@@ -75,14 +75,14 @@ Published MIMIC-CDM numbers use different splits, metrics and environments, so o
 | LDTL (reported; current SOTA) | own unpublished 70/10/20 | – | **93.4** | 78.8 | – |
 | Random planner (from LDTL) | own split | – | 84.8 | 90.4 | – |
 | DiagAgent-14B (run here) | LA-CDM test | 71.9 | 77.9 | 56.0 | – |
-| Qwen3-8B zero-shot, **closed world** (4 classes; earlier runs) | LA-CDM test | 87.2 ± 2.4 | 88.3 ± 1.1 | 84.8 (all 2,400 cases) | – |
+| Qwen3-8B zero-shot, **closed world** (4 labels, as in prior work; this protocol) | LA-CDM test | 86.9 (83.1–90.4) | 87.2 (83.6–90.6) | 92.0 (83.3–98.7) | 89.9 (95.8%) |
 | Qwen3-8B zero-shot, open world, forced choice (this protocol) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | 75.5 (98.4%) |
 | Qwen3-8B zero-shot, open world, prompted DEFER (this protocol) | LA-CDM test | 78.3 (73.7–82.4) | 79.2 (75.1–83.1) | 82.7 (70.7–92.4) | 87.9 (75.1%) |
 | Case-level consensus arm, open world (published mechanism; this protocol) | LA-CDM test | **86.3** (82.2–90.2) | 87.1 (83.5–90.6) | **90.7** (79.4–98.6) | **94.0** (82.6%) |
 | **DEFER-Dx (CEV)**, open world (this protocol) | LA-CDM test | 76.4 (71.1–81.0) | 79.0 (74.3–83.2) | 77.3 (63.0–90.3) | **95.2** (77.6%) |
 
 **Verdict so far:**
-- **Open world costs accuracy.** Offering OTHER as a fifth answer costs the untrained model about 13 points: 87.2 closed world against 74.4 open world on the same test split, because it answers OTHER on many in-set cases. Every trained system here works in the open world.
+- **Open world costs accuracy.** Offering OTHER as a fifth answer costs the untrained model about 13 points: 86.9 closed world against 74.4 open world on the same test split, because it answers OTHER on many in-set cases. Every trained system here works in the open world.
 - **Above LA-CDM:** the trained comparator arm reaches 86.3 mean-class accuracy on LA-CDM's test split in the open world, against LA-CDM's 81.3 in its closed world. The environments differ (full history versus a summary, 22 tests versus 12, a different base model), so this is context, not a head-to-head.
 - **Above LDTL on diverticulitis:** 90.7 versus 78.8, on a different split.
 - **Below LDTL's 93.4 at full coverage:** the comparator's case-weighted 87.1 is the one SOTA number not reached, and LDTL's split is unpublished.
@@ -113,6 +113,7 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
   - fewer tests: DEFER-Dx escalates early, so this run does not show the "investigate further" half of the mechanism.
 - **Against post-hoc thresholding of the zero-shot model at matched coverage** (three-sample voting for both): +11.4 points (7.4–15.7) accuracy on answered cases, and −9.2 (−12.7 to −5.8) unflagged errors per 100.
 - **Not yet answered:** learned deferral against thresholding an *identically trained* model. That needs the GRPO control in the journal queue.
+- **Robustness to the mask cue.** With every sentence containing CDM's `____` diagnosis mask removed, DEFER-Dx answers 76.0% at 96.2% accuracy, against 77.6% at 95.2%. All paired differences are within 1.6 points and AURC is unchanged, so it does not rely on the mask.
 
 **The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
 - **Data figures:** drawn by [scripts/make_figures.py](scripts/make_figures.py) from aggregates only (`docs/results.json`, numbers-only training logs). They are regenerated with every report, so they fill in as runs finish. A figure whose inputs don't exist yet shows a labelled placeholder.
