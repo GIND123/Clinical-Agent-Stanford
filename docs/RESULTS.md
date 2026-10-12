@@ -24,6 +24,8 @@ cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | 86.2 (83.4–88.8) | 84.7 (81.6–87.8) | 85.3 (82.0–88.2) | 95.8 (94.4–96.9) | 89.9 (87.5–92.1) | 94.8 (92.8–96.7) | 0.036 (0.024–0.055) | 0.077 (0.058–0.099) | 0.081 (0.068–0.093) | – |
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | 88.8 (85.8–91.5) | 87.2 (83.8–90.5) | 86.4 (82.8–89.6) | 99.2 (98.3–99.8) | 89.5 (86.7–92.2) | 96.9 (94.3–98.2) | 0.024 (0.012–0.041) | 0.041 (0.030–0.071) | 0.076 (0.058–0.096) | – |
 | DEFER-Dx at step 100 | 78.4 (75.2–81.6) | 75.9 (71.9–79.6) | 81.1 (77.8–84.2) | 68.1 (64.4–71.6) | 94.5 (92.2–96.5) | 87.6 (83.5–90.2) | 0.060 (0.045–0.081) | 0.041 (0.030–0.059) | 0.049 (0.035–0.066) | 82.0 (79.9–84.1) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | 84.8 (82.1–87.4) | 83.2 (79.9–86.3) | 85.7 (82.8–88.3) | 72.6 (69.2–75.7) | 96.2 (94.5–97.6) | 92.1 (89.6–95.0) | 0.040 (0.027–0.056) | 0.066 (0.051–0.081) | 0.042 (0.031–0.053) | 83.3 (81.3–85.4) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | 87.3 (84.4–90.2) | 85.5 (82.0–88.8) | 87.3 (84.0–90.2) | 75.4 (71.5–79.0) | 96.4 (94.4–98.1) | 94.3 (91.4–96.9) | 0.030 (0.019–0.047) | 0.038 (0.019–0.058) | 0.037 (0.021–0.053) | 85.1 (82.8–87.3) |
 | Ablation: constant deferral reward (step 100) | 84.9 (81.9–87.7) | 83.5 (80.0–86.7) | 86.0 (82.8–88.8) | 77.5 (74.1–80.6) | 94.9 (92.8–96.8) | 93.1 (90.6–96.1) | 0.042 (0.031–0.066) | 0.068 (0.049–0.087) | 0.055 (0.043–0.070) | 86.9 (84.9–88.8) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 82.4 (79.6–85.1) | 79.6 (76.1–83.0) | 86.5 (83.9–89.0) | 79.2 (76.2–81.9) | 92.1 (89.9–94.2) | 91.7 (88.5–94.1) | 0.048 (0.035–0.066) | 0.034 (0.022–0.050) | 0.066 (0.051–0.082) | 91.1 (89.5–92.7) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 92.6 (91.0–94.0) | 77.6 (74.3–80.7) | 81.3 (78.0–84.9) | 0.129 (0.102–0.161) | 0.089 (0.065–0.121) | 0.160 (0.140–0.182) | 88.1 (86.1–89.9) |
@@ -53,6 +55,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | 86.3 (78.4–93.5) | 9.7 (7.6–11.9) | 1.9 (1.0–3.0) | 0.053 (0.041–0.065) | – | – | 0.0 (0.0–0.0) | 2.010 (1.908–2.115) | 1282.740 (1205.303–1361.405) |
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | 88.2 (79.2–96.0) | 10.4 (7.7–13.3) | 4.0 (2.3–5.8) | 0.056 (0.041–0.071) | – | – | 0.0 (0.0–0.0) | 2.010 (1.908–2.115) | 1282.740 (1205.303–1361.405) |
 | DEFER-Dx at step 100 | 73.5 (62.7–83.9) | 3.8 (2.4–5.3) | 2.2 (1.2–3.3) | 0.018 (0.011–0.025) | 0.102 (0.067–0.142) | 55.7 (49.2–62.0) | 82.1 (75.8–88.3) | 1.566 (1.475–1.654) | 1041.795 (971.516–1121.223) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | 85.0 (75.3–93.2) | 2.8 (1.7–4.0) | 1.7 (0.8–2.6) | 0.014 (0.009–0.021) | 0.134 (0.094–0.178) | 43.1 (36.3–49.6) | 74.4 (66.5–81.6) | 1.210 (1.150–1.272) | 1072.383 (1014.422–1130.039) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | 86.3 (76.3–95.0) | 2.7 (1.5–4.2) | 1.9 (0.8–3.1) | 0.014 (0.007–0.022) | 0.128 (0.086–0.176) | 40.7 (31.9–49.6) | 78.7 (67.9–88.5) | 1.210 (1.150–1.272) | 1072.383 (1014.422–1130.039) |
 | Ablation: constant deferral reward (step 100) | 85.3 (76.0–93.6) | 4.0 (2.5–5.5) | 2.1 (1.1–3.1) | 0.020 (0.012–0.028) | 0.107 (0.070–0.147) | 48.3 (40.7–55.9) | 70.3 (60.9–78.7) | 2.019 (1.914–2.129) | 1356.327 (1290.007–1424.588) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 76.5 (66.7–86.0) | 6.2 (4.6–8.0) | 2.5 (1.5–3.6) | 0.029 (0.021–0.037) | 0.084 (0.053–0.119) | 35.5 (27.9–43.1) | 29.5 (22.7–36.1) | 1.479 (1.403–1.558) | 1296.199 (1237.468–1356.854) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 73.9 (63.5–83.7) | 20.7 (17.8–23.7) | 7.9 (6.3–9.6) | 0.098 (0.085–0.113) | 0.152 (0.109–0.198) | 58.3 (46.9–69.2) | 13.2 (9.7–17.0) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
@@ -76,6 +80,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 6.5 (3.7–9.4) | 4.0 (2.3–6.2) | 4.5 (3.1–6.3) | 89.0 (85.8–92.2) | 95.6 (93.9–97.2) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 5.8 (2.9–9.2) | 3.9 (1.5–6.8) | 2.4 (0.5–4.9) | 91.7 (87.9–95.1) | 97.4 (94.8–99.5) |
 | DEFER-Dx at step 100 | 6.3 (3.6–9.2) | 4.6 (2.2–7.3) | 9.5 (6.6–12.6) | 84.2 (80.1–88.1) | 88.2 (84.3–91.8) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | 9.4 (6.1–12.9) | 4.5 (2.4–7.0) | 5.5 (3.4–7.9) | 84.1 (79.9–88.0) | 96.2 (94.4–97.7) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | 9.2 (5.3–13.1) | 6.8 (3.4–10.2) | 4.9 (1.9–8.3) | 85.9 (81.1–90.3) | 70.1 (63.4–76.4) |
 | Ablation: constant deferral reward (step 100) | 10.7 (6.8–14.6) | 5.3 (2.9–8.3) | 15.3 (11.4–19.4) | 72.8 (67.7–77.9) | 26.0 (20.8–31.4) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 6.5 (3.7–9.4) | 3.1 (1.3–5.3) | 47.4 (42.2–52.8) | 32.7 (28.5–37.2) | 73.3 (66.2–80.5) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 11.2 (7.8–14.6) | 4.0 (2.1–6.1) | 78.5 (73.9–82.7) | 7.3 (5.2–9.7) | 77.8 (65.3–89.7) |
@@ -99,6 +105,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 6.8 (4.3–10.0) | 3.9 (2.1–6.1) | 6.2 (4.1–8.6) | 87.0 (83.2–90.4) | 93.9 (91.5–96.1) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 5.9 (2.7–9.6) | 3.7 (1.6–7.0) | 2.7 (0.5–5.3) | 91.4 (87.2–95.2) | 91.2 (86.8–95.3) |
 | DEFER-Dx at step 100 | 10.2 (6.7–14.2) | 7.2 (4.0–10.7) | 12.0 (8.6–15.5) | 77.8 (72.7–82.9) | 89.0 (85.4–92.5) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | 13.4 (9.4–17.8) | 7.8 (4.6–11.6) | 7.1 (4.6–9.8) | 78.3 (73.4–82.5) | 94.3 (91.5–96.7) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | 12.8 (8.6–17.6) | 10.2 (6.4–15.0) | 6.4 (3.2–10.2) | 80.7 (74.9–86.1) | 77.5 (70.5–84.0) |
 | Ablation: constant deferral reward (step 100) | 10.7 (7.0–14.7) | 5.1 (2.4–8.0) | 23.8 (18.7–28.9) | 62.8 (57.2–68.4) | 24.7 (18.8–30.9) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 8.4 (5.3–11.9) | 4.1 (2.0–6.6) | 66.0 (60.2–71.5) | 18.5 (14.3–22.8) | 64.4 (53.5–75.3) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 15.2 (10.9–19.8) | 5.5 (3.4–8.0) | 75.8 (70.2–80.7) | 6.1 (4.1–8.2) | 58.8 (41.9–74.3) |
@@ -122,6 +130,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours) | 70.7 (65.8–75.3) | 70.0 (65.5–74.5) | 88.7 (84.3–92.5) | 0.3 (0.0–0.6) | 29.8 (25.5–34.5) |
 | DEFER-Dx: counterfactual escalation value + scored handoff (ours), self-consistency over 3 samples | 73.6 (68.2–78.7) | 71.3 (65.5–76.7) | 89.1 (84.4–93.5) | 0.0 (0.0–0.0) | 28.7 (23.3–34.5) |
 | DEFER-Dx at step 100 | 70.3 (65.3–75.0) | 52.3 (47.3–57.6) | 80.7 (74.3–86.5) | 1.0 (0.2–2.1) | 47.7 (42.4–52.7) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | 72.9 (68.2–77.3) | 54.0 (49.0–59.2) | 84.4 (78.6–89.4) | 0.3 (0.0–0.8) | 45.6 (40.6–50.6) |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | 76.7 (70.9–81.8) | 55.4 (49.2–61.6) | 84.6 (78.5–90.2) | 0.4 (0.0–1.2) | 44.6 (38.4–50.8) |
 | Ablation: constant deferral reward (step 100) | 68.2 (63.2–73.1) | 62.6 (57.4–67.6) | 77.7 (71.7–83.0) | 2.3 (1.2–3.9) | 36.8 (31.8–42.1) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 67.3 (62.1–72.1) | 66.3 (62.0–70.9) | 79.7 (74.3–84.6) | 5.6 (3.4–8.0) | 25.8 (22.0–29.7) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 57.6 (52.6–62.7) | 87.5 (84.6–90.1) | 60.3 (54.8–65.5) | 26.0 (21.7–30.4) | 10.3 (7.9–12.9) |
@@ -154,6 +164,8 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only) | LA-CDM test | 86.9 (83.1–90.4) | 87.2 (83.6–90.6) | 92.0 (83.3–98.7) | this report |
 | Qwen3-8B zero-shot, closed world: four labels, as in prior work (CDM sets only), self-consistency over 3 samples | LA-CDM test | 90.9 (86.6–94.5) | 91.2 (87.5–94.6) | 96.0 (86.4–100.0) | this report |
 | DEFER-Dx at step 100 | LA-CDM test | 76.5 (70.5–82.1) | 79.4 (74.8–84.0) | 72.0 (54.5–88.6) | this report |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | LA-CDM test | 83.7 (78.9–87.8) | 85.3 (81.4–88.9) | 85.3 (71.3–97.0) | this report |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled), self-consistency over 3 samples | LA-CDM test | 84.9 (79.5–89.7) | 87.1 (82.9–90.8) | 84.0 (68.0–96.6) | this report |
 | Ablation: constant deferral reward (step 100) | LA-CDM test | 84.8 (80.1–89.2) | 86.0 (82.1–90.0) | 86.0 (73.2–96.7) | this report |
 | GRPO control (no DEFER) + SGR (5% risk, delta 0.05) | LA-CDM test | 82.7 (77.9–87.1) | 85.4 (81.7–89.0) | 76.0 (60.8–89.5) | this report |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | this report |
@@ -182,6 +194,9 @@ Environments differ across rows (history summary vs full history, 12 vs 22 tests
 | DEFER-Dx at step 100 | diabetic ketoacidosis | 17 | 5.9 | 82.4 |
 | DEFER-Dx at step 100 | mesenteric ischemia | 91 | 15.9 | 76.9 |
 | DEFER-Dx at step 100 | peptic ulcer perforation or bleed | 69 | 5.1 | 75.4 |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | diabetic ketoacidosis | 17 | 3.9 | 94.1 |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | mesenteric ischemia | 91 | 21.2 | 74.0 |
+| DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled) | peptic ulcer perforation or bleed | 69 | 7.2 | 77.8 |
 | Ablation: constant deferral reward (step 100) | diabetic ketoacidosis | 17 | 2.9 | 55.9 |
 | Ablation: constant deferral reward (step 100) | mesenteric ischemia | 91 | 15.4 | 64.3 |
 | Ablation: constant deferral reward (step 100) | peptic ulcer perforation or bleed | 69 | 8.0 | 60.9 |
@@ -256,6 +271,17 @@ Environments differ across rows (history summary vs full history, 12 vs 22 tests
 | cev vs grpo_nodefer | handoff_quality | – | nan |
 | cev vs grpo_nodefer | false_commit:eval_other_seen | -8.7 (-12.1–-5.7) | < 0.001 |
 | cev vs grpo_nodefer | false_commit:eval_other_unseen | -8.2 (-12.1–-4.6) | < 0.001 |
+| cev vs cev_dualascent | selective_acc | -1.0 (-2.9–0.8) | 0.285 |
+| cev vs cev_dualascent | coverage | 4.9 (2.1–7.8) | < 0.001 |
+| cev vs cev_dualascent | acc_full | -6.6 (-9.3–-4.0) | < 0.001 |
+| cev vs cev_dualascent | unsafe_errors | 1.0 (-0.4–2.4) | 0.199 |
+| cev vs cev_dualascent | confident_errors | 0.6 (-0.6–1.9) | 0.331 |
+| cev vs cev_dualascent | acc_diverticulitis | -15.7 (-24.2–-8.3) | < 0.001 |
+| cev vs cev_dualascent | aurc | 0.019 (-0.002–0.031) | 0.092 |
+| cev vs cev_dualascent | ece | -0.024 (-0.042–-0.005) | 0.014 |
+| cev vs cev_dualascent | handoff_quality | -24.4 (-27.7–-21.2) | < 0.001 |
+| cev vs cev_dualascent | false_commit:eval_other_seen | -2.9 (-5.8–-0.2) | 0.034 |
+| cev vs cev_dualascent | false_commit:eval_other_unseen | -6.6 (-10.3–-3.0) | < 0.001 |
 | cev@sc vs grpo_nodefer@sc+thr | selective_acc | 2.2 (-0.9–5.5) | 0.156 |
 | cev@sc vs grpo_nodefer@sc+thr | coverage | 1.0 (-2.9–5.0) | 0.647 |
 | cev@sc vs grpo_nodefer@sc+thr | acc_full | -7.3 (-10.8–-4.0) | < 0.001 |
