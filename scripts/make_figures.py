@@ -462,7 +462,7 @@ def fig_ablations(tables, out):
     fig, axes = plt.subplots(2, 3, figsize=(FULL, 2 * (0.3 * len(rows) + 0.7)), sharey=True, layout="constrained")
     for j, (ax, (sec, key, title, scale)) in enumerate(zip(axes.flat, panels)):
         dots(ax, rows, lambda n, s=sec, k=key: table(tables, n, s, k), scale=scale, labels=j % 3 == 0,
-             zero=key != "aurc")
+             zero=key not in ("aurc", "selective_acc"))
         ax.set_title(title, fontsize=7)
     save(fig, out, "fig_ablations")
 

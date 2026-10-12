@@ -189,7 +189,7 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
 
 ![Figure S4](docs/figures/fig_unseen_groups.png)
 
-**Figure S5 | Ablations at 100 training steps.** DEFER-Dx against the same training without the scored handoff (η = 0), and with a constant deferral reward. Written when the ablations finish.
+**Figure S5 | Ablations at 100 training steps.** DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, and without the scored handoff (η = 0, added when it finishes on Tuesday). Both are evaluated on 2 seeds with 95% intervals.
 
 ![Figure S5](docs/figures/fig_ablations.png)
 
