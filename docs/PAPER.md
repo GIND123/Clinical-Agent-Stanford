@@ -140,16 +140,66 @@ DiagAgent-14B, LA-CDM and LDTL appear as context (§7.4).
 ## 7. Results
 
 ### 7.1 Closed world
-[[Table 1 (ML) and Table 2 (clinical) from docs/RESULTS.md. Lead with the paired matched-coverage comparison of DEFER-Dx against the thresholded control.]] Figure 5 (`fig_paired_differences.pdf`), Figure 6 (`fig_clinical_safety.pdf`), Figure S3 (`fig_per_class.pdf`).
+All numbers are on CDM val + test (480 admissions, 3 evaluation seeds) with 95% case-level bootstrap intervals; differences are paired on the same cases (Figure 5, Figure 6, Figure S3; docs/RESULTS.md Tables 1, 2 and 5).
+
+**Learned against post-hoc deferral on an identically trained model.** DEFER-Dx answered 77.6% (74.3–80.6) of in-set cases at 95.2% (93.4–96.8) accuracy. The GRPO control, trained identically but without DEFER and thresholded on its stated probability at DEFER-Dx's coverage (cross-fitted), answered 79.2% at 92.1% (89.9–94.2). The coverage difference was −1.6 points (−4.8 to 1.7), so the comparison is at matched coverage.
+- **Accuracy on answered cases:** DEFER-Dx was 3.1 points (0.9 to 5.4; p = 0.007) more accurate.
+- **Unflagged errors:** wrong commitments with no escalation fell from 6.2 to 3.8 per 100 cases (−2.5, −4.4 to −0.8; p = 0.007).
+- **Calibration:** Brier score 0.047 against 0.066. Confident errors, AURC and ECE did not differ significantly.
+- **Three-sample voting** for both systems (coverage 79.8% against 78.8%): the accuracy gap narrowed to 2.2 points (−0.9 to 5.5), and confident errors fell by 3.5 per 100 (−5.8 to −1.5).
+
+**What it costs.** When a deferral is scored by the top of its handed-over differential, DEFER-Dx was less accurate than the control:
+- **full coverage:** 78.2% against 82.4% (−4.2, −7.2 to −1.2);
+- **diverticulitis:** 69.3% against 76.5% (−7.2, −15.5 to 0.0).
+
+The reason is its handoffs: 68.4% of its in-set handoffs rank OTHER first, against 8.6% for the consensus arm and 27.6% for prompted deferral. Its in-set handoff quality is correspondingly lower (−20.4 points against the control's thresholded deferrals). DEFER-Dx also ordered fewer tests: 0.84 per case, against 1.48 for the control and 1.83 for the consensus arm, and 0.67 before deferring. It escalated early rather than investigating, so this run does not show the "investigate further" half of the mechanism.
+
+**Against the deferral reward from prior work** (the identically trained case-level consensus arm):
+- **Same:** accuracy on answered cases (+1.1, −0.5 to 2.9) and unflagged errors (−1.2, −2.6 to 0.2).
+- **Lower coverage:** 77.6% against 82.6% (−5.1).
+- **Lower when handoffs are counted:** full-coverage accuracy (−7.6) and diverticulitis accuracy (−16.3, −24.3 to −8.8).
+
+**Against zero-shot Qwen3-8B.** Unflagged errors were 3.8 per 100 against 24.1 (forced choice) and 9.1 (prompted DEFER; paired −5.3, −7.5 to −3.3).
 
 ### 7.2 Open world
-[[Tables 3a–3d: seen vs never-seen groups, the per-group breakdown, and the controls.]] Figure 7 (`fig_open_world.pdf`), Figure S4 (`fig_unseen_groups.pdf`).
+Figure 7, Figure S4; docs/RESULTS.md Tables 3a–3d.
+
+**Never-seen time-critical diagnoses** (187 cases: mesenteric ischaemia, perforated or bleeding ulcer, DKA, and pooled AAA and ectopic pregnancy). DEFER-Dx escalated 87.0% (83.2–90.4) and committed to one of the four conditions in 6.8% (4.3–10.0). For comparison:
+- **The control without a threshold:** 15.0% (paired −8.2, −12.1 to −4.6).
+- **The consensus arm:** 11.4% (−4.6, −8.0 to −1.4).
+- **Zero-shot:** 17.6% forced choice and 14.4% with prompted DEFER.
+- **The thresholded control:** 8.4%, a difference of −1.6 (−5.0 to 1.6) that is not significant.
+- **Context, not a head-to-head:** an untrained Qwen3-14B with a confidence threshold reaches 6.6% (docs/BASELINES.md §7).
+
+On OTHER cases, DEFER-Dx's handoff contained OTHER 93.9% of the time, against 14.7% for the consensus arm.
+
+**OTHER from groups seen in training** (206 cases). False commits were 6.5% for DEFER-Dx and for the thresholded control, against 13.4% for the consensus arm (paired −7.0, −9.9 to −4.4). DEFER-Dx escalated 89.0% of these cases and named OTHER for only 4.5%; the thresholded control named OTHER for 47.4%.
+
+**Same-pipeline in-set controls** (258 cases). DEFER-Dx named OTHER for 0.3% and answered 70.0% at 88.7% accuracy, so its open-world behaviour is not the source shortcut.
+
+**Separability.** The OOD AUROC uses the stated probability alone to separate OTHER from in-set cases. It is lower for DEFER-Dx (86.8) than for the control (92.6): its open-world safety comes from escalating, not from a better-separated confidence.
 
 ### 7.3 Risk-coverage and calibration
-Figure 4 (`fig_risk_coverage.pdf`), Figure S2 (`fig_reliability.pdf`). Ablations: Figure S5 (`fig_ablations.pdf`).
+Figure 4, Figure S2.
+- **Risk–coverage:** DEFER-Dx's curve lies on the consensus arm's and above the zero-shot curves. The area under it (AURC) is 0.052 (0.038–0.072), against 0.048 for the thresholded control and 0.045 for the consensus arm; neither difference is significant. At 70% coverage it is 96.5% accurate.
+- **Calibration:** of its stated probabilities on commitments, ECE 0.042 (0.027–0.059) and Brier 0.047 (0.034–0.061), the lowest Brier score of all systems.
+
+### 7.6 Ablations
+[[Filled when the runs finish (Mon–Tue): DEFER-Dx at 100 steps against the constant deferral reward and against no scored handoff (Figure S5; docs/RESULTS.md Table 5).]]
+
+### 7.7 Training-seed variance and training dynamics
+[[Second DEFER-Dx training seed (Tue).]]
+
+**Controller** (Figure 8). Under plain dual ascent, the coverage multiplier ν reached 4.6, 2.5 and 1.5 in three successive overshoots of the first DEFER-Dx run. After each overshoot, in-set deferral collapsed, and dev coverage swung between 48% and 88% depending on where an evaluation fell in the cycle. With the PI controller, the final run's ν peaked at 1.49 and did not wind up. In-set deferral still overshot the cap once, around steps 45–60, and dev coverage dipped to 37% at step 50; from step 75 on, it held at 69–75%.
 
 ### 7.4 Context against published systems
-[[Table 4. LA-CDM rows are on the same test split but in a different environment; LDTL numbers come from its own unpublished split and are case-weighted. Neither is a head-to-head.]]
+On the LA-CDM test split (240 cases), with deferrals counted through the top of their differential, mean-class accuracy is:
+- **DEFER-Dx:** 76.4% (71.1–81.0);
+- **the control:** 82.7%;
+- **the consensus arm:** 86.3%;
+- **zero-shot Qwen3-8B:** 74.4% when OTHER is offered, and 86.9% when restricted to the four labels.
+
+LA-CDM reports 81.3% in its closed-world environment, which uses an LLM-written summary, 12 tests and a different base model. LDTL reports 93.4% case-weighted accuracy on its own unpublished split. Neither is a head-to-head comparison.
 
 ### 7.5 Robustness
 **The diagnosis mask.** MIMIC-CDM replaces the case's own diagnosis with "____" in some sentences, which is a label cue. With every such sentence removed, DEFER-Dx answers 76.0% (72.8–79.2) of cases at 96.2% (94.4–97.6) accuracy, against 77.6% at 95.2%. Paired on the same cases, the differences are −1.0 points (−2.0 to 0.0) in accuracy on answered cases and +1.6 (−0.2 to 3.5) in coverage, and AURC is unchanged. The agent does not rely on the mask.
@@ -159,7 +209,21 @@ Figure 4 (`fig_risk_coverage.pdf`), Figure S2 (`fig_reliability.pdf`). Ablations
 **Closed world.** Zero-shot Qwen3-8B restricted to the four labels, as in prior work, reaches 86.9% (83.1–90.4) mean-class accuracy on the LA-CDM test split under this protocol, against 74.4% when OTHER is offered.
 
 ## 8. Discussion
-[[What learned deferral buys over thresholding, stated only as strongly as the paired intervals allow; when it does not.]]
+**What learned deferral buys.** Against a confidence threshold on an identically trained model at matched coverage, DEFER-Dx was 3.1 points more accurate on the cases it answered, and let 2.5 fewer errors per 100 cases through unflagged. The effect is modest, and with three-sample voting the accuracy gap is not significant. The larger differences are in the open world:
+- it escalated 87% of never-seen time-critical presentations;
+- the thresholded control escalated 18.5% and named OTHER for most of the rest;
+- it committed wrongly far less often than the same model without a threshold, or than the deferral reward from prior work.
+
+The counterfactual escalation value therefore produces an agent that escalates where a confidence threshold would answer.
+
+**What it does not buy.**
+- **Less specific handoffs:** the agent learned to escalate early (0.67 tests before deferring) and to label uncertain in-set cases "not one of the four". So its in-set handoffs are less specific than those of the consensus arm or the control, and counting them as diagnoses lowers full-coverage and diverticulitis accuracy.
+- **Not separable from the handoff design:** whether this follows from the counterfactual itself, or from the OTHER value in the escalation reward (1.2), is what the no-handoff and constant-reward ablations (§7.6) bear on.
+- **No more investigation:** fewer tests were ordered than by the comparators, so we do not claim that the agent learned to investigate more.
+
+**Implications.**
+- **Evaluate in the open world:** for deployment, the relevant comparison is with a thresholded agent, and it must include presentations outside the training label set, where the two approaches differ most.
+- **Score the handoff on in-set cases:** handoffs need their own pressure toward in-set specificity, for example by scoring them against a clinician's differential, not only the recorded diagnosis.
 
 **Limitations.**
 - **Single centre, one organ system.** MIMIC (BIDMC), abdominal pain only.
@@ -167,8 +231,8 @@ Figure 4 (`fig_risk_coverage.pdf`), Figure S2 (`fig_reliability.pdf`). Ablations
 - **Proxy cost and severity:** the severity matrix is a time-to-harm proxy, not clinician-built; some test prices are placeholders (marked in the catalog).
 - **No clinician adjudication yet.**
 - **Small samples:** two training seeds for DEFER-Dx and one for every other arm, and 51 diverticulitis cases in the evaluation set.
-- **Not run:** the no-handoff ablation, so the scored handoff's separate contribution is not isolated.
-- **Shared, single GPU:** two runs were interrupted by out-of-memory errors caused by other processes, and resumed from checkpoints. Their memory settings changed between parts; sampling and the algorithm did not.
+- **Single training seed for the comparators:** the control and the consensus arm have one seed each.
+- **Shared, single GPU:** runs were interrupted by out-of-memory errors caused by other processes, and once by a machine restart; each resumed from its newest checkpoint. Memory settings changed between parts; sampling and the algorithm did not.
 - **The environment reveals only what was recorded:** test availability is informative.
 
 ## 9. Data and code availability
