@@ -13,7 +13,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ---
 
-## 1. Status (2026-10-10)
+## 1. Status (2026-10-12)
 
 | Component | State |
 |---|---|
@@ -23,21 +23,26 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Single-GPU colocated GRPO trainer | built, tested and in use |
 | Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) runs in the journal queue. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
-| GRPO control (no DEFER), the key comparator | resumes from step 20 in `scripts/queue_v6.sh`; held-out numbers and the learned-versus-threshold comparison around Oct 11, 04:30 IST |
-| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: around Oct 11, 20:30. **Not run** in this budget: the no-handoff ablation, a second seed of the control, gpt-oss-20b |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) is training in `scripts/queue_v8.sh`: another user's job on the shared GPU stopped its first attempt, and the second resumed from the step-50 checkpoint. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8; held-out evaluation done Oct 12) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
+| GRPO control (no DEFER), the key comparator | trained (150 steps) and evaluated, Oct 11; the learned-versus-threshold comparison is in §3 |
+| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps) runs after the second seed in `scripts/queue_v8.sh`. **Not run:** a second seed of the control |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 117 pass: 115 test functions, some parametrised (`pytest`; CPU only) |
 
-Held-out numbers exist for DEFER-Dx, the comparator arm and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
+Held-out numbers exist for DEFER-Dx, the GRPO control, the comparator arm, the constant-deferral ablation and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
 
-**The journal run.** `scripts/queue_v6.sh` may use the GPU until **Mon Oct 12, 18:00 IST (08:30 US Eastern)**, and nothing runs after that.
+**The journal run.** `scripts/queue_v8.sh` may use the GPU until **Wed Oct 14, 05:30 IST (Tue Oct 13, 20:00 US Eastern)**, and nothing runs after that. In order:
+1. DEFER-Dx second seed: finish training (150 steps), evaluate, report. Expected around Tue Oct 13, 09:00 IST.
+2. No-handoff ablation: train 100 steps, evaluate against DEFER-Dx at step 100, report. Expected around Tue Oct 13, 23:00 IST.
+3. gpt-oss-20b zero-shot, only if it still fits.
+
+The rules are unchanged from the earlier queues:
 - **Fixed list:** jobs run in priority order, and none is added while it runs.
 - **Start check:** a job starts only if its estimated time fits before the deadline. Every attempt is killed at the deadline.
-- **Attempts:** at most two per job; whatever finishes is reported as it is.
+- **Attempts:** at most two per job; training resumes from its newest checkpoint. Whatever finishes is reported as it is.
 
-Until `outputs/logs/queue_v6.log` says `queue v6 finished`:
-- **Keep the GPU free.** The card is shared with the desktop session and other users, and two jobs have already died of out-of-memory errors. Run nothing else on it, including `pytest` without `CUDA_VISIBLE_DEVICES=`. The queue now leaves about 4 GB free and resumes any crashed step from its checkpoint, but a larger job would still stop it.
+Until `outputs/logs/queue_v8.log` says `queue v8 finished`:
+- **Keep the GPU free.** The card is shared with the desktop session and other users, and three jobs have died of out-of-memory errors when another process took memory. Run nothing else on it, including `pytest` without `CUDA_VISIBLE_DEVICES=`.
 - **Don't `git pull` on this machine.** While a queue runs, the sync daemon keeps result commits local rather than pull remote code changes, so every job uses one version of the code.
 
 ## 2. Is it novel? Is it beating SOTA? (honest assessment)
