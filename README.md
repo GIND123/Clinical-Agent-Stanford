@@ -113,6 +113,7 @@ The plan itself (§6.4) says not to claim SOTA on LDTL's full-coverage metric; t
   - fewer tests: DEFER-Dx escalates early, so this run does not show the "investigate further" half of the mechanism.
 - **Against post-hoc thresholding of the zero-shot model at matched coverage** (three-sample voting for both): +11.4 points (7.4–15.7) accuracy on answered cases, and −9.2 (−12.7 to −5.8) unflagged errors per 100.
 - **Not yet answered:** learned deferral against thresholding an *identically trained* model. That needs the GRPO control in the journal queue.
+- **Ablation: counterfactual credit against a constant deferral reward** (100 steps each, same cases). No difference in accuracy on answered cases (−0.4), unflagged errors, or wrong commitments on never-seen time-critical cases (10.2% vs 10.7%). The credit defers more, puts OTHER in its handoffs far more often (89% vs 25%), cuts false commits on seen OTHER groups (−4.4, −7.5 to −1.5), and lowers diverticulitis accuracy (−11.8). The no-handoff ablation and the second training seed finish on Tuesday.
 - **Robustness to the mask cue.** With every sentence containing CDM's `____` diagnosis mask removed, DEFER-Dx answers 76.0% at 96.2% accuracy, against 77.6% at 95.2%. All paired differences are within 1.6 points and AURC is unchanged, so it does not rely on the mask.
 
 **The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).

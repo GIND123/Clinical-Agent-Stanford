@@ -185,7 +185,21 @@ Figure 4, Figure S2.
 - **Calibration:** of its stated probabilities on commitments, ECE 0.042 (0.027–0.059) and Brier 0.047 (0.034–0.061), the lowest Brier score of all systems.
 
 ### 7.6 Ablations
-[[Filled when the runs finish (Mon–Tue): DEFER-Dx at 100 steps against the constant deferral reward and against no scored handoff (Figure S5; docs/RESULTS.md Table 5).]]
+Both ablations are trained for 100 steps and compared with DEFER-Dx's step-100 checkpoint, evaluated on 2 seeds (Figure S5; docs/RESULTS.md Table 5).
+
+**Counterfactual credit against a constant deferral reward.** The constant reward is matched to the consensus reward's crossover at the current τ, and trained with the same PI coverage controller. At 100 steps:
+- **No difference:** accuracy on answered cases (94.5% against 94.9%; −0.4, −2.3 to 1.5), unflagged errors (3.8 against 4.0 per 100), and confident errors.
+- **Never-seen time-critical diagnoses:** wrong commitments do not differ either (10.2% against 10.7%).
+- **Where the credit differs:**
+  - it defers more: coverage 68.1% against 77.5%, and 77.8% against 62.8% of never-seen time-critical cases;
+  - its handoffs name OTHER far more often on those cases (89.0% against 24.7%);
+  - it makes fewer false commits on OTHER from seen groups (−4.4, −7.5 to −1.5);
+  - its calibration is better (ECE −0.028, −0.045 to 0.000).
+- **What it costs:** lower full-coverage accuracy (−6.5, −9.0 to −4.0) and diverticulitis accuracy (−11.8).
+
+So the counterfactual credit, not deferral reward as such, produces the OTHER-leaning handoffs. On the main in-set metrics at 100 steps, it is not distinguishable from a well-matched constant reward. DEFER-Dx's advantage on never-seen time-critical diagnoses at 150 steps (6.8%) appeared in the second half of training.
+
+**Without the scored handoff (η = 0).** [[Tue: DEFER-Dx at 100 steps against the no-handoff ablation.]]
 
 ### 7.7 Training-seed variance and training dynamics
 [[Second DEFER-Dx training seed (Tue).]]
@@ -218,7 +232,7 @@ The counterfactual escalation value therefore produces an agent that escalates w
 
 **What it does not buy.**
 - **Less specific handoffs:** the agent learned to escalate early (0.67 tests before deferring) and to label uncertain in-set cases "not one of the four". So its in-set handoffs are less specific than those of the consensus arm or the control, and counting them as diagnoses lowers full-coverage and diverticulitis accuracy.
-- **Not separable from the handoff design:** whether this follows from the counterfactual itself, or from the OTHER value in the escalation reward (1.2), is what the no-handoff and constant-reward ablations (§7.6) bear on.
+- **Caused by the counterfactual credit:** a constant deferral reward with the same OTHER value and the same controller does not produce OTHER-leaning handoffs (§7.6). The credit itself does, so in-set handoffs need their own pressure toward specificity.
 - **No more investigation:** fewer tests were ordered than by the comparators, so we do not claim that the agent learned to investigate more.
 
 **Implications.**
