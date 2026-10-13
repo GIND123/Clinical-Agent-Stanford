@@ -42,7 +42,7 @@ probability (one fixed hash per case and evaluation seed), which matches the ref
 
 ## 2. Clinical safety (CDM, val + test; time-critical column from the unseen OTHER groups)
 
-Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx, 8.6% for the consensus arm).
+Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx, 4.2% for DEFER-Dx, second training seed, 8.6% for Group-consensus deferral reward (case-level; TIAR/KARL-style), 27.6% for Qwen3-8B zero-shot, prompted DEFER).
 
 | System | Diverticulitis acc | Unflagged errors ↓ | Confident errors ↓ | Severity-wtd error ↓ | Time-critical OTHER missed ↓ | Deferral precision | Errors caught | Tests/case | $/case |
 |---|---|---|---|---|---|---|---|---|---|
