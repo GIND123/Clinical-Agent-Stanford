@@ -14,7 +14,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from ..baselines.selective import apply_threshold, threshold_for_coverage
+from ..baselines.selective import apply_threshold, coverage_rule
 from ..data.io import iter_jsonl
 from ..env.environment import EpisodeResult
 from . import stats as S
@@ -117,21 +117,27 @@ def cdm_pooled(suite: dict[str, list[EpisodeResult]]) -> list[EpisodeResult]:
 
 
 def crossfit_posthoc(suite: dict[str, list[EpisodeResult]], target_coverage: float | None = None,
-                     fit=None) -> tuple[dict[str, list[EpisodeResult]], dict[str, float]]:
+                     fit=None, salt: int = 0) -> tuple[dict[str, list[EpisodeResult]], dict[str, Any]]:
     """Apply a post-hoc threshold on stated probability, cross-fitted on val/test.
 
-    `fit(results) -> threshold`; default: the threshold keeping `target_coverage` of cases.
+    `fit(results) -> threshold` or `(threshold, keep)`; default: the randomized coverage rule keeping
+    `target_coverage` of cases (ties at the cut kept with a fitted probability; `salt` picks the draw).
     Pass e.g. `lambda rs: sgr_threshold(rs, 0.05, 0.05)` for SGR (guaranteed selective risk).
     """
     if fit is None:
-        fit = lambda rs: threshold_for_coverage(rs, target_coverage)  # noqa: E731
+        fit = lambda rs: coverage_rule(rs, target_coverage)  # noqa: E731
+
+    def rule(rs):
+        r = fit(rs)
+        return r if isinstance(r, tuple) else (r, 1.0)
+
     val, test = suite.get("eval_cdm_val", []), suite.get("eval_cdm_test", [])
-    thr = {"fit_on_val": fit(val), "fit_on_test": fit(test), "fit_on_cdm_eval": fit(val + test)}
-    out = {"eval_cdm_val": apply_threshold(val, thr["fit_on_test"]),
-           "eval_cdm_test": apply_threshold(test, thr["fit_on_val"])}
+    thr = {"fit_on_val": rule(val), "fit_on_test": rule(test), "fit_on_cdm_eval": rule(val + test)}
+    out = {"eval_cdm_val": apply_threshold(val, *thr["fit_on_test"], salt=salt),
+           "eval_cdm_test": apply_threshold(test, *thr["fit_on_val"], salt=salt)}
     for s in OW_SETS:
         if s in suite:
-            out[s] = apply_threshold(suite[s], thr["fit_on_cdm_eval"])
+            out[s] = apply_threshold(suite[s], *thr["fit_on_cdm_eval"], salt=salt)
     return out, thr
 
 

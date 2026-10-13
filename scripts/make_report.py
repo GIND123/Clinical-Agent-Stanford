@@ -63,6 +63,7 @@ SYSTEMS = [  # eval-suite directory name, label
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
 ]
+N_DRAWS = 20  # tie-break draws at the post-hoc cut, for the matched-coverage sensitivity (section 5b)
 MAIN = ("cev", "deferdx")  # the reference system: the first one that has been evaluated
 # Systems that state no probability (DiagAgent: every commit is 1.0). Metrics that rank or bin by stated
 # confidence are undefined for them and shown as "–" rather than as tie-broken numbers.
@@ -187,7 +188,7 @@ def main() -> None:
                 suites[name + "@sc"] = {k: self_consistency(v) for k, v in suites[name].items()}
                 labels[name + "@sc"] = f"{label}, self-consistency over {n_seeds} samples"
     # post-hoc thresholds at DEFER-Dx's own coverage, cross-fitted on val/test
-    thresholds = {}
+    thresholds, thr_spec = {}, {}  # thr_spec: thresholded key -> (source suite, target coverage)
     main = next((m for m in MAIN if m in suites), None)
     for ref in ((main, main + "@sc") if main else ()):
         if ref not in suites:
@@ -198,12 +199,14 @@ def main() -> None:
             if base + suffix in suites:
                 key = f"{base}{suffix}+thr"
                 suites[key], thresholds[key] = crossfit_posthoc(suites[base + suffix], target)
+                thr_spec[key] = (base + suffix, target)
                 labels[key] = f"{labels[base + suffix]} + threshold at matched coverage ({target:.0%})"
     # the second DEFER-Dx training seed is compared with the control thresholded at its own coverage
     if "cev_seed1" in suites and "grpo_nodefer" in suites:
         target = S.coverage(cdm_pooled(suites["cev_seed1"]))
         key = "grpo_nodefer+thr_seed1"
         suites[key], thresholds[key] = crossfit_posthoc(suites["grpo_nodefer"], target)
+        thr_spec[key] = ("grpo_nodefer", target)
         labels[key] = f"{labels['grpo_nodefer']} + threshold at the second seed's coverage ({target:.0%})"
 
     # SGR (Geifman & El-Yaniv 2017; plan #7): the lowest threshold whose binomial upper bound on
@@ -222,6 +225,7 @@ def main() -> None:
             for key in keys:
                 tables[k].get(section, {}).pop(key, None)
     paired: dict = {}
+    tie_draws: dict = {}
     comparisons = []
     if main:
         comparisons += [(main, ("grpo_nodefer+thr", "zs_nodefer+thr", "grpo_nodefer+sgr", "deferdx", "zs_defer",
@@ -247,11 +251,34 @@ def main() -> None:
                     d[f"false_commit:{s}"] = S.paired_bootstrap(suites[ref][s], suites[other][s], S.false_commit,
                                                                 args.n_boot)
             paired[f"{ref} vs {other}"] = d
+            if other in thr_spec:  # the tie-break at the cut is one fixed draw: how much do other draws move it?
+                src, target = thr_spec[other]
+                draws = {"selective_acc": [], "unsafe_errors": [], "coverage": []}
+                for salt in range(N_DRAWS):
+                    cdm_only = {k: v for k, v in suites[src].items() if k in ("eval_cdm_val", "eval_cdm_test")}
+                    b2 = cdm_pooled(crossfit_posthoc(cdm_only, target, salt=salt)[0])
+                    for m, f in (("selective_acc", S.selective_acc), ("unsafe_errors", S.unsafe_error_rate),
+                                 ("coverage", S.coverage)):
+                        draws[m].append(f(a) - f(b2))
+                tie_draws[f"{ref} vs {other}"] = {m: (min(v), max(v)) for m, v in draws.items()}
+
+    # share of in-set (CDM) deferrals whose differential ranks OTHER first: a handoff that names no in-set diagnosis
+    other_first = {}
+    short = {"cev": "DEFER-Dx", "cev_seed1": "its second training seed", "deferdx": "the consensus arm",
+             "zs_defer": "prompted DEFER"}
+    for k in short:
+        if k in suites:
+            defs = [r for r in cdm_pooled(suites[k]) if r.terminal == "defer"]
+            if defs:
+                other_first[k] = sum(bool(r.differential) and r.differential[0].lower() == "other" for r in defs) / len(defs)
+    other_first_note = "; ".join(f"{v * 100:.1f}% for {short[k]}" for k, v in other_first.items())
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps({"tables": tables, "paired": paired, "labels": labels,
-                                                  "posthoc_thresholds": thresholds}, indent=2, default=str),
+                                                  "posthoc_thresholds": thresholds,
+                                                  "tie_break_draws": tie_draws,
+                                                  "handoff_other_first": other_first}, indent=2, default=str),
                                       encoding="utf-8")
 
     def block(title, section, cols, note=""):
@@ -266,7 +293,10 @@ def main() -> None:
          "Generated by `scripts/make_report.py` from `outputs/eval/` (aggregates only). Point estimates pool all",
          "evaluation seeds; brackets are 95% case-level bootstrap intervals (2,000 resamples). CDM = LA-CDM val +",
          "test (480 cases, 51 diverticulitis), never seen by any trained model. Post-hoc thresholds are",
-         "cross-fitted (fit on val, applied to test and vice versa). ↓ = lower is better."]
+         "cross-fitted (fit on val, applied to test and vice versa). Stated probabilities are coarse (0.80, 0.85,",
+         "...), so a plain cut overshoots the target coverage; commits tied at the cut are kept with a fitted",
+         "probability (one fixed hash per case and evaluation seed), which matches the reference coverage.",
+         "↓ = lower is better."]
     sev_name = Path(args.severity).name if Path(args.severity).resolve() != (ROOT / "configs" / "severity_matrix.yaml").resolve() \
         else "configs/severity_matrix.yaml (a proxy)"
     price_note = f"; costs re-priced from {Path(args.prices).name}" if prices else ""
@@ -277,7 +307,7 @@ def main() -> None:
                f"uses the matrix in {sev_name}{price_note}. Deferral precision: share of deferrals whose "
                "best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top "
                "of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them "
-               "with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx, 8.6% for the consensus arm).")
+               "with the share of in-set handoffs ranked OTHER first (" + other_first_note + ").")
     L += block("3a. Open world: OTHER, diagnosis groups seen in training", "eval_other_seen", OW_COLS)
     L += block("3b. Open world: OTHER, time-critical groups never seen in training", "eval_other_unseen", OW_COLS)
     L += block("3c. Same-pipeline in-set controls (source-shortcut check)", "eval_controls",
@@ -320,6 +350,13 @@ def main() -> None:
                 # p = 0 means no resample crossed zero: below the bootstrap's resolution of 2 / n_boot
                 p = f"< {2 / args.n_boot:.2g}" if v["p"] == 0 else f"{v['p']:.3g}"
                 L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {p} |")
+    if tie_draws:
+        L += ["", f"## 5b. Matched-coverage comparisons over {N_DRAWS} tie-break draws (range of the point difference)", "",
+              "Section 5 uses one fixed draw; this is how far the difference moves over other draws.", "",
+              "| Comparison | Selective acc | Unflagged errors | Coverage |", "|---|---|---|---|"]
+        for comp, d in tie_draws.items():
+            L.append(f"| {comp} | " + " | ".join(f"{lo * 100:+.1f} to {hi * 100:+.1f}" for lo, hi in
+                                                 (d["selective_acc"], d["unsafe_errors"], d["coverage"])) + " |")
     (out / "RESULTS.md").write_text("\n".join(L) + "\n", encoding="utf-8")
     print(f"wrote {out / 'RESULTS.md'} and {out / 'results.json'} ({len(tables)} systems)")
     try:  # the data figures follow the tables (a figure failure must not lose the report)

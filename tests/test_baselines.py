@@ -2,7 +2,8 @@ import math
 
 import numpy as np
 
-from deferdx.baselines import apply_threshold, binomial_ucb, sgr_threshold, threshold_for_coverage, threshold_for_risk
+from deferdx.baselines import (apply_threshold, binomial_ucb, coverage_rule, sgr_threshold, threshold_for_coverage,
+                               threshold_for_risk)
 from deferdx.env.environment import EpisodeResult
 
 
@@ -22,6 +23,17 @@ def test_threshold_for_coverage():
     thr = threshold_for_coverage(R, 0.8)
     kept = sum(r.probability >= thr for r in R)
     assert kept == 320
+
+
+def test_coverage_rule_with_ties():
+    R = [EpisodeResult(str(i), "appendicitis", "commit", diagnosis="appendicitis", probability=0.8) for i in range(1000)]
+    thr, keep = coverage_rule(R, 0.25)
+    assert thr == 0.8 and keep == 0.25
+    kept = sum(r.terminal == "commit" for r in apply_threshold(R, thr, keep))
+    assert 200 <= kept <= 300
+    other = apply_threshold(R, thr, keep, salt=1)  # another draw keeps a different set of tied cases
+    assert [r.terminal for r in other] != [r.terminal for r in apply_threshold(R, thr, keep)]
+    assert sum(r.terminal == "commit" for r in apply_threshold(R, thr)) == 1000  # keep=1: ties kept, as before
 
 
 def test_threshold_for_risk_and_apply():

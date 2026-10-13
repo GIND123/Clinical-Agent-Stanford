@@ -2,6 +2,11 @@
 
 Status: **FINAL TEXT, numbers filled from docs/results.json** (report of Oct 10, 2026, 09:29 IST: DEFER-Dx and every comparator evaluated on 480 CDM cases and the open-world sets, 3 seeds, 95% case-level bootstrap intervals). The identically trained no-DEFER control is a journal run (`scripts/queue_v7.sh`), so the submission uses outcome **D** below, which does not depend on it.
 
+**Revised Oct 13, 2026** (word count unchanged), after the journal runs:
+- **Zero-shot comparison:** 11.4 (7.4–15.7) became 11.1 (7.0–15.3). Post-hoc thresholds now break ties at the cut, so coverage matches exactly.
+- **Handoffs:** the conclusion now says handoff content varied between training seeds, replacing "at the cost of less specific handoffs". A second seed's handoffs rarely rank OTHER first.
+- **If the form was already submitted:** both changes are small, but update it if the form allows edits before Thu Oct 15, 11:59 pm PT.
+
 ## What the submission form asks for
 
 Read from the call ([aimi.stanford.edu/aihealth26](https://aimi.stanford.edu/aihealth26)) on 2026-10-09.
@@ -31,9 +36,9 @@ DEFER-Dx is a reinforcement-learning diagnostic agent that asks, orders tests, c
 
 **Methods.** DEFER-Dx is a Qwen3-8B agent trained with multi-turn reinforcement learning (GRPO) to examine, order any of 22 priced tests, commit to a diagnosis with a stated probability, or defer to a clinician with a probabilistic differential. Deferral is trained against a counterfactual: at the state where the agent escalates, continuations branched from that state with escalation disabled estimate the clinical value of deciding now or testing further, and escalation is credited only where a handoff beats continuing. We train on MIMIC-IV-Ext-CDM (2,400 admissions, four abdominal conditions) and a new open-world extension of 713 admissions with other diagnoses, holding five time-critical diagnoses out of training.
 
-**Results.** On 480 held-out admissions, DEFER-Dx answered 77.6% of cases at 95.2% accuracy (95% CI 93.4–96.8), with 3.8 unflagged errors per 100 cases (zero-shot 24.1). With three-sample voting for both, it was 11.4 points (7.4–15.7) more accurate on answered cases than a confidence threshold on the zero-shot model at matched coverage. On 187 time-critical admissions never seen in training, it escalated 87.0% and wrongly committed in 6.8%, against 11.4% for an identically trained group-consensus deferral reward from prior work (paired difference −4.6 points, −8.0 to −1.4). Its handoffs favoured "other diagnosis", lowering accuracy when they are counted (78.2% vs 85.8% for the consensus reward).
+**Results.** On 480 held-out admissions, DEFER-Dx answered 77.6% of cases at 95.2% accuracy (95% CI 93.4–96.8), with 3.8 unflagged errors per 100 cases (zero-shot 24.1). With three-sample voting for both, it was 11.1 points (7.0–15.3) more accurate on answered cases than a confidence threshold on the zero-shot model at matched coverage. On 187 time-critical admissions never seen in training, it escalated 87.0% and wrongly committed in 6.8%, against 11.4% for an identically trained group-consensus deferral reward from prior work (paired difference −4.6, −8.0 to −1.4). This run's handoffs favoured "other diagnosis", lowering accuracy when they are counted (78.2% vs 85.8% for the consensus reward).
 
-**Conclusion.** Crediting escalation against the counterfactual of continuing yields an agent that rarely errs without flagging the case and commits wrongly on never-seen dangerous presentations less often than a prior deferral reward, at the cost of less specific handoffs.
+**Conclusion.** Crediting escalation against the counterfactual of continuing yields an agent that rarely errs without flagging the case and commits wrongly on never-seen dangerous presentations less often than a prior deferral reward, though handoff content varied between training seeds.
 
 ### Where each number comes from (`docs/results.json`, `docs/RESULTS.md`)
 
@@ -41,11 +46,12 @@ DEFER-Dx is a reinforcement-learning diagnostic agent that asks, orders tests, c
 |---|---|
 | 480 admissions; 77.6% answered; 95.2% (93.4–96.8) | `tables.cev.ml.coverage`, `tables.cev.ml.selective_acc` (RESULTS §1) |
 | 3.8 vs 24.1 unflagged errors per 100 | `tables.cev.clinical.unsafe_errors`, `tables.zs_nodefer.clinical.unsafe_errors` (§2) |
-| +11.4 points (7.4–15.7) at matched coverage, three-sample voting | `paired["cev@sc vs zs_nodefer@sc+thr"].selective_acc`; coverage difference −0.2 (−4.6 to 4.0), so coverage is matched (§5) |
+| +11.1 points (7.0–15.3) at matched coverage, three-sample voting | `paired["cev@sc vs zs_nodefer@sc+thr"].selective_acc`; coverage difference +0.6 (−3.7 to 4.8), so coverage is matched (§5). Was 11.4 (7.4–15.7) before thresholds broke ties at the cut (Oct 13) |
 | 187 unseen; escalated 87.0%; wrong commitments 6.8% vs 11.4% | `tables.cev.eval_other_unseen.defer`, `.false_commit`; `tables.deferdx.eval_other_unseen.false_commit` (§3b) |
 | −4.6 points (−8.0 to −1.4) | `paired["cev vs deferdx"]["false_commit:eval_other_unseen"]`, p = 0.013 (§5) |
 | 78.2% vs 85.8% when handoffs are counted | `tables.cev.ml.acc_full`, `tables.deferdx.ml.acc_full` (§1) |
-| handoffs favour "other diagnosis" | 68.4% of DEFER-Dx's in-set handoffs rank OTHER first (consensus arm 8.6%, prompted DEFER 27.6%); computed from the evaluation suites, aggregates only |
+| handoffs favour "other diagnosis" (this run) | 68.4% of DEFER-Dx's in-set handoffs rank OTHER first (consensus arm 8.6%, prompted DEFER 27.6%; second training seed 4.2%); `handoff_other_first` in results.json |
+| handoff content varied between training seeds | second seed: 4.2% OTHER first, 86.3% accuracy counting handoffs, but its handoff contains OTHER on 35.2% of unseen OTHER cases (first seed 93.9%) |
 
 ### What not to claim (in the abstract or the talk)
 
@@ -54,7 +60,9 @@ DEFER-Dx is a reinforcement-learning diagnostic agent that asks, orders tests, c
 - **Lower unflagged errors than the consensus arm.** 3.8 vs 4.9 per 100, paired −1.2 (−2.6 to 0.2), which is not significant. Same for AURC and ECE against it.
 - **Better full-coverage or diverticulitis accuracy.** Both are lower than the consensus arm: 78.2 vs 85.8, and 69.3 vs 85.6 with paired −16.3 (−24.3 to −8.8).
 - **Fewer missed time-critical diagnoses than every baseline.** An untrained Qwen3-14B with a confidence threshold reaches 6.6% (docs/BASELINES.md §7), against DEFER-Dx's 6.8%. The claim holds against the same 8B base model and against the deferral reward from prior work.
-- **The single-sample threshold comparison (+17.5 points).** It is not at matched coverage: tied stated probabilities kept the threshold at 92.6% coverage against 77.6%.
+- **That DEFER-Dx beats a threshold on an identically trained model.** At exactly matched coverage it is +2.3 points (0.1 to 4.6) in this run and +1.1 (−0.8 to 3.3), not significant, in a second training seed.
+- **That its handoffs always favour "other diagnosis".** True of this run (68.4% of in-set handoffs); a second training seed ranks OTHER first in 4.2%.
+- **The old single-sample threshold comparison (+17.5 points).** It was not at matched coverage. With ties at the cut broken, the matched single-sample difference is +12.4 (9.4–15.7); the abstract keeps the three-sample version.
 
 ## Results and Conclusion, written for each outcome (A–C need the GRPO control; superseded by the final text above, outcome D)
 

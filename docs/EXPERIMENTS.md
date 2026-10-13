@@ -13,7 +13,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | DEFER-Dx with every sentence containing CDM's `____` mask removed | (none) | (none) | `queue_v5.sh`, CDM sets only | robustness to the mask cue |
 | GRPO control, identical training without DEFER | `configs/grpo_nodefer.yaml` | 150 | trained and evaluated (`queue_v7.sh`, Oct 11; the first attempt died of an out-of-memory error at step 24 and was resumed from step 20) | learned vs post-hoc deferral on an identically trained model |
 | Constant deferral reward | `configs/ablations/constant_defer.yaml` | 100 | trained and evaluated (`queue_v7.sh`, Oct 11–12), against DEFER-Dx's step-100 checkpoint | does the counterfactual credit matter? |
-| DEFER-Dx, second training seed | `configs/ablations/cev_seed1.yaml` (seed 1, otherwise identical) | 150 | did not fit `queue_v7.sh`; training in `queue_v8.sh` (first attempt stopped by another user's GPU job, second resumed from step 50); compared with the control thresholded at its own coverage | training-seed variance |
+| DEFER-Dx, second training seed | `configs/ablations/cev_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v8.sh`, Oct 12–13; the first attempt was stopped by another user's GPU job, the second resumed from step 50); compared with the control thresholded at its own coverage | training-seed variance |
 | No-handoff ablation (η = 0) | `configs/ablations/cev_no_handoff.yaml` | 100 | `queue_v8.sh`, after the second seed; against DEFER-Dx's step-100 checkpoint | does the scored handoff matter? |
 | Held-out evaluation of the dual-ascent run | (none) | (none) | evaluated (`queue_v7.sh`, Oct 12) | record of the controller failure |
 | gpt-oss-20b zero-shot | (none) | (none) | last in `queue_v8.sh`, only if it fits | larger open model |
@@ -40,13 +40,16 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 
 - **Against the published mechanism.** DEFER-Dx against the case-level consensus arm, paired on the same cases. This is the novelty claim.
 - **Learned against prompted deferral.** DEFER-Dx against zero-shot Qwen3-8B with DEFER in the prompt, paired.
-- **Learned deferral against a post-hoc threshold on a zero-shot model.**
-  - **Setup:** DEFER-Dx against zero-shot forced choice with a confidence threshold cross-fitted at DEFER-Dx's own coverage (fit on val, applied to test and vice versa), paired.
-  - **Single sample:** tied stated probabilities can keep the threshold from reaching the target coverage. RESULTS.md reports the coverage actually reached.
-  - **Self-consistency:** with agreement over three samples as the confidence, coverage can be matched.
+- **Learned deferral against a post-hoc threshold on an identically trained model.** DEFER-Dx against the GRPO control with a confidence threshold cross-fitted at DEFER-Dx's own coverage, paired. Each DEFER-Dx seed is compared at its own coverage.
+- **Learned deferral against a post-hoc threshold on a zero-shot model.** The same, on zero-shot forced choice, with one sample and with three-sample voting.
+- **How thresholds match coverage.**
+  - **Fitting:** each threshold is fit on val and applied to test, and vice versa.
+  - **Ties:** stated probabilities are coarse (0.80 alone covers 14–17% of the control's cases), so a plain cut overshoots the target. Commitments tied at the cut are kept with a probability fitted to reach it, decided by a fixed hash of the case and evaluation seed (`coverage_rule` in `src/deferdx/baselines/selective.py`).
+  - **Draws:** RESULTS.md §5 uses one pre-specified draw, and §5b the range over 20 draws.
+  - **Before Oct 13:** reports used a plain cut, which put the control at 79% coverage for both seeds (targets 77.6% and 73.2%). That overstated the learned-versus-threshold advantage: +3.1 instead of +2.3, and +3.2 instead of +1.1.
 - **Open world.** False commitments, deferral and naming OTHER on 206 OTHER cases from groups seen in training and 187 from five time-critical groups never seen. Ruptured AAA and ectopic pregnancy have fewer than 10 cases each: they are pooled, never reported separately.
 
-**Not answered, and said so.** The control's seed variance (one control seed). Anything in the queue that does not finish by the deadline is listed here when the run ends.
+**Not answered, and said so.** The control's and the consensus arm's seed variance (one seed each). Two DEFER-Dx seeds show that handoff content and the in-set comparison with the threshold vary between seeds, but cannot estimate by how much. Anything in the queue that does not finish by the deadline is listed here when the run ends.
 
 ## Reporting rules
 

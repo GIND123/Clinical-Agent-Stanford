@@ -2,7 +2,9 @@
 
 * Post-hoc confidence threshold (stanford_idea §6.1 #6, the critical ablation):
   commits with p < t become deferrals; t tuned on validation for a target coverage or
-  a target selective risk.
+  a target selective risk. Stated probabilities are coarse (0.80, 0.85, ...), so a plain cut can
+  overshoot the target coverage; `coverage_rule` returns the randomized rule that hits it, keeping
+  each commit tied at the cut with a fitted probability (a fixed hash of the case, so reproducible).
 * Selection with Guaranteed Risk (SGR, Geifman & El-Yaniv 2017) — a conformal-style
   comparator (§6.1 #7): the lowest threshold whose binomial upper confidence bound on
   selective risk is <= target with probability >= 1 - delta.
@@ -11,7 +13,9 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import math
+from collections import Counter
 
 import numpy as np
 from scipy.stats import beta
@@ -34,6 +38,24 @@ def threshold_for_coverage(results: list[EpisodeResult], target_coverage: float)
     if k >= len(p):
         return float(p.min())
     return float(np.sort(p)[::-1][k - 1])
+
+
+def coverage_rule(results: list[EpisodeResult], target_coverage: float, tol: float = 1e-9) -> tuple[float, float]:
+    """(threshold, keep): commits above the threshold are kept and commits tied at it are kept with
+    probability `keep`, so that exactly ~target_coverage of ALL episodes in `results` commit."""
+    p, _ = _arrays(results)
+    thr = threshold_for_coverage(results, target_coverage)
+    if not math.isfinite(thr):
+        return thr, 1.0
+    above, tied = int((p > thr + tol).sum()), int((np.abs(p - thr) <= tol).sum())
+    keep = (target_coverage * len(results) - above) / tied if tied else 1.0
+    return thr, float(min(1.0, max(0.0, keep)))
+
+
+def _uniform(case_id: str, occurrence: int, salt: int) -> float:
+    """A fixed pseudo-random number in [0, 1) per (case, evaluation seed, salt)."""
+    h = hashlib.sha256(f"{salt}:{case_id}:{occurrence}".encode()).digest()
+    return int.from_bytes(h[:8], "big") / 2.0**64
 
 
 def threshold_for_risk(results: list[EpisodeResult], target_risk: float) -> float:
@@ -82,12 +104,19 @@ def sgr_threshold(results: list[EpisodeResult], target_risk: float, delta: float
     return best
 
 
-def apply_threshold(results: list[EpisodeResult], threshold: float) -> list[EpisodeResult]:
-    """Commits with p < threshold become DEFERs whose differential is the original commit."""
-    out = []
+def apply_threshold(results: list[EpisodeResult], threshold: float, keep: float = 1.0, salt: int = 0,
+                    tol: float = 1e-9) -> list[EpisodeResult]:
+    """Commits with p < threshold become DEFERs whose differential is the original commit. With keep < 1,
+    a commit tied at the threshold also defers unless its fixed hash (case, occurrence, salt) is below keep;
+    the occurrence index separates evaluation seeds of the same case."""
+    out, seen = [], Counter()
     for r in results:
         r2 = copy.deepcopy(r)
-        if r.terminal == "commit" and (r.probability is None or r.probability < threshold):
+        occurrence = seen[r.case_id]
+        seen[r.case_id] += 1
+        tied_out = (keep < 1.0 and r.probability is not None and abs(r.probability - threshold) <= tol
+                    and _uniform(r.case_id, occurrence, salt) >= keep)
+        if r.terminal == "commit" and (r.probability is None or r.probability < threshold - tol or tied_out):
             r2.terminal = "defer"
             r2.differential = [r.diagnosis] if r.diagnosis else []
             r2.reason = f"post-hoc threshold {threshold:.3f}"

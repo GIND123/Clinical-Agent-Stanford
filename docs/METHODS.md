@@ -120,7 +120,7 @@ No training case shares a patient with an open-world evaluation case. The time-c
 **Baselines.** All are run here on the same cases and seeds:
 - zero-shot Qwen3-8B, forced choice and with prompted DEFER;
 - the GRPO control;
-- post-hoc confidence thresholds on each forced-choice model at DEFER-Dx's coverage, cross-fitted (fit on val, applied to test and vice versa, so no case is scored by a threshold that saw it);
+- post-hoc confidence thresholds on each forced-choice model at DEFER-Dx's coverage, cross-fitted (fit on val, applied to test and vice versa, so no case is scored by a threshold that saw it). Stated probabilities are coarse, so commitments tied at the cut are kept with a probability fitted to reach the target coverage, decided by a fixed SHA-256 hash of (draw, case, evaluation seed). One pre-specified draw (0) is reported, with the range over 20 draws;
 - self-consistency over the 3 samples (majority vote, with agreement as confidence: the inference-time twin of the group-consensus reward);
 - DiagAgent-14B and published LA-CDM / LDTL numbers as context (`docs/BASELINES.md`).
 

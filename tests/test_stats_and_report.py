@@ -68,10 +68,25 @@ def test_crossfit_threshold_never_uses_the_case_it_scores():
     out, thr = crossfit_posthoc({"eval_cdm_val": val, "eval_cdm_test": test}, 0.5)
     # test is thresholded with the cut fit on val (~0.75): all of test (p=0.9) survives
     assert all(r.terminal == "commit" for r in out["eval_cdm_test"])
-    # val is thresholded with the cut fit on test (0.9): only val cases at or above it still commit
+    # val is thresholded with the cut fit on test (0.9, half of the ties kept): cases above it still commit
     for orig, r in zip(val, out["eval_cdm_val"]):
-        assert r.terminal == ("commit" if orig.probability >= 0.9 else "defer")
-    assert thr["fit_on_val"] < thr["fit_on_test"]
+        if abs(orig.probability - 0.9) > 1e-9:
+            assert r.terminal == ("commit" if orig.probability > 0.9 else "defer")
+    assert thr["fit_on_val"][0] < thr["fit_on_test"][0]
+
+
+def test_crossfit_reaches_the_target_coverage_through_tied_probabilities():
+    # stated probabilities are coarse: 40% at 0.9, 60% at 0.8; a plain cut gives 40% or 100% coverage
+    val = [R(i, "appendicitis", dx="appendicitis", p=0.9 if i < 40 else 0.8) for i in range(100)]
+    test = [R(1000 + i, "appendicitis", dx="appendicitis", p=0.9 if i < 40 else 0.8) for i in range(100)]
+    out, thr = crossfit_posthoc({"eval_cdm_val": val, "eval_cdm_test": test}, 0.7)
+    assert thr["fit_on_val"] == pytest.approx((0.8, 0.5))
+    for s in ("eval_cdm_val", "eval_cdm_test"):
+        kept = sum(r.terminal == "commit" for r in out[s])
+        assert 60 <= kept <= 80  # 70 expected; the tie-break is a fixed hash per case
+        assert all(r.terminal == "commit" for r in out[s][:40])  # everything above the cut is kept
+    again, _ = crossfit_posthoc({"eval_cdm_val": val, "eval_cdm_test": test}, 0.7)
+    assert [r.terminal for r in again["eval_cdm_test"]] == [r.terminal for r in out["eval_cdm_test"]]
 
 
 def test_reprice_changes_only_charged_tests(tmp_path):

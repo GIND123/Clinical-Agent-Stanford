@@ -221,7 +221,7 @@ def fig_risk_coverage(suites, tables, out):
         lo_y = min(lo_y, y)
     if thr:
         handles.append(Line2D([], [], ls="none", marker="o", ms=5, mfc=SURFACE, mec=MUTED, mew=1.1,
-                              label="Forced choice + cross-fitted threshold aimed at the reference coverage (hollow)"))
+                              label="Forced choice + cross-fitted threshold at the reference coverage (hollow)"))
     ref = next((n for n in ("cev", "deferdx") if table(tables, n, "ml", "coverage")), None)
     if ref:
         x = table(tables, ref, "ml", "coverage")["value"] * 100
@@ -250,11 +250,12 @@ PAIRED_METRICS = [  # key, label, higher is better
     ("confident_errors", "Confident errors ↓", False), ("aurc", "AURC (×100) ↓", False), ("ece", "ECE (×100) ↓", False),
     ("handoff_quality", "Handoff quality", True), ("false_commit:eval_other_seen", "False commits, OTHER seen ↓", False),
     ("false_commit:eval_other_unseen", "False commits, OTHER unseen ↓", False)]
-# "@sc+thr": three-sample voting for both systems, threshold at matched coverage (the single-sample threshold can
-# miss the target coverage because stated probabilities tie); compared as "<ref>@sc vs <comparator>"
-# The single-sample zero-shot threshold is left out: it missed DEFER-Dx's coverage (tied probabilities), so its
-# paired differences are not at matched coverage (RESULTS.md shows them with the coverage reached).
+# "@sc+thr": three-sample voting for both systems, threshold at matched coverage; compared as "<ref>@sc vs <comparator>".
+# Every threshold matches the reference coverage (ties at the cut are kept with a fitted probability); the
+# single-sample zero-shot threshold is in RESULTS.md section 5, the figure keeps the first four comparators.
 COMPARATORS = ["grpo_nodefer+thr", "deferdx", "zs_defer", "zs_nodefer@sc+thr", "cev_dualascent", "grpo_nodefer"]
+# the second DEFER-Dx training seed, overlaid where it has the same comparison (the control at its own coverage)
+SEED2 = {"grpo_nodefer+thr": "cev_seed1 vs grpo_nodefer+thr_seed1", "deferdx": "cev_seed1 vs deferdx"}
 
 
 def paired_key(ref: str, c: str) -> str:
@@ -267,22 +268,28 @@ def fig_paired(results, out):
     comps = [c for c in COMPARATORS if ref and c != ref and paired_key(ref, c) in paired][:4]
     if not comps:
         return placeholder(out, "fig_paired_differences", "Needs the paired comparisons in docs/results.json.")
-    fig, axes = plt.subplots(1, len(comps), figsize=(FULL, 2.7), sharey=True, layout="constrained", squeeze=False)
+    seed2 = ref == "cev" and any(SEED2.get(c) in paired for c in comps)
+    fig, axes = plt.subplots(1, len(comps), figsize=(FULL, 3.0 if seed2 else 2.7), sharey=True, layout="constrained",
+                             squeeze=False)
     axes = axes[0]
     _, color, _, _ = style(ref)
     rows = [m for m in PAIRED_METRICS if any(m[0] in paired[paired_key(ref, c)] for c in comps)]
     for ax, c in zip(axes, comps):
-        d = paired[paired_key(ref, c)]
-        for i, (key, _, up) in enumerate(rows):
-            v = d.get(key)
-            if not v or v.get("diff") is None or not np.isfinite(v["diff"]):
-                continue
-            sgn = 1 if up else -1  # oriented so that positive favours the reference system
-            x, lo, hi = sgn * v["diff"] * 100, sgn * v["lo"] * 100, sgn * v["hi"] * 100
-            lo, hi = min(lo, hi), max(lo, hi)
-            sig = lo > 0 or hi < 0
-            ax.plot([lo, hi], [i, i], color=color, lw=1.2, zorder=2)
-            ax.plot(x, i, marker="o", ls="none", zorder=3, **marker_kw(color, sig))
+        series = [(paired[paired_key(ref, c)], "o", 0.0)]
+        if seed2 and SEED2.get(c) in paired:
+            series = [(series[0][0], "o", -0.18), (paired[SEED2[c]], "D", 0.18)]
+        for d, mk, dy in series:
+            for i, (key, _, up) in enumerate(rows):
+                v = d.get(key)
+                if not v or v.get("diff") is None or not np.isfinite(v["diff"]):
+                    continue
+                sgn = 1 if up else -1  # oriented so that positive favours the reference system
+                x, lo, hi = sgn * v["diff"] * 100, sgn * v["lo"] * 100, sgn * v["hi"] * 100
+                lo, hi = min(lo, hi), max(lo, hi)
+                sig = lo > 0 or hi < 0
+                ax.plot([lo, hi], [i + dy, i + dy], color=color, lw=1.2, zorder=2)
+                ax.plot(x, i + dy, marker=mk, ls="none", zorder=3,
+                        **marker_kw(color, sig, ms=4.2 if mk == "D" else 5.0, marker=mk))
         ax.axvline(0, color=INK2, lw=0.7, zorder=1)
         ax.set_yticks(range(len(rows)), [r[1] for r in rows])
         ax.set_ylim(len(rows) - 0.5, -0.5)
@@ -293,6 +300,12 @@ def fig_paired(results, out):
         ticks(ax, n=5)
     fig.suptitle(f"{style(ref)[0]} minus each comparator on the same cases; positive favours {style(ref)[0]}; "
                  "filled = 95% interval excludes 0", x=0.0, ha="left", fontsize=7.5, color=INK)
+    if seed2:
+        fig.legend(handles=[Line2D([], [], color=color, marker="o", label="first training seed (the reported run)",
+                                   **legend_kw(color, "o")),
+                            Line2D([], [], color=color, marker="D", label="second training seed; the control is "
+                                   "thresholded at that seed's own coverage", **legend_kw(color, "D", 4.2))],
+                   loc="outside lower center", ncols=2, fontsize=6.5, frameon=False, handlelength=1.6)
     save(fig, out, "fig_paired_differences")
 
 
