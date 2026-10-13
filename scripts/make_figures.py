@@ -61,6 +61,8 @@ SYSTEMS = {  # eval-suite name: (label, colour slot, marker). Colour follows the
     "abl_constant_defer": ("Constant deferral reward", 7, "h"),
     "cev_step100": ("DEFER-Dx, step 100", 0, "o"),
     "cev_seed1": ("DEFER-Dx, second seed", 0, "o"),
+    "grpo_nodefer_seed1": ("GRPO control, second seed", 2, "^"),
+    "deferdx_seed1": ("Group-consensus reward, second seed", 1, "s"),
 }
 SHORT = {"grpo_nodefer+thr": "GRPO control\n+ threshold", "zs_nodefer+thr": "zero-shot\n+ threshold",
          "zs_nodefer@sc+thr": "zero-shot + threshold\n(matched; 3-sample vote)",

@@ -1,0 +1,4 @@
+# Training-seed replicate of the GRPO control (case order, rollout sampling, LoRA initialisation).
+base: ../grpo_nodefer.yaml
+seed: 1
+output_dir: outputs/runs/nodefer_seed1

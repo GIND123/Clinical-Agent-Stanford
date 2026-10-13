@@ -111,6 +111,11 @@ def push_pending() -> None:
     git("fetch", "-q", "origin")
     if git("rev-list", "--count", "origin/main..HEAD").stdout.strip() in ("", "0"):
         return
+    if git("merge-base", "--is-ancestor", "origin/main", "HEAD", check=False).returncode == 0:
+        # nothing new on origin: a fast-forward push needs no rebase, so uncommitted edits cannot block it
+        p = git("push", "-q", "origin", "main", check=False)
+        log("git: pushed results update" if p.returncode == 0 else f"git: push failed: {p.stderr.strip()[:200]}")
+        return
     incoming = git("diff", "--name-only", "HEAD...origin/main").stdout.split()
     code = [f for f in incoming if f.startswith(CODE_PATHS)]
     if code and queue_running():

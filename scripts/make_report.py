@@ -53,7 +53,9 @@ SYSTEMS = [  # eval-suite directory name, label
     ("qwen14b_defer", "Qwen3-14B zero-shot, prompted DEFER"),
     ("diagagent_nodefer", "DiagAgent-14B (DiagGym RL), forced choice via its format adapter"),
     ("grpo_nodefer", "GRPO control (no DEFER)"),
+    ("grpo_nodefer_seed1", "GRPO control (no DEFER), second training seed"),
     ("deferdx", "Group-consensus deferral reward (case-level; TIAR/KARL-style)"),
+    ("deferdx_seed1", "Group-consensus deferral reward, second training seed"),
     ("cev", "DEFER-Dx: counterfactual escalation value + scored handoff (ours)"),
     ("cev_seed1", "DEFER-Dx, second training seed"),
     ("cev_maskdrop", "DEFER-Dx, every sentence with CDM's ____ diagnosis mask removed (CDM sets only)"),
@@ -195,19 +197,20 @@ def main() -> None:
             continue
         target = S.coverage(cdm_pooled(suites[ref]))
         suffix = "@sc" if ref.endswith("@sc") else ""
-        for base in ("grpo_nodefer", "zs_nodefer", "gptoss_nodefer", "qwen14b_nodefer"):
+        for base in ("grpo_nodefer", "grpo_nodefer_seed1", "zs_nodefer", "gptoss_nodefer", "qwen14b_nodefer"):
             if base + suffix in suites:
                 key = f"{base}{suffix}+thr"
                 suites[key], thresholds[key] = crossfit_posthoc(suites[base + suffix], target)
                 thr_spec[key] = (base + suffix, target)
                 labels[key] = f"{labels[base + suffix]} + threshold at matched coverage ({target:.0%})"
-    # the second DEFER-Dx training seed is compared with the control thresholded at its own coverage
-    if "cev_seed1" in suites and "grpo_nodefer" in suites:
-        target = S.coverage(cdm_pooled(suites["cev_seed1"]))
-        key = "grpo_nodefer+thr_seed1"
-        suites[key], thresholds[key] = crossfit_posthoc(suites["grpo_nodefer"], target)
-        thr_spec[key] = ("grpo_nodefer", target)
-        labels[key] = f"{labels['grpo_nodefer']} + threshold at the second seed's coverage ({target:.0%})"
+    # the second DEFER-Dx training seed is compared with each control seed thresholded at its own coverage
+    for ctrl in ("grpo_nodefer", "grpo_nodefer_seed1"):
+        if "cev_seed1" in suites and ctrl in suites:
+            target = S.coverage(cdm_pooled(suites["cev_seed1"]))
+            key = f"{ctrl}+thr_seed1"
+            suites[key], thresholds[key] = crossfit_posthoc(suites[ctrl], target)
+            thr_spec[key] = (ctrl, target)
+            labels[key] = f"{labels[ctrl]} + threshold at the second DEFER-Dx seed's coverage ({target:.0%})"
 
     # SGR (Geifman & El-Yaniv 2017; plan #7): the lowest threshold whose binomial upper bound on
     # selective risk is <= 5% with probability >= 95%, cross-fitted the same way
@@ -229,9 +232,12 @@ def main() -> None:
     comparisons = []
     if main:
         comparisons += [(main, ("grpo_nodefer+thr", "zs_nodefer+thr", "grpo_nodefer+sgr", "deferdx", "zs_defer",
-                                "grpo_nodefer", "cev_dualascent")),
-                        (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc"))]
-    comparisons.append(("cev_seed1", ("grpo_nodefer+thr_seed1", "deferdx")))
+                                "grpo_nodefer", "cev_dualascent", "grpo_nodefer_seed1+thr", "deferdx_seed1")),
+                        (main + "@sc", ("grpo_nodefer@sc+thr", "zs_nodefer@sc+thr", "deferdx@sc", "zs_defer@sc",
+                                        "grpo_nodefer_seed1@sc+thr"))]
+    # every DEFER-Dx seed against every comparator seed (control thresholded at that DEFER-Dx seed's coverage)
+    comparisons.append(("cev_seed1", ("grpo_nodefer+thr_seed1", "deferdx", "grpo_nodefer_seed1+thr_seed1",
+                                      "deferdx_seed1")))
     comparisons.append(("cev", ("cev_maskdrop",)))  # robustness to the mask cue, same cases
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
     for ref, comps in comparisons:
@@ -265,7 +271,7 @@ def main() -> None:
     # share of in-set (CDM) deferrals whose differential ranks OTHER first: a handoff that names no in-set diagnosis
     other_first = {}
     short = {"cev": "DEFER-Dx", "cev_seed1": "its second training seed", "deferdx": "the consensus arm",
-             "zs_defer": "prompted DEFER"}
+             "deferdx_seed1": "the consensus arm's second seed", "zs_defer": "prompted DEFER"}
     for k in short:
         if k in suites:
             defs = [r for r in cdm_pooled(suites[k]) if r.terminal == "defer"]

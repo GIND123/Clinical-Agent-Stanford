@@ -35,6 +35,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | `queue_v6.sh` | Oct 10 | The journal run, to Mon 18:00 IST. Replaced the same day so the Stanford-abstract evaluations ran first. |
 | `queue_v7.sh` | Oct 10–12 | Stanford-abstract block first (DEFER-Dx, closed-world zero-shot, mask-drop), then the control, the constant-deferral ablation with the step-100 evaluation, and the dual-ascent evaluation. The second seed did not fit its deadline. |
 | `queue_v8.sh` | Oct 12–14 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed, the no-handoff ablation, gpt-oss-20b if it fits. |
+| `queue_v9.sh` | Oct 14–15 | The control's second training seed, and the consensus arm's second seed if its adapter arrives in time; deadline Thu Oct 15, 12:00 IST. |
 
 ## Comparisons the results support
 
@@ -51,20 +52,21 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 
 **Not answered, and said so.** The control's and the consensus arm's seed variance (one seed each). Two DEFER-Dx seeds show that handoff content and the in-set comparison with the threshold vary between seeds, but cannot estimate by how much. Anything in the queue that does not finish by the deadline is listed here when the run ends.
 
-## Proposed: second seeds of the control and the consensus arm (Oct 13)
+## Second seeds of the control and the consensus arm (proposed Oct 13; the control's is queued)
 
 The control and the consensus arm each have one training seed, so the learned-versus-threshold comparison and the comparison with the published mechanism each rest on one run of the comparator. Two second seeds close that gap. They are independent jobs, split across two GPUs so that both finish in about a day.
 
 | Job | Who, where | Training | Time |
 |---|---|---|---|
-| Control (no DEFER), seed 1 | Dr. George, on the shared 48 GB GPU after `queue_v8.sh` ends (Wed Oct 14, 05:30 IST) | `deferdx train grpo-vllm --config configs/grpo_nodefer.yaml --set seed=1 output_dir=outputs/runs/nodefer_seed1 vllm_gpu_memory_utilization=0.72` | 150 × 466 s ≈ 19.4 h, plus ≈ 1.7 h evaluation |
+| Control (no DEFER), seed 1 | Dr. George, on the shared 48 GB GPU: **queued** in `scripts/queue_v9.sh`, which starts when `queue_v8.sh` ends (by Wed Oct 14, 05:30 IST) and stops by Thu Oct 15, 12:00 IST | `deferdx train grpo-vllm --config configs/ablations/nodefer_seed1.yaml --set vllm_gpu_memory_utilization=0.72`; the config differs from `configs/grpo_nodefer.yaml` only in `seed: 1` and `output_dir: outputs/runs/nodefer_seed1` | 150 × 466 s ≈ 19.4 h, plus ≈ 1.7 h evaluation |
 | Consensus arm, seed 1 | Shreeya, on a Lambda Cloud GPU (48 GB A6000, or an 80 GB H100) | `deferdx train grpo-vllm --config configs/grpo_deferdx.yaml --set seed=1 output_dir=outputs/runs/deferdx_seed1` | 150 × 520 s ≈ 21.7 h on the shared GPU; the Lambda speed is measured by a 3-step smoke run first |
 
 - **Why this way round:** the control is the comparator for the main claim, so its second seed stays on the hardware that every DEFER-Dx and control run used. The consensus arm stands for a published mechanism, where a change of hardware matters least.
 - **Seeds and code:** `seed=1`, as in `configs/ablations/cev_seed1.yaml` (case order, rollout sampling, LoRA initialisation); everything else as in the seed-0 runs. The training code and both configs are unchanged since `d8a3f0b` (Oct 9), so either job can run from the current `main`.
 - **Environment on Lambda:** vLLM 0.11.0 with torch 2.8.0+cu128, the pin that Lambda's CUDA 12.8 driver needs (`scripts/lambda/setup.sh`). Library versions may differ from the shared GPU's; the run records them.
 - **Evaluation:** the Lambda run's adapter (`outputs/runs/deferdx_seed1/final`; weights only, no case text) is evaluated on the shared GPU with `deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx_seed1/final --name deferdx_seed1` (≈ 1.7 h). Every system is then evaluated by the same engine, and the paired comparisons run on one machine. The control's evaluation: `deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/nodefer_seed1/final --name grpo_nodefer_seed1 --no-defer`.
-- **Report:** `scripts/make_report.py` needs the two systems added (`deferdx_seed1`, `grpo_nodefer_seed1`), with each DEFER-Dx seed compared with each control seed thresholded at that DEFER-Dx seed's coverage. That is a small change once the queue has ended.
+- **Report:** done Oct 13. `scripts/make_report.py` knows both systems (`deferdx_seed1`, `grpo_nodefer_seed1`). Each DEFER-Dx seed is compared with each comparator seed, and each control is thresholded at that DEFER-Dx seed's coverage, with the tie-break range in §5b. A dry run with stand-in suites reproduced the existing comparisons.
+- **Queue:** `queue_v9.sh` trains the control's second seed, then evaluates it (3 seeds) and reports. If the consensus arm's adapter is already in `outputs/runs/deferdx_seed1/final` when the queue gets there, the queue evaluates and reports it too. Otherwise, run the evaluation command above after the queue.
 - **Data:** the Lambda run needs `data/cohorts/rl_train.jsonl` and `dev.jsonl` on the VM, and these contain MIMIC text. Confirm with the PI that cloud compute is acceptable under the PhysioNet DUA before uploading. Only aggregates come back to the repository.
 - **If one does not finish:** each is reported as it stands, and the other still counts.
 
