@@ -25,7 +25,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
 | **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) was trained and evaluated, Oct 13, in `scripts/queue_v8.sh`. Another user's job on the shared GPU stopped its first attempt, and the second resumed from the step-50 checkpoint. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8; held-out evaluation done Oct 12) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
 | GRPO control (no DEFER), the key comparator | trained (150 steps) and evaluated, Oct 11; the learned-versus-threshold comparison is in §3 |
-| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps) runs after the second seed in `scripts/queue_v8.sh`. The control's second seed is queued in `scripts/queue_v9.sh` (results by Thu Oct 15 IST); a second seed of the consensus arm is proposed on another GPU (docs/EXPERIMENTS.md) |
+| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps): done, Oct 13 (§3). The control's second seed is queued in `scripts/queue_v9.sh` (results by Thu Oct 15 IST); a second seed of the consensus arm is proposed on another GPU (docs/EXPERIMENTS.md) |
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
 
@@ -126,7 +126,11 @@ The control is thresholded at the first seed's coverage; the second seed is comp
 - **Matched coverage needs care.** Stated probabilities are coarse, so a plain cut on the control overshoots the target coverage (79% instead of 73% for the second seed). With that overshoot the advantage reads +3.1 and +3.2. Every threshold now keeps commitments tied at the cut with a fitted probability. RESULTS.md §5b gives the range over 20 tie-break draws.
 - **Seed-dependent handoffs.** The first seed ranks OTHER first in 68% of in-set handoffs, lowering full-coverage accuracy (78.2) and diverticulitis accuracy. The second does so in 4% (86.3 at full coverage), but its handoff names OTHER for only 35% of true OTHER cases (first seed: 94%).
 - **Against post-hoc thresholding of the zero-shot model at matched coverage:** +12.4 points (9.4–15.7) accuracy on answered cases. With three-sample voting for both, as in the abstract: +11.1 (7.0–15.3), and −8.8 (−12.3 to −5.4) unflagged errors per 100.
-- **Ablation: counterfactual credit against a constant deferral reward** (100 steps each, same cases). No difference in accuracy on answered cases (−0.4), unflagged errors, or wrong commitments on never-seen time-critical cases (10.2% vs 10.7%). The credit defers more, puts OTHER in its handoffs far more often (89% vs 25%), cuts false commits on seen OTHER groups (−4.4, −7.5 to −1.5), and lowers diverticulitis accuracy (−11.8). The no-handoff ablation finishes on Tuesday night (IST).
+- **Ablation: counterfactual credit against a constant deferral reward** (100 steps each, same cases). No difference in accuracy on answered cases (−0.4), unflagged errors, or wrong commitments on never-seen time-critical cases (10.2% vs 10.7%). The credit defers more, puts OTHER in its handoffs far more often (89% vs 25%), cuts false commits on seen OTHER groups (−4.4, −7.5 to −1.5), and lowers diverticulitis accuracy (−11.8).
+- **Ablation: without the scored handoff** (η = 0; 100 steps, same cases).
+  - **No difference:** accuracy on answered cases (−1.1, −2.8 to 0.6) and unflagged errors (3.8 vs 3.3 per 100).
+  - **What the score adds:** more informative in-set handoffs (+6.5, 3.5 to 9.3), more deferral (coverage 68.1% vs 75.9%), and fewer false commits on seen OTHER groups (−3.2, −6.3 to −0.2).
+  - **What it doesn't cause:** the OTHER-leaning handoffs. They are more common without the score (55% vs 35% of in-set handoffs, against 13% with a constant reward), so they come from the counterfactual credit, to a degree that depends on the seed.
 - **Robustness to the mask cue.** With every sentence containing CDM's `____` diagnosis mask removed, DEFER-Dx answers 76.0% at 96.2% accuracy, against 77.6% at 95.2%. All paired differences are within 1.6 points and AURC is unchanged, so it does not rely on the mask.
 
 **The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
@@ -203,7 +207,7 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
 
 ![Figure S4](docs/figures/fig_unseen_groups.png)
 
-**Figure S5 | Ablations at 100 training steps.** DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, and without the scored handoff (η = 0, added when it finishes on Tuesday). Both are evaluated on 2 seeds with 95% intervals.
+**Figure S5 | Ablations at 100 training steps.** DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, and without the scored handoff (η = 0). Both are evaluated on 2 seeds with 95% intervals.
 
 ![Figure S5](docs/figures/fig_ablations.png)
 

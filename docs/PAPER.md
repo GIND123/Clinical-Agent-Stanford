@@ -1,6 +1,6 @@
 # Training Clinical Agents to Ask, Test, Commit, and Defer
 
-*Draft for a journal submission (and the source of the Stanford AI+HEALTH abstract). Figures: `docs/figures/` (vector PDFs; TikZ sources in `docs/figures/tikz/`), numbered and captioned in README §3. Every `[[...]]` is a placeholder that is filled only from `docs/RESULTS.md`. Methods are written from the code; see `docs/METHODS.md` for every constant.*
+*Draft for a journal submission (and the source of the Stanford AI+HEALTH abstract). Figures: `docs/figures/` (vector PDFs; TikZ sources in `docs/figures/tikz/`), numbered and captioned in README §3. Every number is taken from `docs/RESULTS.md`. Methods are written from the code; see `docs/METHODS.md` for every constant.*
 
 ## Abstract
 **Background.** Interactive diagnostic agents for acute abdominal pain are evaluated in a closed world: they must name one of four diagnoses and cannot hand a case to a clinician. Abstention learned by reinforcement learning is known to collapse into refusal, and theory recommends thresholding a calibrated confidence instead.
@@ -228,7 +228,15 @@ Both ablations are trained for 100 steps and compared with DEFER-Dx's step-100 c
 
 In this seed, then, the OTHER-leaning handoffs came with the counterfactual credit, not with deferral reward as such. They are not a necessary consequence of it: the second DEFER-Dx seed ranks OTHER first in 4.2% of in-set handoffs at 150 steps (§7.7). On the main in-set metrics at 100 steps, the credit is not distinguishable from a well-matched constant reward. DEFER-Dx's advantage on never-seen time-critical diagnoses at 150 steps (6.8%) appeared in the second half of training.
 
-**Without the scored handoff (η = 0).** [[Tue: DEFER-Dx at 100 steps against the no-handoff ablation.]]
+**Without the scored handoff (η = 0).** The same training with the handoff score removed from the escalation value, so a deferral is credited whatever its differential says. At 100 steps:
+- **No difference:** accuracy on answered cases (94.5% against 95.6%; −1.1, −2.8 to 0.6), unflagged errors (3.8 against 3.3 per 100) and confident errors.
+- **Where the handoff score differs:**
+  - its in-set handoffs are more informative: handoff quality +6.5 points (3.5 to 9.3);
+  - it defers more: coverage 68.1% against 75.9% (−7.8, −10.9 to −5.0);
+  - it makes fewer false commits on OTHER from seen groups (6.3% against 9.5%; −3.2, −6.3 to −0.2). On never-seen time-critical diagnoses, 10.2% against 12.8% (−2.7, −5.9 to 0.5) is not significant.
+- **What it does not cause:** without the score, handoffs rank OTHER first more often (55.1% of in-set handoffs, against 35.1%).
+
+The scored handoff therefore does what it was designed for: it makes handoffs more informative, and it raises the value of escalating, so the agent defers more. The OTHER-leaning handoffs come with the counterfactual credit itself, with or without the score (35.1% and 55.1% at 100 steps, against 12.8% for a constant reward), and how far they develop depends on the seed (§7.7).
 
 ### 7.7 Training-seed variance and training dynamics
 **Second training seed.** A second DEFER-Dx run differs only in its seed (case order, sampling and LoRA initialisation) and was evaluated in the same way. Against the control, it is compared at its own coverage (73.2%; the control thresholded to 72.1%).
@@ -261,7 +269,7 @@ On never-seen time-critical presentations it also behaves differently from the t
 A committed OTHER label is not a handoff: the clinician receives no differential and no flag that the case was uncertain. The counterfactual escalation value therefore produces an agent that escalates where a confidence threshold would answer "none of these".
 
 **What it does not buy.**
-- **Reliable handoff content:** the first seed labelled uncertain in-set cases "not one of the four" (68.4% of in-set handoffs), which lowers full-coverage and diverticulitis accuracy when handoffs are counted as diagnoses. The second did not (4.2%), but it rarely named OTHER when handing over a true OTHER case. A constant deferral reward with the same OTHER value and controller produced neither pattern at 100 steps (§7.6). The handoff score does not fix which differential the agent learns, so handoffs need stronger pressure toward the right content.
+- **Reliable handoff content:** the first seed labelled uncertain in-set cases "not one of the four" (68.4% of in-set handoffs), which lowers full-coverage and diverticulitis accuracy when handoffs are counted as diagnoses. The second did not (4.2%), but it rarely named OTHER when handing over a true OTHER case. A constant deferral reward with the same OTHER value and controller produced neither pattern at 100 steps, and removing the handoff score made OTHER-first handoffs more common (§7.6). The score makes handoffs more informative but does not fix which differential the agent learns, so handoffs need stronger pressure toward the right content.
 - **More investigation:** both seeds ordered fewer tests than the comparators (0.84 and 0.89 per case; 0.67 before deferring in the first), so we do not claim that the agent learned to investigate more. The "another test would settle it" half of the mechanism is not shown.
 
 **Implications.**

@@ -14,7 +14,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | GRPO control, identical training without DEFER | `configs/grpo_nodefer.yaml` | 150 | trained and evaluated (`queue_v7.sh`, Oct 11; the first attempt died of an out-of-memory error at step 24 and was resumed from step 20) | learned vs post-hoc deferral on an identically trained model |
 | Constant deferral reward | `configs/ablations/constant_defer.yaml` | 100 | trained and evaluated (`queue_v7.sh`, Oct 11–12), against DEFER-Dx's step-100 checkpoint | does the counterfactual credit matter? |
 | DEFER-Dx, second training seed | `configs/ablations/cev_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v8.sh`, Oct 12–13; the first attempt was stopped by another user's GPU job, the second resumed from step 50); compared with the control thresholded at its own coverage | training-seed variance |
-| No-handoff ablation (η = 0) | `configs/ablations/cev_no_handoff.yaml` | 100 | `queue_v8.sh`, after the second seed; against DEFER-Dx's step-100 checkpoint | does the scored handoff matter? |
+| No-handoff ablation (η = 0) | `configs/ablations/cev_no_handoff.yaml` | 100 | trained and evaluated (`queue_v8.sh`, Oct 13), against DEFER-Dx's step-100 checkpoint | does the scored handoff matter? |
 | Held-out evaluation of the dual-ascent run | (none) | (none) | evaluated (`queue_v7.sh`, Oct 12) | record of the controller failure |
 | gpt-oss-20b zero-shot | (none) | (none) | last in `queue_v8.sh`, only if it fits | larger open model |
 | A second seed of the control | (none) | (none) | **not run** | — |

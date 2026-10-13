@@ -271,7 +271,9 @@ def main() -> None:
     # share of in-set (CDM) deferrals whose differential ranks OTHER first: a handoff that names no in-set diagnosis
     other_first = {}
     short = {"cev": "DEFER-Dx", "cev_seed1": "its second training seed", "deferdx": "the consensus arm",
-             "deferdx_seed1": "the consensus arm's second seed", "zs_defer": "prompted DEFER"}
+             "deferdx_seed1": "the consensus arm's second seed", "zs_defer": "prompted DEFER",
+             "cev_step100": "DEFER-Dx at step 100", "abl_cev_no_handoff": "the no-handoff ablation",
+             "abl_constant_defer": "the constant-reward ablation"}
     for k in short:
         if k in suites:
             defs = [r for r in cdm_pooled(suites[k]) if r.terminal == "defer"]
