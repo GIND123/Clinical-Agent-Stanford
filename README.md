@@ -29,14 +29,14 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Figures | 13 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
 
-Held-out numbers exist for DEFER-Dx, the GRPO control, the comparator arm, the constant-deferral ablation and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
+Held-out numbers exist for DEFER-Dx (two training seeds), the GRPO control, the comparator arm, both ablations and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
 
-**The journal run.** `scripts/queue_v8.sh` may use the GPU until **Wed Oct 14, 05:30 IST (Tue Oct 13, 20:00 US Eastern)**, and nothing runs after that. In order:
-1. DEFER-Dx second seed: finish training (150 steps), evaluate, report. Done Tue Oct 13, 08:10 IST.
-2. No-handoff ablation: train 100 steps, evaluate against DEFER-Dx at step 100, report. Expected around Tue Oct 13, 23:00 IST.
-3. gpt-oss-20b zero-shot, only if it still fits.
+**The journal run.** `scripts/queue_v8.sh` finished on Tue Oct 13, 21:57 IST:
+1. DEFER-Dx second seed: trained (150 steps), evaluated and reported. Done Tue Oct 13, 08:10 IST.
+2. No-handoff ablation: trained 100 steps, evaluated against DEFER-Dx at step 100 and reported. Done Tue Oct 13, 21:44 IST.
+3. gpt-oss-20b zero-shot: **not run.** Both attempts failed at engine start-up, because vLLM's FlashInfer kernels rejected this Blackwell GPU ("requires sm75 or higher"). It is a library incompatibility, and an optional baseline, so it was not retried.
 
-Then `scripts/queue_v9.sh`, already waiting, trains and evaluates the control's second training seed. It takes about 21 h and stops by **Thu Oct 15, 12:00 IST**.
+**Running now:** `scripts/queue_v9.sh` started the control's second training seed at Tue 21:58 IST. Training takes about 20.6 h and evaluation about 1.7 h, so results are expected around Wed Oct 14, 20:30 IST. The queue stops by **Thu Oct 15, 12:00 IST**.
 
 The rules are unchanged from the earlier queues:
 - **Fixed list:** jobs run in priority order, and none is added while it runs.
@@ -284,7 +284,7 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
   - post-hoc thresholds at DEFER-Dx's coverage (cross-fitted: fit on val, applied to test and vice versa);
   - SGR (5% risk, δ 0.05);
   - self-consistency over 3 samples;
-  - gpt-oss-20b;
+  - gpt-oss-20b (planned; not run, see §1);
   - DiagAgent-14B and the published LA-CDM / LDTL numbers as context.
 - **Machine-learning metrics:** accuracy at full coverage, mean-class accuracy, macro-F1, coverage, selective accuracy, AURC, accuracy at 70/80/90% coverage, ECE, Brier, OOD AUROC.
 - **Clinical metrics:**

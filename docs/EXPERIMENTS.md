@@ -16,7 +16,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | DEFER-Dx, second training seed | `configs/ablations/cev_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v8.sh`, Oct 12–13; the first attempt was stopped by another user's GPU job, the second resumed from step 50); compared with the control thresholded at its own coverage | training-seed variance |
 | No-handoff ablation (η = 0) | `configs/ablations/cev_no_handoff.yaml` | 100 | trained and evaluated (`queue_v8.sh`, Oct 13), against DEFER-Dx's step-100 checkpoint | does the scored handoff matter? |
 | Held-out evaluation of the dual-ascent run | (none) | (none) | evaluated (`queue_v7.sh`, Oct 12) | record of the controller failure |
-| gpt-oss-20b zero-shot | (none) | (none) | last in `queue_v8.sh`, only if it fits | larger open model |
+| gpt-oss-20b zero-shot | (none) | (none) | **not run**: both attempts in `queue_v8.sh` failed at engine start-up (vLLM's FlashInfer kernels rejected the Blackwell GPU, "requires sm75 or higher"); an optional baseline, not retried | larger open model |
 | A second seed of the control | (none) | (none) | **not run** | — |
 
 **Records, not results.** These two runs appear only through their training logs (README Fig. 8).
@@ -34,8 +34,8 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | `queue_v5.sh` | Oct 10 | Fit a Saturday budget. Replaced the same morning when the budget was extended to Monday for the journal experiments. |
 | `queue_v6.sh` | Oct 10 | The journal run, to Mon 18:00 IST. Replaced the same day so the Stanford-abstract evaluations ran first. |
 | `queue_v7.sh` | Oct 10–12 | Stanford-abstract block first (DEFER-Dx, closed-world zero-shot, mask-drop), then the control, the constant-deferral ablation with the step-100 evaluation, and the dual-ascent evaluation. The second seed did not fit its deadline. |
-| `queue_v8.sh` | Oct 12–14 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed, the no-handoff ablation, gpt-oss-20b if it fits. |
-| `queue_v9.sh` | Oct 14–15 | The control's second training seed, and the consensus arm's second seed if its adapter arrives in time; deadline Thu Oct 15, 12:00 IST. |
+| `queue_v8.sh` | Oct 12–13 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed and the no-handoff ablation; gpt-oss-20b failed at start-up. Finished Tue 21:57 IST. |
+| `queue_v9.sh` | Oct 13–15 | Started Tue 21:58 IST: the control's second training seed, and the consensus arm's second seed if its adapter arrives in time; deadline Thu Oct 15, 12:00 IST. |
 
 ## Comparisons the results support
 
