@@ -389,6 +389,7 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 | [docs/figures/](docs/figures/) | All figures; captions in §3 of this README |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | The run grid, queues, ablations and the question each answers |
 | [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md) | The consensus arm's second training seed (Lambda Cloud): setup, cost, data handling, in-training dev evaluations, every training step; no held-out numbers yet |
+| [docs/REVIEWER_CHECKS.md](docs/REVIEWER_CHECKS.md) | Reviewer comments of Oct 14: chart-artifact audit, test-price sensitivity, Holm correction, and the status of every comment |
 | [docs/PAPER.md](docs/PAPER.md), [docs/ABSTRACT.md](docs/ABSTRACT.md) | Paper draft and abstract scaffold (placeholders until results) |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Facts checked against primary sources; literature re-checks and the narrowed novelty claim |
 | [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory, schemas, label and leakage checks, bias analysis |

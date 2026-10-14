@@ -1,0 +1,155 @@
+{
+  "chart_artifacts": {
+    "in_set": {
+      "n": 1760,
+      "cv_accuracy": 0.694,
+      "majority_class": 0.399,
+      "macro_auroc": 0.879,
+      "most_predictive": {
+        "appendicitis": [
+          {
+            "test": "ct_abdomen",
+            "recorded_in_class": 0.942,
+            "recorded_in_others": 0.506
+          },
+          {
+            "test": "urinalysis",
+            "recorded_in_class": 0.869,
+            "recorded_in_others": 0.777
+          },
+          {
+            "test": "pregnancy_test",
+            "recorded_in_class": 0.325,
+            "recorded_in_others": 0.143
+          }
+        ],
+        "cholecystitis": [
+          {
+            "test": "us_abdomen",
+            "recorded_in_class": 0.876,
+            "recorded_in_others": 0.383
+          },
+          {
+            "test": "liver_panel",
+            "recorded_in_class": 1.0,
+            "recorded_in_others": 0.885
+          },
+          {
+            "test": "lipase",
+            "recorded_in_class": 0.964,
+            "recorded_in_others": 0.733
+          }
+        ],
+        "diverticulitis": [
+          {
+            "test": "ct_abdomen",
+            "recorded_in_class": 0.942,
+            "recorded_in_others": 0.648
+          },
+          {
+            "test": "crp",
+            "recorded_in_class": 0.063,
+            "recorded_in_others": 0.018
+          },
+          {
+            "test": "urinalysis",
+            "recorded_in_class": 0.884,
+            "recorded_in_others": 0.805
+          }
+        ],
+        "pancreatitis": [
+          {
+            "test": "lipase",
+            "recorded_in_class": 1.0,
+            "recorded_in_others": 0.736
+          },
+          {
+            "test": "triglycerides",
+            "recorded_in_class": 0.406,
+            "recorded_in_others": 0.021
+          },
+          {
+            "test": "amylase",
+            "recorded_in_class": 0.51,
+            "recorded_in_others": 0.125
+          }
+        ]
+      }
+    },
+    "other_vs_in_set_same_pipeline": {
+      "n": 651,
+      "n_other": 393,
+      "cv_auroc": 0.84
+    }
+  },
+  "prices": {
+    "n_tests": 22,
+    "n_placeholder": 10,
+    "catalog_total_usd": 14674.0,
+    "placeholder_share_of_total": 0.296,
+    "placeholder_reward_cost": {
+      "amylase": 0.01,
+      "blood_culture": 0.017,
+      "coagulation": 0.01,
+      "crp": 0.007,
+      "hida_scan": 0.204,
+      "lactate": 0.01,
+      "lipase": 0.01,
+      "pregnancy_test": 0.01,
+      "triglycerides": 0.007,
+      "urine_culture": 0.01
+    },
+    "reward_cost_median": 0.0136,
+    "reward_cost_max": {
+      "mri_abdomen": 0.332
+    },
+    "placeholder_scaled": {
+      "x0.5": {
+        "max_shift_any_test": 0.084,
+        "max_shift_test": "hida_scan",
+        "median_shift": 0.0042
+      },
+      "x2.0": {
+        "max_shift_any_test": 0.111,
+        "max_shift_test": "hida_scan",
+        "median_shift": 0.0055
+      }
+    },
+    "reward_components_last50": {
+      "run": "outputs/lambda5/deferdx_seed1/train_log.jsonl",
+      "r_accuracy": 0.642,
+      "r_calibration": 0.058,
+      "r_severity": 0.023,
+      "r_consensus": 0.157,
+      "r_cost": 0.094
+    }
+  },
+  "multiple_comparisons": {
+    "n_tests": 218,
+    "raw_below_0.05": 107,
+    "holm_below_0.05": 58,
+    "abstract_tests": [
+      {
+        "comparison": "cev@sc vs zs_nodefer@sc+thr",
+        "metric": "selective_acc",
+        "p": 0.0,
+        "holm_within_abstract": 0.0,
+        "holm_all": 0.0
+      },
+      {
+        "comparison": "cev vs deferdx",
+        "metric": "false_commit:eval_other_unseen",
+        "p": 0.013,
+        "holm_within_abstract": 0.02,
+        "holm_all": 1.0
+      },
+      {
+        "comparison": "cev_seed1 vs deferdx",
+        "metric": "false_commit:eval_other_unseen",
+        "p": 0.01,
+        "holm_within_abstract": 0.02,
+        "holm_all": 1.0
+      }
+    ]
+  }
+}
