@@ -65,6 +65,7 @@ SYSTEMS = [  # eval-suite directory name, label
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
 ]
+POOLED = "DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled"
 N_DRAWS = 20  # tie-break draws at the post-hoc cut, for the matched-coverage sensitivity (section 5b)
 MAIN = ("cev", "deferdx")  # the reference system: the first one that has been evaluated
 # Systems that state no probability (DiagAgent: every commit is 1.0). Metrics that rank or bin by stated
@@ -240,25 +241,33 @@ def main() -> None:
                                       "deferdx_seed1")))
     comparisons.append(("cev", ("cev_maskdrop",)))  # robustness to the mask cue, same cases
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
+    def paired_metrics(refs: list[dict], others: list[dict]) -> dict:
+        """Paired bootstrap of every comparison metric; refs[i] is paired with others[i] and the pairs are
+        pooled (cases resampled, all their episodes kept together)."""
+        a = [r for x in refs for r in cdm_pooled(x)]
+        b = [r for y in others for r in cdm_pooled(y)]
+        d = {k: S.paired_bootstrap(a, b, f, args.n_boot) for k, f in {
+            "selective_acc": S.selective_acc, "coverage": S.coverage, "acc_full": S.acc_full,
+            "unsafe_errors": S.unsafe_error_rate, "confident_errors": S.confident_error_rate(0.8),
+            "acc_diverticulitis": S.class_acc("diverticulitis"), "aurc": S.aurc, "ece": S.ece}.items()}
+        d["handoff_quality"] = S.paired_bootstrap(a, b, S.handoff_quality, args.n_boot)
+        for s in ("eval_other_seen", "eval_other_unseen"):
+            if all(s in x for x in refs + others):
+                d[f"false_commit:{s}"] = S.paired_bootstrap([r for x in refs for r in x[s]],
+                                                            [r for y in others for r in y[s]], S.false_commit,
+                                                            args.n_boot)
+        return d
+
     for ref, comps in comparisons:
         if ref not in suites:
             continue
         for other in comps:
             if other not in suites or other == ref:
                 continue
-            a, b = cdm_pooled(suites[ref]), cdm_pooled(suites[other])
-            d = {k: S.paired_bootstrap(a, b, f, args.n_boot) for k, f in {
-                "selective_acc": S.selective_acc, "coverage": S.coverage, "acc_full": S.acc_full,
-                "unsafe_errors": S.unsafe_error_rate, "confident_errors": S.confident_error_rate(0.8),
-                "acc_diverticulitis": S.class_acc("diverticulitis"), "aurc": S.aurc, "ece": S.ece}.items()}
-            d["handoff_quality"] = S.paired_bootstrap(a, b, S.handoff_quality, args.n_boot)
-            for s in ("eval_other_seen", "eval_other_unseen"):
-                if s in suites[ref] and s in suites[other]:
-                    d[f"false_commit:{s}"] = S.paired_bootstrap(suites[ref][s], suites[other][s], S.false_commit,
-                                                                args.n_boot)
-            paired[f"{ref} vs {other}"] = d
+            paired[f"{ref} vs {other}"] = paired_metrics([suites[ref]], [suites[other]])
             if other in thr_spec:  # the tie-break at the cut is one fixed draw: how much do other draws move it?
                 src, target = thr_spec[other]
+                a = cdm_pooled(suites[ref])
                 draws = {"selective_acc": [], "unsafe_errors": [], "coverage": []}
                 for salt in range(N_DRAWS):
                     cdm_only = {k: v for k, v in suites[src].items() if k in ("eval_cdm_val", "eval_cdm_test")}
@@ -267,6 +276,14 @@ def main() -> None:
                                  ("coverage", S.coverage)):
                         draws[m].append(f(a) - f(b2))
                 tie_draws[f"{ref} vs {other}"] = {m: (min(v), max(v)) for m, v in draws.items()}
+
+    # learned versus post-hoc deferral pooled over training seeds: each DEFER-Dx seed against each control seed
+    # thresholded at that DEFER-Dx seed's coverage. Cases are resampled and the training runs are held fixed, so
+    # the interval reflects case sampling; the four pairings show the training-seed variation.
+    SEED_PAIRS = [("cev", "grpo_nodefer+thr"), ("cev", "grpo_nodefer_seed1+thr"),
+                  ("cev_seed1", "grpo_nodefer+thr_seed1"), ("cev_seed1", "grpo_nodefer_seed1+thr_seed1")]
+    if all(x in suites and y in suites for x, y in SEED_PAIRS):
+        paired[POOLED] = paired_metrics([suites[x] for x, _ in SEED_PAIRS], [suites[y] for _, y in SEED_PAIRS])
 
     # share of in-set (CDM) deferrals whose differential ranks OTHER first: a handoff that names no in-set diagnosis
     other_first = {}

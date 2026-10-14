@@ -17,7 +17,8 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | No-handoff ablation (η = 0) | `configs/ablations/cev_no_handoff.yaml` | 100 | trained and evaluated (`queue_v8.sh`, Oct 13), against DEFER-Dx's step-100 checkpoint | does the scored handoff matter? |
 | Held-out evaluation of the dual-ascent run | (none) | (none) | evaluated (`queue_v7.sh`, Oct 12) | record of the controller failure |
 | gpt-oss-20b zero-shot | (none) | (none) | **not run**: both attempts in `queue_v8.sh` failed at engine start-up (vLLM's FlashInfer kernels rejected the Blackwell GPU, "requires sm75 or higher"); an optional baseline, not retried | larger open model |
-| A second seed of the control | (none) | (none) | **not run** | — |
+| GRPO control, second training seed | `configs/ablations/nodefer_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v9.sh`, Oct 13–14) | comparator seed variance; each DEFER-Dx seed against each control seed, and pooled |
+| Consensus arm, second training seed | `configs/grpo_deferdx.yaml` with `seed=1` | 150 | **not run** here: proposed on a cloud GPU; its adapter had not arrived when `queue_v9.sh` ended | — |
 
 **Records, not results.** These two runs appear only through their training logs (README Fig. 8).
 - `cev_dualascent` is the first CEV run. Its plain dual-ascent coverage cap ran a limit cycle. It also predates the rule that deferrals left unbranched get no DEFER-turn update.
@@ -35,7 +36,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | `queue_v6.sh` | Oct 10 | The journal run, to Mon 18:00 IST. Replaced the same day so the Stanford-abstract evaluations ran first. |
 | `queue_v7.sh` | Oct 10–12 | Stanford-abstract block first (DEFER-Dx, closed-world zero-shot, mask-drop), then the control, the constant-deferral ablation with the step-100 evaluation, and the dual-ascent evaluation. The second seed did not fit its deadline. |
 | `queue_v8.sh` | Oct 12–13 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed and the no-handoff ablation; gpt-oss-20b failed at start-up. Finished Tue 21:57 IST. |
-| `queue_v9.sh` | Oct 13–15 | Started Tue 21:58 IST: the control's second training seed, and the consensus arm's second seed if its adapter arrives in time; deadline Thu Oct 15, 12:00 IST. |
+| `queue_v9.sh` | Oct 13–14 | The control's second training seed, trained from Tue 21:58 IST, evaluated and reported Wed 16:18 IST. The consensus arm's second seed was not evaluated: no adapter had arrived. |
 
 ## Comparisons the results support
 
@@ -50,15 +51,15 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
   - **Before Oct 13:** reports used a plain cut, which put the control at 79% coverage for both seeds (targets 77.6% and 73.2%). That overstated the learned-versus-threshold advantage: +3.1 instead of +2.3, and +3.2 instead of +1.1.
 - **Open world.** False commitments, deferral and naming OTHER on 206 OTHER cases from groups seen in training and 187 from five time-critical groups never seen. Ruptured AAA and ectopic pregnancy have fewer than 10 cases each: they are pooled, never reported separately.
 
-**Not answered, and said so.** The control's and the consensus arm's seed variance (one seed each). Two DEFER-Dx seeds show that handoff content and the in-set comparison with the threshold vary between seeds, but cannot estimate by how much. Anything in the queue that does not finish by the deadline is listed here when the run ends.
+**Not answered, and said so.** The consensus arm's seed variance (one seed). With two seeds each for DEFER-Dx and the control, the four pairings show how much the learned-versus-threshold margin varies between training runs (+1.1 to +5.3), but two runs per arm cannot estimate that variance.
 
-## Second seeds of the control and the consensus arm (proposed Oct 13; the control's is queued)
+## Second seeds of the control and the consensus arm (proposed Oct 13; the control's done Oct 14)
 
 The control and the consensus arm each have one training seed, so the learned-versus-threshold comparison and the comparison with the published mechanism each rest on one run of the comparator. Two second seeds close that gap. They are independent jobs, split across two GPUs so that both finish in about a day.
 
 | Job | Who, where | Training | Time |
 |---|---|---|---|
-| Control (no DEFER), seed 1 | Dr. George, on the shared 48 GB GPU: **queued** in `scripts/queue_v9.sh`, which starts when `queue_v8.sh` ends (by Wed Oct 14, 05:30 IST) and stops by Thu Oct 15, 12:00 IST | `deferdx train grpo-vllm --config configs/ablations/nodefer_seed1.yaml --set vllm_gpu_memory_utilization=0.72`; the config differs from `configs/grpo_nodefer.yaml` only in `seed: 1` and `output_dir: outputs/runs/nodefer_seed1` | 150 × 466 s ≈ 19.4 h, plus ≈ 1.7 h evaluation |
+| Control (no DEFER), seed 1 | Dr. George, on the shared 48 GB GPU: **done** in `scripts/queue_v9.sh` (trained Tue 21:58 to Wed 15:03 IST, about 420 s per step; evaluated and reported by 16:18) | `deferdx train grpo-vllm --config configs/ablations/nodefer_seed1.yaml --set vllm_gpu_memory_utilization=0.72`; the config differs from `configs/grpo_nodefer.yaml` only in `seed: 1` and `output_dir: outputs/runs/nodefer_seed1` | 150 × 466 s ≈ 19.4 h, plus ≈ 1.7 h evaluation |
 | Consensus arm, seed 1 | Shreeya, on a Lambda Cloud GPU (48 GB A6000, or an 80 GB H100) | `deferdx train grpo-vllm --config configs/grpo_deferdx.yaml --set seed=1 output_dir=outputs/runs/deferdx_seed1` | 150 × 520 s ≈ 21.7 h on the shared GPU; the Lambda speed is measured by a 3-step smoke run first |
 
 - **Why this way round:** the control is the comparator for the main claim, so its second seed stays on the hardware that every DEFER-Dx and control run used. The consensus arm stands for a published mechanism, where a change of hardware matters least.

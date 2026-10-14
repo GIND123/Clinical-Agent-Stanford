@@ -60,7 +60,7 @@ DEFER-Dx is a reinforcement-learning diagnostic agent that asks, orders tests, c
 - **Lower unflagged errors than the consensus arm.** 3.8 vs 4.9 per 100, paired −1.2 (−2.6 to 0.2), which is not significant. Same for AURC and ECE against it.
 - **Better full-coverage or diverticulitis accuracy.** Both are lower than the consensus arm: 78.2 vs 85.8, and 69.3 vs 85.6 with paired −16.3 (−24.3 to −8.8).
 - **Fewer missed time-critical diagnoses than every baseline.** An untrained Qwen3-14B with a confidence threshold reaches 6.6% (docs/BASELINES.md §7), against DEFER-Dx's 6.8%. The claim holds against the same 8B base model and against the deferral reward from prior work.
-- **That DEFER-Dx beats a threshold on an identically trained model.** At exactly matched coverage it is +2.3 points (0.1 to 4.6) in this run and +1.1 (−0.8 to 3.3), not significant, in a second training seed.
+- **That DEFER-Dx beats a threshold on an identically trained model, as one number.** With two training seeds per arm it is +1.1 to +5.3 points at exactly matched coverage (pooled +3.2, 1.6 to 5.1), and the margin depends mainly on the control's seed. Usable in the talk with that caveat; the abstract does not need it.
 - **That its handoffs always favour "other diagnosis".** True of this run (68.4% of in-set handoffs); a second training seed ranks OTHER first in 4.2%.
 - **The old single-sample threshold comparison (+17.5 points).** It was not at matched coverage. With ties at the cut broken, the matched single-sample difference is +12.4 (9.4–15.7); the abstract keeps the three-sample version.
 

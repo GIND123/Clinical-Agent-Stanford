@@ -311,6 +311,50 @@ def fig_paired(results, out):
     save(fig, out, "fig_paired_differences")
 
 
+SEED_PAIRS = [("cev vs grpo_nodefer+thr", "DEFER-Dx first seed\nvs control first seed"),
+              ("cev vs grpo_nodefer_seed1+thr", "DEFER-Dx first seed\nvs control second seed"),
+              ("cev_seed1 vs grpo_nodefer+thr_seed1", "DEFER-Dx second seed\nvs control first seed"),
+              ("cev_seed1 vs grpo_nodefer_seed1+thr_seed1", "DEFER-Dx second seed\nvs control second seed")]
+POOLED_KEY = "DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled"  # as in make_report.POOLED
+
+
+def fig_seed_pairings(results, out):
+    """Learned versus post-hoc deferral for every pair of training seeds, and pooled over the four pairs."""
+    paired = results.get("paired") or {}
+    rows = [(k, lab) for k, lab in SEED_PAIRS if k in paired]
+    if len(rows) < len(SEED_PAIRS) or POOLED_KEY not in paired:
+        return placeholder(out, "fig_seed_pairings", "Needs both DEFER-Dx seeds and both control seeds.")
+    rows.append((POOLED_KEY, "Pooled over\nthe four pairs"))
+    metrics = [("selective_acc", "Accuracy on answered cases", True), ("unsafe_errors", "Unflagged errors ↓", False),
+               ("false_commit:eval_other_unseen", "False commits, unseen OTHER ↓", False)]
+    fig, axes = plt.subplots(1, len(metrics), figsize=(FULL, 2.6), sharey=True, layout="constrained")
+    _, color, _, _ = style("cev")
+    for ax, (key, title, up) in zip(axes, metrics):
+        for i, (k, _) in enumerate(rows):
+            v = paired[k].get(key)
+            if not v or v.get("diff") is None or not np.isfinite(v["diff"]):
+                continue
+            sgn = 1 if up else -1  # oriented so that positive favours DEFER-Dx
+            x, lo, hi = sgn * v["diff"] * 100, sgn * v["lo"] * 100, sgn * v["hi"] * 100
+            lo, hi = min(lo, hi), max(lo, hi)
+            pooled = k == POOLED_KEY
+            ax.plot([lo, hi], [i, i], color=color, lw=1.8 if pooled else 1.2, zorder=2)
+            ax.plot(x, i, marker="D" if pooled else "o", ls="none", zorder=3,
+                    **marker_kw(color, lo > 0 or hi < 0, ms=5.2 if pooled else 5.0, marker="D" if pooled else "o"))
+        ax.axvline(0, color=INK2, lw=0.7, zorder=1)
+        ax.axhline(len(rows) - 1.5, color=AXIS, lw=0.6, zorder=1)
+        ax.set_yticks(range(len(rows)), [r[1] for r in rows])
+        ax.set_ylim(len(rows) - 0.5, -0.5)
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+        ax.set_title(title, fontsize=7)
+        ax.set_xlabel("Difference (points)")
+        ticks(ax, n=4)
+    fig.suptitle("DEFER-Dx minus the GRPO control + threshold at matched coverage, for each pair of training seeds; "
+                 "positive favours DEFER-Dx; filled = 95% interval excludes 0", x=0.0, ha="left", fontsize=7.5, color=INK)
+    save(fig, out, "fig_seed_pairings")
+
+
 def fig_clinical_safety(tables, out):
     rows = [n for n in MAIN_ROWS if table(tables, n, "clinical", "unsafe_errors")]
     if not rows:
@@ -538,6 +582,7 @@ def main(argv=None):
     suites = {n: load_suite(ev / n) for n in CURVE_SYSTEMS if suite_complete(ev / n)}
     fig_risk_coverage(suites, tables, out)
     fig_paired(results, out)
+    fig_seed_pairings(results, out)
     fig_clinical_safety(tables, out)
     fig_open_world(tables, out)
     fig_training_dynamics(Path(args.runs_dir), Path(args.queue_dir), out)
