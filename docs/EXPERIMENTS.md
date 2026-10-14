@@ -18,7 +18,7 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | Held-out evaluation of the dual-ascent run | (none) | (none) | evaluated (`queue_v7.sh`, Oct 12) | record of the controller failure |
 | gpt-oss-20b zero-shot | (none) | (none) | **not run**: both attempts in `queue_v8.sh` failed at engine start-up (vLLM's FlashInfer kernels rejected the Blackwell GPU, "requires sm75 or higher"); an optional baseline, not retried | larger open model |
 | GRPO control, second training seed | `configs/ablations/nodefer_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v9.sh`, Oct 13–14) | comparator seed variance; each DEFER-Dx seed against each control seed, and pooled |
-| Consensus arm, second training seed | `configs/grpo_deferdx.yaml` with `seed=1` | 150 | **not run** here: proposed on a cloud GPU; its adapter had not arrived when `queue_v9.sh` ended | — |
+| Consensus arm, second training seed | `configs/ablations/seed1.yaml` (`configs/grpo_deferdx.yaml` with seed 1) | 150 | trained on a Lambda Cloud A100, Oct 13–14 ([CONSENSUS_SEED1.md](CONSENSUS_SEED1.md)); **held-out evaluation pending**: its adapter was not on the shared GPU when `queue_v9.sh` ended | the consensus arm's seed variance |
 
 **Records, not results.** These two runs appear only through their training logs (README Fig. 8).
 - `cev_dualascent` is the first CEV run. Its plain dual-ascent coverage cap ran a limit cycle. It also predates the rule that deferrals left unbranched get no DEFER-turn update.
@@ -53,14 +53,14 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 
 **Not answered, and said so.** The consensus arm's seed variance (one seed). With two seeds each for DEFER-Dx and the control, the four pairings show how much the learned-versus-threshold margin varies between training runs (+1.1 to +5.3), but two runs per arm cannot estimate that variance.
 
-## Second seeds of the control and the consensus arm (proposed Oct 13; the control's done Oct 14)
+## Second seeds of the control and the consensus arm (proposed Oct 13; both trained Oct 14, the consensus arm's not yet evaluated)
 
 The control and the consensus arm each have one training seed, so the learned-versus-threshold comparison and the comparison with the published mechanism each rest on one run of the comparator. Two second seeds close that gap. They are independent jobs, split across two GPUs so that both finish in about a day.
 
 | Job | Who, where | Training | Time |
 |---|---|---|---|
 | Control (no DEFER), seed 1 | Dr. George, on the shared 48 GB GPU: **done** in `scripts/queue_v9.sh` (trained Tue 21:58 to Wed 15:03 IST, about 420 s per step; evaluated and reported by 16:18) | `deferdx train grpo-vllm --config configs/ablations/nodefer_seed1.yaml --set vllm_gpu_memory_utilization=0.72`; the config differs from `configs/grpo_nodefer.yaml` only in `seed: 1` and `output_dir: outputs/runs/nodefer_seed1` | 150 × 466 s ≈ 19.4 h, plus ≈ 1.7 h evaluation |
-| Consensus arm, seed 1 | Shreeya, on a Lambda Cloud GPU (48 GB A6000, or an 80 GB H100) | `deferdx train grpo-vllm --config configs/grpo_deferdx.yaml --set seed=1 output_dir=outputs/runs/deferdx_seed1` | 150 × 520 s ≈ 21.7 h on the shared GPU; the Lambda speed is measured by a 3-step smoke run first |
+| Consensus arm, seed 1 | Shreeya, on Lambda Cloud: **trained** on 1x A100-SXM4-40GB (Tue 19:57 to Wed 13:45 IST, about 411 s per step, $37.86; [CONSENSUS_SEED1.md](CONSENSUS_SEED1.md)); held-out evaluation pending | `deferdx train grpo-vllm --config configs/ablations/seed1.yaml`, identical to `configs/grpo_deferdx.yaml --set seed=1 output_dir=outputs/runs/deferdx_seed1` | 150 × 520 s ≈ 21.7 h on the shared GPU; the 3-step smoke run on the A100 measured ≈ 480 s per step |
 
 - **Why this way round:** the control is the comparator for the main claim, so its second seed stays on the hardware that every DEFER-Dx and control run used. The consensus arm stands for a published mechanism, where a change of hardware matters least.
 - **Seeds and code:** `seed=1`, as in `configs/ablations/cev_seed1.yaml` (case order, rollout sampling, LoRA initialisation); everything else as in the seed-0 runs. The training code and both configs are unchanged since `d8a3f0b` (Oct 9), so either job can run from the current `main`.

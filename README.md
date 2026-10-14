@@ -21,11 +21,11 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Open-world set MIMIC-CDM-OW: 713 OTHER + 648 same-pipeline controls | built; deterministic (byte-identical rebuilds) |
 | Patient-disjoint cohorts (`data/cohorts/`) | built |
 | Single-GPU colocated GRPO trainer | built, tested and in use |
-| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done |
+| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done. A second training seed (`configs/ablations/seed1.yaml`) was trained on a Lambda Cloud A100, Oct 13–14; its held-out evaluation is pending ([docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md)) |
 | Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
 | **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) was trained and evaluated, Oct 13, in `scripts/queue_v8.sh`. Another user's job on the shared GPU stopped its first attempt, and the second resumed from the step-50 checkpoint. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8; held-out evaluation done Oct 12) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
 | GRPO control (no DEFER), the key comparator | trained (150 steps) and evaluated, Oct 11; a second training seed (`configs/ablations/nodefer_seed1.yaml`) trained and evaluated, Oct 14, in `scripts/queue_v9.sh`. The learned-versus-threshold comparison over both seeds of each arm is in §3 |
-| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps): done, Oct 13 (§3). A second seed of the consensus arm was proposed on another GPU (docs/EXPERIMENTS.md); its adapter had not arrived when the last queue ended, so it is **not run** |
+| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps): done, Oct 13 (§3). The consensus arm's second seed: trained (150 steps) on a Lambda Cloud A100, Oct 13–14, **not yet evaluated** on the held-out suite (see below) |
 | Figures | 14 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
 | Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
 
@@ -36,7 +36,12 @@ Held-out numbers exist for DEFER-Dx and the GRPO control (two training seeds eac
 2. No-handoff ablation: trained 100 steps, evaluated against DEFER-Dx at step 100 and reported. Done Tue Oct 13, 21:44 IST.
 3. gpt-oss-20b zero-shot: **not run.** Both attempts failed at engine start-up, because vLLM's FlashInfer kernels rejected this Blackwell GPU ("requires sm75 or higher"). It is a library incompatibility, and an optional baseline, so it was not retried.
 
-**The control's second seed.** `scripts/queue_v9.sh` trained it from Tue 21:58 IST and finished on Wed Oct 14, 16:18 IST, with evaluation and report. The consensus arm's second seed was not evaluated, because its adapter had not arrived. **No GPU jobs are running or scheduled.**
+**The control's second seed.** `scripts/queue_v9.sh` trained it from Tue 21:58 IST and finished on Wed Oct 14, 16:18 IST, with evaluation and report. **No GPU jobs are running or scheduled.**
+
+**The consensus arm's second seed.** Trained on a rented Lambda Cloud GPU (1x A100-SXM4-40GB) from Tue Oct 13, 19:57 IST to Wed Oct 14, 13:45 IST: 150 steps in one attempt, no crashes, $37.86. Its adapter was not on the shared GPU when `queue_v9.sh` ended, so it has **no held-out numbers yet**; nothing in §3 or RESULTS.md includes it. The in-training dev evaluations, every training step, cost and data handling are in [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md). In short:
+- **Dev results improved until step 125, then fell back.** Dev accuracy on answered cases 0.871 (step 3) → 0.951 (step 100) → 0.949 (step 125) → 0.899 (final); AURC 0.083 → 0.044 → 0.034 → 0.043; Brier score 0.119 → 0.071 → 0.062 → 0.108.
+- **Late drift:** token entropy rose from 0.31 (steps 1–50) to 1.36 at step 150, and the last step had 11.5% invalid episodes.
+- **Still to decide (PI):** the plan evaluates `final`, as for seed 0. Evaluating the step-125 or step-100 checkpoint would select on dev results, a different rule from seed 0's. Held-out evaluation (≈ 1.7 h on the shared GPU): `deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx_seed1/final --name deferdx_seed1`.
 
 The queues all followed the same rules:
 - **Fixed list:** jobs run in priority order, and none is added while it runs.
@@ -383,6 +388,7 @@ python scripts/push_hf.py --run cev          # or push one run by hand
 | [docs/RESULTS.md](docs/RESULTS.md) | ML-benchmark and clinical tables with intervals, open world, published context, paired tests (generated) |
 | [docs/figures/](docs/figures/) | All figures; captions in §3 of this README |
 | [docs/EXPERIMENTS.md](docs/EXPERIMENTS.md) | The run grid, queues, ablations and the question each answers |
+| [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md) | The consensus arm's second training seed (Lambda Cloud): setup, cost, data handling, in-training dev evaluations, every training step; no held-out numbers yet |
 | [docs/PAPER.md](docs/PAPER.md), [docs/ABSTRACT.md](docs/ABSTRACT.md) | Paper draft and abstract scaffold (placeholders until results) |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Facts checked against primary sources; literature re-checks and the narrowed novelty claim |
 | [docs/DATA_AUDIT.md](docs/DATA_AUDIT.md) | Inventory, schemas, label and leakage checks, bias analysis |
