@@ -171,6 +171,175 @@
           "credited_share": 0.75
         }
       }
+    },
+    "cev_s1": {
+      "n_states": 160,
+      "nu_final": 0.5581854256854266,
+      "in_set": {
+        "n": 100,
+        "noise": {
+          "K1": {
+            "sign_agreement_with_K16": 0.876495,
+            "sd_of_V_hat": 0.29829963890316413
+          },
+          "K2": {
+            "sign_agreement_with_K16": 0.8870649999999999,
+            "sd_of_V_hat": 0.2046096960770206
+          },
+          "K3": {
+            "sign_agreement_with_K16": 0.9224899999999999,
+            "sd_of_V_hat": 0.16054274972524563
+          },
+          "K4": {
+            "sign_agreement_with_K16": 0.929715,
+            "sd_of_V_hat": 0.13372575525785405
+          },
+          "K8": {
+            "sign_agreement_with_K16": 0.9627549999999999,
+            "sd_of_V_hat": 0.07710412446471616
+          }
+        },
+        "cost": {
+          "credited_with_cost": 0.37,
+          "credited_without_cost": 0.36,
+          "sign_changes_without_cost": 0.01,
+          "credited_only_because_of_cost": 0.01,
+          "continuations_ordering_a_test": 0.183125,
+          "mean_extra_tests": 0.216875,
+          "mean_cost_term": -0.015793367520785064
+        },
+        "clinician_accuracy": {
+          "0.50": 0.17,
+          "0.55": 0.2,
+          "0.60": 0.24,
+          "0.65": 0.27,
+          "0.70": 0.3,
+          "0.75": 0.32,
+          "0.80": 0.34,
+          "0.85": 0.37,
+          "0.90": 0.42,
+          "0.95": 0.46,
+          "1.00": 0.6
+        },
+        "outcomes": {
+          "continuation_accuracy": 0.66875,
+          "continuation_commit_rate": 0.969375,
+          "states_where_most_continuations_err": 0.32,
+          "mean_V16": 0.28755038247921494,
+          "mean_E": 0.23096863681457336,
+          "credited_share": 0.37
+        }
+      },
+      "other": {
+        "n": 60,
+        "noise": {
+          "K1": {
+            "sign_agreement_with_K16": 1.0,
+            "sd_of_V_hat": 0.4632918636628263
+          },
+          "K2": {
+            "sign_agreement_with_K16": 1.0,
+            "sd_of_V_hat": 0.3147215880809357
+          },
+          "K3": {
+            "sign_agreement_with_K16": 1.0,
+            "sd_of_V_hat": 0.24802112750143307
+          },
+          "K4": {
+            "sign_agreement_with_K16": 1.0,
+            "sd_of_V_hat": 0.20745846012764288
+          },
+          "K8": {
+            "sign_agreement_with_K16": 1.0,
+            "sd_of_V_hat": 0.1194075386297156
+          }
+        },
+        "cost": {
+          "credited_with_cost": 1.0,
+          "credited_without_cost": 1.0,
+          "sign_changes_without_cost": 0.0,
+          "credited_only_because_of_cost": 0.0,
+          "continuations_ordering_a_test": 0.07708333333333334,
+          "mean_extra_tests": 0.078125,
+          "mean_cost_term": -0.00644542785425469
+        },
+        "clinician_accuracy": {
+          "0.50": 0.9666666666666667,
+          "0.55": 0.9833333333333333,
+          "0.60": 0.9833333333333333,
+          "0.65": 0.9833333333333333,
+          "0.70": 1.0,
+          "0.75": 1.0,
+          "0.80": 1.0,
+          "0.85": 1.0,
+          "0.90": 1.0,
+          "0.95": 1.0,
+          "1.00": 1.0
+        },
+        "outcomes": {
+          "continuation_accuracy": 0.29270833333333335,
+          "continuation_commit_rate": 0.9729166666666667,
+          "states_where_most_continuations_err": 0.75,
+          "mean_V16": -0.22206885674543927,
+          "mean_E": 1.2730703124999998,
+          "credited_share": 1.0
+        }
+      },
+      "all": {
+        "n": 160,
+        "noise": {
+          "K1": {
+            "sign_agreement_with_K16": 0.9223687500000001,
+            "sd_of_V_hat": 0.35990729335486166
+          },
+          "K2": {
+            "sign_agreement_with_K16": 0.9294781249999999,
+            "sd_of_V_hat": 0.2466181621284667
+          },
+          "K3": {
+            "sign_agreement_with_K16": 0.95161875,
+            "sd_of_V_hat": 0.19347893422019408
+          },
+          "K4": {
+            "sign_agreement_with_K16": 0.956640625,
+            "sd_of_V_hat": 0.1607780892373195
+          },
+          "K8": {
+            "sign_agreement_with_K16": 0.976975,
+            "sd_of_V_hat": 0.09314461123580864
+          }
+        },
+        "cost": {
+          "credited_with_cost": 0.60625,
+          "credited_without_cost": 0.6,
+          "sign_changes_without_cost": 0.00625,
+          "credited_only_because_of_cost": 0.00625,
+          "continuations_ordering_a_test": 0.143359375,
+          "mean_extra_tests": 0.16484375,
+          "mean_cost_term": -0.012287890145836172
+        },
+        "clinician_accuracy": {
+          "0.50": 0.46875,
+          "0.55": 0.49375,
+          "0.60": 0.51875,
+          "0.65": 0.5375,
+          "0.70": 0.5625,
+          "0.75": 0.575,
+          "0.80": 0.5875,
+          "0.85": 0.60625,
+          "0.90": 0.6375,
+          "0.95": 0.6625,
+          "1.00": 0.75
+        },
+        "outcomes": {
+          "continuation_accuracy": 0.527734375,
+          "continuation_commit_rate": 0.970703125,
+          "states_where_most_continuations_err": 0.48125,
+          "mean_V16": 0.09644316776996957,
+          "mean_E": 0.6217567651966083,
+          "credited_share": 0.60625
+        }
+      }
     }
   }
 }

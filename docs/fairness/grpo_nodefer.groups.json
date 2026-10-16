@@ -1,0 +1,242 @@
+{
+ "cases": 480,
+ "accuracy": 0.8236,
+ "ci95": [
+  0.7958,
+  0.8507
+ ],
+ "mean_class_accuracy": 0.7956,
+ "demographic_floor": {
+  "accuracy": 0.478,
+  "majority_accuracy": 0.399,
+  "source": "docs/DATA_AUDIT.md \u00a77.3 (5-fold CV, all 2,400 CDM cases)"
+ },
+ "tables": {
+  "label": {
+   "appendicitis": {
+    "cases": "191",
+    "accuracy": "95.3",
+    "95% CI": "92.8\u201397.4"
+   },
+   "cholecystitis": {
+    "cases": "130",
+    "accuracy": "73.3",
+    "95% CI": "66.7\u201379.0"
+   },
+   "diverticulitis": {
+    "cases": "51",
+    "accuracy": "76.5",
+    "95% CI": "66.0\u201385.6"
+   },
+   "pancreatitis": {
+    "cases": "108",
+    "accuracy": "73.1",
+    "95% CI": "65.7\u201380.2"
+   }
+  },
+  "sex": {
+   "Female": {
+    "cases": "278",
+    "accuracy": "81.1",
+    "95% CI": "77.5\u201384.7",
+    "label-adjusted": "81.8"
+   },
+   "Male": {
+    "cases": "202",
+    "accuracy": "84.2",
+    "95% CI": "79.7\u201388.6",
+    "label-adjusted": "82.8"
+   }
+  },
+  "age_group": {
+   "18-29": {
+    "cases": "96",
+    "accuracy": "86.1",
+    "95% CI": "80.6\u201391.0",
+    "label-adjusted": "72.3"
+   },
+   "30-44": {
+    "cases": "113",
+    "accuracy": "82.9",
+    "95% CI": "76.4\u201388.8",
+    "label-adjusted": "78.9"
+   },
+   "45-64": {
+    "cases": "152",
+    "accuracy": "85.5",
+    "95% CI": "80.7\u201390.1",
+    "label-adjusted": "86.4"
+   },
+   "65-79": {
+    "cases": "75",
+    "accuracy": "74.7",
+    "95% CI": "66.2\u201382.7",
+    "label-adjusted": "80.8"
+   },
+   "80+": {
+    "cases": "44",
+    "accuracy": "75.0",
+    "95% CI": "64.4\u201384.8",
+    "label-adjusted": "77.8"
+   }
+  },
+  "race_group": {
+   "Asian": {
+    "cases": "31",
+    "accuracy": "92.5",
+    "95% CI": "83.9\u201398.9",
+    "label-adjusted": "88.3"
+   },
+   "Black": {
+    "cases": "57",
+    "accuracy": "84.2",
+    "95% CI": "76.0\u201391.8",
+    "label-adjusted": "85.4"
+   },
+   "Hispanic/Latino": {
+    "cases": "43",
+    "accuracy": "82.9",
+    "95% CI": "73.6\u201391.5",
+    "label-adjusted": "82.2"
+   },
+   "Other": {
+    "cases": "\u00b7",
+    "accuracy": "90.3",
+    "95% CI": "79.2\u201397.2",
+    "label-adjusted": "90.1"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "accuracy": "\u2013",
+    "95% CI": "\u2013",
+    "label-adjusted": "\u2013"
+   },
+   "White": {
+    "cases": "317",
+    "accuracy": "80.8",
+    "95% CI": "77.1\u201384.4",
+    "label-adjusted": "81.2"
+   }
+  },
+  "insurance": {
+   "Medicaid": {
+    "cases": "50",
+    "accuracy": "84.0",
+    "95% CI": "76.0\u201391.3",
+    "label-adjusted": "84.8"
+   },
+   "Medicare": {
+    "cases": "96",
+    "accuracy": "70.1",
+    "95% CI": "62.5\u201377.1",
+    "label-adjusted": "76.7"
+   },
+   "Other": {
+    "cases": "334",
+    "accuracy": "85.6",
+    "95% CI": "82.4\u201388.6",
+    "label-adjusted": "83.7"
+   }
+  },
+  "language": {
+   "English": {
+    "cases": "417",
+    "accuracy": "81.8",
+    "95% CI": "78.6\u201384.7",
+    "label-adjusted": "82.0"
+   },
+   "Non-English/unknown": {
+    "cases": "63",
+    "accuracy": "86.2",
+    "95% CI": "78.8\u201393.1",
+    "label-adjusted": "85.4"
+   }
+  },
+  "marital_status": {
+   "DIVORCED": {
+    "cases": "\u00b7",
+    "accuracy": "77.4",
+    "95% CI": "64.3\u201389.3",
+    "label-adjusted": "79.3"
+   },
+   "MARRIED": {
+    "cases": "190",
+    "accuracy": "82.1",
+    "95% CI": "77.7\u201386.3",
+    "label-adjusted": "82.4"
+   },
+   "SINGLE": {
+    "cases": "223",
+    "accuracy": "85.2",
+    "95% CI": "81.0\u201388.9",
+    "label-adjusted": "83.8"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "accuracy": "\u2013",
+    "95% CI": "\u2013",
+    "label-adjusted": "\u2013"
+   },
+   "WIDOWED": {
+    "cases": "31",
+    "accuracy": "71.0",
+    "95% CI": "57.0\u201383.9",
+    "label-adjusted": "77.3"
+   }
+  },
+  "rad_mask": {
+   "False": {
+    "cases": "307",
+    "accuracy": "78.9",
+    "95% CI": "74.9\u201382.5"
+   },
+   "True": {
+    "cases": "173",
+    "accuracy": "88.4",
+    "95% CI": "84.6\u201392.3"
+   }
+  },
+  "label x rad_mask": {
+   "appendicitis / mask=False": {
+    "cases": "110",
+    "accuracy": "95.5",
+    "95% CI": "93.0\u201397.6"
+   },
+   "appendicitis / mask=True": {
+    "cases": "81",
+    "accuracy": "95.1",
+    "95% CI": "90.1\u201398.8"
+   },
+   "cholecystitis / mask=False": {
+    "cases": "93",
+    "accuracy": "72.0",
+    "95% CI": "64.5\u201379.2"
+   },
+   "cholecystitis / mask=True": {
+    "cases": "37",
+    "accuracy": "76.6",
+    "95% CI": "64.9\u201386.5"
+   },
+   "diverticulitis / mask=False": {
+    "cases": "28",
+    "accuracy": "69.0",
+    "95% CI": "53.6\u201383.4"
+   },
+   "diverticulitis / mask=True": {
+    "cases": "23",
+    "accuracy": "85.5",
+    "95% CI": "75.4\u201394.2"
+   },
+   "pancreatitis / mask=False": {
+    "cases": "76",
+    "accuracy": "67.1",
+    "95% CI": "58.3\u201375.4"
+   },
+   "pancreatitis / mask=True": {
+    "cases": "32",
+    "accuracy": "87.5",
+    "95% CI": "78.1\u201394.8"
+   }
+  }
+ }
+}

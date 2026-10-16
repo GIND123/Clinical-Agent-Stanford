@@ -571,6 +571,175 @@ def fig_unseen_groups(suites, ev: Path, out, n_boot=1000):
     save(fig, out, "fig_unseen_groups")
 
 
+# ---- analyses written by their own scripts (docs/*.json, aggregates only) ------------------------------------
+STATUS = {"correct": "#0ca30c", "escalated": "#9fb7d9", "wrong": "#d03b3b", "mixed": "#fab219", "none": "#e1e0d9"}
+DOCS = ROOT / "docs"
+
+
+def _load(name):
+    path = DOCS / name
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+def fig_severity(out):
+    """Escalation and unflagged errors on complicated and uncomplicated in-set cases (scripts/severity_analysis.py)."""
+    d = _load("severity.json")
+    if not d:
+        return placeholder(out, "fig_severity", "Needs docs/severity.json (scripts/severity_analysis.py).")
+    rows = [n for n in ("cev", "cev_seed1", "grpo_nodefer+thr", "grpo_nodefer_seed1+thr", "deferdx", "zs_defer")
+            if n in d["systems"]]
+    fig, axes = plt.subplots(1, 2, figsize=(FULL, 0.34 * len(rows) + 1.0), sharey=True, layout="constrained")
+    for ax, (key, title) in zip(axes, (("escalated", "Escalated (%)"), ("unflagged_errors", "Unflagged errors per 100 ↓"))):
+        for i, n in enumerate(rows):
+            _, color, marker, _ = style(n)
+            for dy, stratum, filled in ((-0.14, "complicated", True), (0.14, "uncomplicated", False)):
+                v = d["systems"][n]["strata"][stratum][key]
+                ax.plot([v["lo"] * 100, v["hi"] * 100], [i + dy] * 2, color=color, lw=1.1, zorder=2)
+                ax.plot(v["value"] * 100, i + dy, marker=marker, ls="none", zorder=3, **marker_kw(color, filled, marker=marker))
+        ax.set_yticks(range(len(rows)), [style(n)[0].replace(" + threshold", "\n+ threshold") for n in rows])
+        ax.set_ylim(len(rows) - 0.5, -0.5)
+        ax.grid(axis="y", visible=False)
+        ax.tick_params(axis="y", length=0)
+        ax.set_title(title, fontsize=7)
+        ticks(ax)
+    handles = [Line2D([], [], color=INK2, marker="o", ls="none", label=f"complicated ({d['n_complicated']} cases)",
+                      **legend_kw(INK2, "o")),
+               Line2D([], [], color=INK2, marker="o", ls="none", mfc=SURFACE, mec=INK2, mew=1.1, ms=4.6,
+                      label=f"uncomplicated ({d['n_cases'] - d['n_complicated']})")]
+    fig.legend(handles=handles, loc="outside lower center", ncols=2, fontsize=6.5, frameon=False)
+    letters(fig, [(axes[0], "a"), (axes[1], "b")])
+    save(fig, out, "fig_severity")
+
+
+TEAM_SERIES = [("cev", "DEFER-Dx", 0, "-"), ("cev_seed1", "DEFER-Dx, second seed", 0, "--"),
+               ("grpo_nodefer+thr@cev", "GRPO control + threshold", 2, "-"),
+               ("grpo_nodefer+l2d", "GRPO control, learning to defer", 2, ":"),
+               ("deferdx", "Group-consensus reward", 1, "-")]
+
+
+def fig_team(out):
+    """Team outcomes as a function of clinician susceptibility to the handoff (scripts/team_analysis.py)."""
+    d = _load("team.json")
+    if not d:
+        return placeholder(out, "fig_team", "Needs docs/team.json (scripts/team_analysis.py).")
+    ac = d["a_c"]
+    fig, axes = plt.subplots(1, 2, figsize=(FULL, 2.5), layout="constrained")
+    for ax, (key, title, scale) in zip(axes, (("team_acc_inset", "Team accuracy, in-set cases (%)", 100),
+                                              ("wrong_inset_on_unseen_other",
+                                               "AI-caused wrong in-scope diagnoses,\nunseen time-critical cases (%) ↓", 100))):
+        for name, label, slot, ls in TEAM_SERIES:
+            g = (d["systems"].get(name) or {}).get("grid")
+            if not g:
+                continue
+            fs = sorted({float(k.split("f=")[1]) for k in g if k.startswith(f"ac={ac:.2f}")})
+            ys = [g[f"ac={ac:.2f},f={f:.2f}"][key] * scale for f in fs]
+            ax.plot(fs, ys, color=SLOTS[slot], ls=ls, lw=1.6, label=label, zorder=3)
+            ax.plot(fs[-1], ys[-1], marker="o", ls="none", zorder=4, **marker_kw(SLOTS[slot], ls == "-"))
+        ax.axvline(d["barrit_f"], color=AXIS, lw=0.8, zorder=1)
+        if ax is axes[0]:
+            ax.annotate("adversarial advocacy effect\n(Barrit et al. 2026)", (d["barrit_f"], 1.0),
+                        xycoords=("data", "axes fraction"), xytext=(-3, -2), textcoords="offset points", ha="right",
+                        va="top", fontsize=6, color=INK2)
+        ax.set_xlabel("Susceptibility f: probability the clinician adopts the handoff's top suggestion")
+        ax.set_title(title, fontsize=7)
+        ax.set_xlim(0, 0.5)
+        ticks(ax, "y")
+    axes[0].legend(loc="lower left", fontsize=6.3, frameon=False, handlelength=3.2)
+    fig.suptitle(f"Clinician deciding alone is right with probability {ac:.2f} (MIMIC-CDM physicians, Hager et al. 2024); "
+                 "a COMMIT of OTHER counts as a handoff suggesting OTHER", x=0.0, ha="left", fontsize=7, color=INK2)
+    letters(fig, [(axes[0], "a"), (axes[1], "b")])
+    save(fig, out, "fig_team")
+
+
+def fig_cev_audit(out):
+    """Estimator noise and the clinician-accuracy assumption of the escalation value (scripts/cev_audit_report.py)."""
+    d = _load("cev_audit.json")
+    if not d or not d.get("runs"):
+        return placeholder(out, "fig_cev_audit", "Needs docs/cev_audit.json (scripts/cev_audit_report.py).")
+    fig, axes = plt.subplots(1, 2, figsize=(FULL, 2.3), layout="constrained")
+    for name, ls, label in (("cev_s0", "-", "DEFER-Dx"), ("cev_s1", "--", "DEFER-Dx, second seed")):
+        r = (d["runs"].get(name) or {}).get("in_set")
+        if not r:
+            continue
+        ks = sorted(int(k[1:]) for k in r["noise"])
+        axes[0].plot(ks, [r["noise"][f"K{k}"]["sign_agreement_with_K16"] * 100 for k in ks], color=SLOTS[0], ls=ls,
+                     marker="o", label=label, **{k: v for k, v in marker_kw(SLOTS[0], ls == "-").items() if k != "color"})
+        accs = sorted(float(a) for a in r["clinician_accuracy"])
+        axes[1].plot(accs, [r["clinician_accuracy"][f"{a:.2f}"] * 100 for a in accs], color=SLOTS[0], ls=ls, lw=1.6,
+                     label=label)
+    axes[0].axvline(3, color=AXIS, lw=0.8, zorder=1)
+    axes[0].annotate("K = 3 in training", (3, 0.02), xycoords=("data", "axes fraction"), xytext=(3, 0),
+                     textcoords="offset points", fontsize=6, color=INK2)
+    axes[0].set_xscale("log", base=2)
+    axes[0].set_xticks([1, 2, 4, 8, 16], ["1", "2", "4", "8", "16"])
+    axes[0].set_xlabel("Forced continuations per deferral state (K)")
+    axes[0].set_title("Credit with the same sign as with K = 16 (%)", fontsize=7)
+    for x, txt, dx, ha in ((d["tau"], "tau in\ntraining", -3, "right"), (0.89, "MIMIC-CDM\nphysicians", 3, "left")):
+        axes[1].axvline(x, color=AXIS, lw=0.8, zorder=1)
+        axes[1].annotate(txt, (x, 0.02), xycoords=("data", "axes fraction"), xytext=(dx, 0), textcoords="offset points",
+                         ha=ha, fontsize=6, color=INK2)
+    axes[1].set_xlabel("Accuracy assumed for the clinician who receives the case")
+    axes[1].set_title("In-set deferrals credited by the escalation value (%)", fontsize=7)
+    axes[0].legend(loc="lower right", fontsize=6.3, frameon=False, handlelength=3.2)
+    for ax in axes:
+        ticks(ax, "y")
+    letters(fig, [(axes[0], "a"), (axes[1], "b")])
+    save(fig, out, "fig_cev_audit")
+
+
+CR_COLUMNS = [("cev", "DEFER-Dx"), ("cev_seed1", "DEFER-Dx\nseed 2"), ("abl_cev_eta1", "DEFER-Dx\neta 1.0"),
+              ("grpo_nodefer+thr", "Control\n+ threshold"), ("grpo_nodefer", "Control\nforced"),
+              ("deferdx", "Consensus\nreward"), ("zs_defer", "Zero-shot\nDEFER"), ("zs_nodefer", "Zero-shot\nforced")]
+CR_SECTIONS = [("held_out", "Held-out time-critical groups"), ("new", "Groups in no MIMIC cohort"),
+               ("seen", "Seen group"), ("complicated", "In scope, complicated"), ("uncomplicated", "In scope, uncomplicated")]
+
+
+def fig_casereports(out):
+    """Majority outcome over 3 seeds for every published case and every system (scripts/casereport_report.py)."""
+    d = _load("casereports.json")
+    if not d or not d.get("per_case"):
+        return placeholder(out, "fig_casereports", "Needs docs/casereports.json (scripts/casereport_report.py).")
+    cols = [(k, lab) for k, lab in CR_COLUMNS if k in d["systems"]]
+    cases = d["cases"]
+
+    def section(c):
+        if c["label"] != "other":
+            return "complicated" if c["complicated"] else "uncomplicated"
+        return c["training_group"]
+
+    order = [cid for sec, _ in CR_SECTIONS for cid in sorted(cases) if section(cases[cid]) == sec]
+    fig, ax = plt.subplots(figsize=(FULL, 0.17 * len(order) + 1.4), layout="constrained")
+    for i, cid in enumerate(order):
+        for j, (k, _) in enumerate(cols):
+            o = d["per_case"].get(cid, {}).get(k, "none")
+            ax.add_patch(plt.Rectangle((j + 0.04, i + 0.06), 0.92, 0.88, facecolor=STATUS[o], edgecolor=SURFACE, lw=1.0))
+            ax.text(j + 0.5, i + 0.52, {"correct": "C", "escalated": "E", "wrong": "W", "mixed": "M", "none": "–"}[o],
+                    ha="center", va="center", fontsize=5.5, color=INK if o in ("escalated", "mixed", "none") else SURFACE)
+    labels = [f"{cid}  {cases[cid]['group'].replace('_', ' ')}" for cid in order]
+    ax.set_yticks([i + 0.5 for i in range(len(order))], labels, fontsize=5.8)
+    ax.set_xticks([j + 0.5 for j in range(len(cols))], [lab for _, lab in cols], fontsize=6)
+    ax.xaxis.tick_top()
+    ax.set_xlim(0, len(cols))
+    ax.set_ylim(len(order), 0)
+    ax.grid(False)
+    ax.tick_params(length=0)
+    for side in ax.spines.values():
+        side.set_visible(False)
+    y = 0
+    for sec, title in CR_SECTIONS:
+        n = sum(section(cases[c]) == sec for c in order)
+        if n:
+            ax.axhline(y, color=INK2, lw=0.6)
+            ax.annotate(title, (len(cols), y + n / 2), xytext=(4, 0), textcoords="offset points", va="center",
+                        fontsize=6, color=INK2, annotation_clip=False)
+            y += n
+    handles = [plt.Rectangle((0, 0), 1, 1, facecolor=STATUS[k], label=lab) for k, lab in
+               (("correct", "C: correct in-scope diagnosis"), ("escalated", "E: escalated (DEFER, or COMMIT of OTHER)"),
+                ("wrong", "W: wrong in-scope diagnosis"), ("mixed", "M: no majority over 3 seeds"))]
+    fig.legend(handles=handles, loc="outside lower center", ncols=4, fontsize=6, frameon=False)
+    save(fig, out, "fig_casereports")
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--eval-dir", default=str(ROOT / "outputs" / "eval"))
@@ -594,6 +763,10 @@ def main(argv=None):
     fig_per_class(tables, out)
     fig_ablations(tables, out)
     fig_unseen_groups(suites, ev, out)
+    fig_severity(out)
+    fig_team(out)
+    fig_cev_audit(out)
+    fig_casereports(out)
     print(f"figures -> {out} (systems with suites: {', '.join(suites) or 'none'}; tables: {len(tables)})")
 
 

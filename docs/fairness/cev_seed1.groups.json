@@ -1,0 +1,523 @@
+{
+ "cases": 480,
+ "accuracy": 0.8632,
+ "ci95": [
+  0.8361,
+  0.8889
+ ],
+ "mean_class_accuracy": 0.8391,
+ "demographic_floor": {
+  "accuracy": 0.478,
+  "majority_accuracy": 0.399,
+  "source": "docs/DATA_AUDIT.md \u00a77.3 (5-fold CV, all 2,400 CDM cases)"
+ },
+ "tables": {
+  "label": {
+   "appendicitis": {
+    "cases": "191",
+    "accuracy": "97.9",
+    "95% CI": "95.8\u201399.5"
+   },
+   "cholecystitis": {
+    "cases": "130",
+    "accuracy": "81.3",
+    "95% CI": "75.4\u201386.7"
+   },
+   "diverticulitis": {
+    "cases": "51",
+    "accuracy": "83.0",
+    "95% CI": "73.9\u201390.8"
+   },
+   "pancreatitis": {
+    "cases": "108",
+    "accuracy": "73.5",
+    "95% CI": "66.0\u201380.9"
+   }
+  },
+  "sex": {
+   "Female": {
+    "cases": "278",
+    "accuracy": "85.3",
+    "95% CI": "81.7\u201388.7",
+    "label-adjusted": "86.0"
+   },
+   "Male": {
+    "cases": "202",
+    "accuracy": "87.8",
+    "95% CI": "83.3\u201391.6",
+    "label-adjusted": "86.6"
+   }
+  },
+  "age_group": {
+   "18-29": {
+    "cases": "96",
+    "accuracy": "92.7",
+    "95% CI": "87.8\u201397.2",
+    "label-adjusted": "82.7"
+   },
+   "30-44": {
+    "cases": "113",
+    "accuracy": "88.8",
+    "95% CI": "83.5\u201393.5",
+    "label-adjusted": "85.4"
+   },
+   "45-64": {
+    "cases": "152",
+    "accuracy": "87.7",
+    "95% CI": "83.1\u201392.3",
+    "label-adjusted": "88.9"
+   },
+   "65-79": {
+    "cases": "75",
+    "accuracy": "78.2",
+    "95% CI": "69.8\u201385.8",
+    "label-adjusted": "84.3"
+   },
+   "80+": {
+    "cases": "44",
+    "accuracy": "75.0",
+    "95% CI": "62.9\u201385.6",
+    "label-adjusted": "78.8"
+   }
+  },
+  "race_group": {
+   "Asian": {
+    "cases": "31",
+    "accuracy": "88.2",
+    "95% CI": "77.4\u201396.8",
+    "label-adjusted": "79.5"
+   },
+   "Black": {
+    "cases": "57",
+    "accuracy": "88.9",
+    "95% CI": "81.3\u201395.3",
+    "label-adjusted": "90.1"
+   },
+   "Hispanic/Latino": {
+    "cases": "43",
+    "accuracy": "89.9",
+    "95% CI": "82.2\u201396.1",
+    "label-adjusted": "87.8"
+   },
+   "Other": {
+    "cases": "\u00b7",
+    "accuracy": "87.5",
+    "95% CI": "75.0\u201398.6",
+    "label-adjusted": "87.9"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "accuracy": "\u2013",
+    "95% CI": "\u2013",
+    "label-adjusted": "\u2013"
+   },
+   "White": {
+    "cases": "317",
+    "accuracy": "85.5",
+    "95% CI": "82.0\u201388.9",
+    "label-adjusted": "85.9"
+   }
+  },
+  "insurance": {
+   "Medicaid": {
+    "cases": "50",
+    "accuracy": "90.0",
+    "95% CI": "82.7\u201396.0",
+    "label-adjusted": "90.9"
+   },
+   "Medicare": {
+    "cases": "96",
+    "accuracy": "78.1",
+    "95% CI": "70.5\u201385.1",
+    "label-adjusted": "85.8"
+   },
+   "Other": {
+    "cases": "334",
+    "accuracy": "88.1",
+    "95% CI": "84.8\u201391.1",
+    "label-adjusted": "86.3"
+   }
+  },
+  "language": {
+   "English": {
+    "cases": "417",
+    "accuracy": "86.1",
+    "95% CI": "83.1\u201389.0",
+    "label-adjusted": "86.2"
+   },
+   "Non-English/unknown": {
+    "cases": "63",
+    "accuracy": "87.8",
+    "95% CI": "80.4\u201394.2",
+    "label-adjusted": "87.5"
+   }
+  },
+  "marital_status": {
+   "DIVORCED": {
+    "cases": "\u00b7",
+    "accuracy": "78.6",
+    "95% CI": "64.3\u201391.7",
+    "label-adjusted": "83.9"
+   },
+   "MARRIED": {
+    "cases": "190",
+    "accuracy": "87.5",
+    "95% CI": "83.2\u201391.2",
+    "label-adjusted": "87.5"
+   },
+   "SINGLE": {
+    "cases": "223",
+    "accuracy": "88.5",
+    "95% CI": "84.8\u201392.2",
+    "label-adjusted": "87.7"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "accuracy": "\u2013",
+    "95% CI": "\u2013",
+    "label-adjusted": "\u2013"
+   },
+   "WIDOWED": {
+    "cases": "31",
+    "accuracy": "78.5",
+    "95% CI": "64.5\u201390.3",
+    "label-adjusted": "84.5"
+   }
+  },
+  "rad_mask": {
+   "False": {
+    "cases": "307",
+    "accuracy": "84.0",
+    "95% CI": "80.2\u201387.6"
+   },
+   "True": {
+    "cases": "173",
+    "accuracy": "90.4",
+    "95% CI": "86.3\u201393.8"
+   }
+  },
+  "label x rad_mask": {
+   "appendicitis / mask=False": {
+    "cases": "110",
+    "accuracy": "98.8",
+    "95% CI": "96.7\u2013100.0"
+   },
+   "appendicitis / mask=True": {
+    "cases": "81",
+    "accuracy": "96.7",
+    "95% CI": "92.6\u201399.6"
+   },
+   "cholecystitis / mask=False": {
+    "cases": "93",
+    "accuracy": "80.6",
+    "95% CI": "73.8\u201387.5"
+   },
+   "cholecystitis / mask=True": {
+    "cases": "37",
+    "accuracy": "82.9",
+    "95% CI": "73.0\u201391.9"
+   },
+   "diverticulitis / mask=False": {
+    "cases": "28",
+    "accuracy": "77.4",
+    "95% CI": "64.3\u201390.5"
+   },
+   "diverticulitis / mask=True": {
+    "cases": "23",
+    "accuracy": "89.9",
+    "95% CI": "79.7\u201397.1"
+   },
+   "pancreatitis / mask=False": {
+    "cases": "76",
+    "accuracy": "69.3",
+    "95% CI": "60.5\u201378.1"
+   },
+   "pancreatitis / mask=True": {
+    "cases": "32",
+    "accuracy": "83.3",
+    "95% CI": "70.8\u201393.8"
+   }
+  },
+  "deferral by label": {
+   "appendicitis": {
+    "cases": "191",
+    "defer": "8.7",
+    "defer 95% CI": "5.8\u201312.0",
+    "acc. answered": "99.8",
+    "unflagged /100": "0.2",
+    "unflagged 95% CI": "0.0\u20130.5"
+   },
+   "cholecystitis": {
+    "cases": "130",
+    "defer": "33.1",
+    "defer 95% CI": "26.4\u201340.0",
+    "acc. answered": "91.2",
+    "unflagged /100": "5.9",
+    "unflagged 95% CI": "2.8\u20139.7"
+   },
+   "diverticulitis": {
+    "cases": "51",
+    "defer": "36.6",
+    "defer 95% CI": "25.5\u201347.7",
+    "acc. answered": "91.8",
+    "unflagged /100": "5.2",
+    "unflagged 95% CI": "0.7\u201311.1"
+   },
+   "pancreatitis": {
+    "cases": "108",
+    "defer": "46.3",
+    "defer 95% CI": "38.3\u201354.3",
+    "acc. answered": "89.7",
+    "unflagged /100": "5.6",
+    "unflagged 95% CI": "2.5\u20139.6"
+   }
+  },
+  "deferral by sex": {
+   "Female": {
+    "cases": "278",
+    "defer": "27.8",
+    "defer 95% CI": "23.1\u201332.4",
+    "acc. answered": "94.3",
+    "unflagged /100": "4.1",
+    "unflagged 95% CI": "2.2\u20136.1",
+    "defer, label-adj.": "26.8",
+    "acc. answered, label-adj.": "94.1"
+   },
+   "Male": {
+    "cases": "202",
+    "defer": "25.2",
+    "defer 95% CI": "20.1\u201331.0",
+    "acc. answered": "96.5",
+    "unflagged /100": "2.6",
+    "unflagged 95% CI": "1.0\u20134.8",
+    "defer, label-adj.": "27.5",
+    "acc. answered, label-adj.": "95.0"
+   }
+  },
+  "deferral by age_group": {
+   "18-29": {
+    "cases": "96",
+    "defer": "18.1",
+    "defer 95% CI": "11.5\u201325.0",
+    "acc. answered": "97.9",
+    "unflagged /100": "1.7",
+    "unflagged 95% CI": "0.3\u20133.8",
+    "defer, label-adj.": "30.6",
+    "acc. answered, label-adj.": "\u2013"
+   },
+   "30-44": {
+    "cases": "113",
+    "defer": "20.4",
+    "defer 95% CI": "14.2\u201327.1",
+    "acc. answered": "94.4",
+    "unflagged /100": "4.4",
+    "unflagged 95% CI": "1.5\u20138.3",
+    "defer, label-adj.": "24.5",
+    "acc. answered, label-adj.": "90.3"
+   },
+   "45-64": {
+    "cases": "152",
+    "defer": "26.3",
+    "defer 95% CI": "20.2\u201332.7",
+    "acc. answered": "96.4",
+    "unflagged /100": "2.6",
+    "unflagged 95% CI": "0.7\u20135.3",
+    "defer, label-adj.": "23.3",
+    "acc. answered, label-adj.": "96.3"
+   },
+   "65-79": {
+    "cases": "75",
+    "defer": "37.8",
+    "defer 95% CI": "28.9\u201346.7",
+    "acc. answered": "92.8",
+    "unflagged /100": "4.4",
+    "unflagged 95% CI": "1.3\u20138.9",
+    "defer, label-adj.": "27.0",
+    "acc. answered, label-adj.": "94.3"
+   },
+   "80+": {
+    "cases": "44",
+    "defer": "44.7",
+    "defer 95% CI": "32.6\u201357.6",
+    "acc. answered": "89.0",
+    "unflagged /100": "6.1",
+    "unflagged 95% CI": "1.5\u201312.1",
+    "defer, label-adj.": "36.9",
+    "acc. answered, label-adj.": "90.7"
+   }
+  },
+  "deferral by race_group": {
+   "Asian": {
+    "cases": "31",
+    "defer": "10.8",
+    "defer 95% CI": "3.2\u201321.5",
+    "acc. answered": "91.6",
+    "unflagged /100": "7.5",
+    "unflagged 95% CI": "0.0\u201317.2",
+    "defer, label-adj.": "16.6",
+    "acc. answered, label-adj.": "79.6"
+   },
+   "Black": {
+    "cases": "57",
+    "defer": "28.7",
+    "defer 95% CI": "19.3\u201339.2",
+    "acc. answered": "100.0",
+    "unflagged /100": "0.0",
+    "unflagged 95% CI": "0.0\u20130.0",
+    "defer, label-adj.": "26.9",
+    "acc. answered, label-adj.": "100.0"
+   },
+   "Hispanic/Latino": {
+    "cases": "43",
+    "defer": "24.8",
+    "defer 95% CI": "14.7\u201334.9",
+    "acc. answered": "99.0",
+    "unflagged /100": "0.8",
+    "unflagged 95% CI": "0.0\u20132.3",
+    "defer, label-adj.": "28.1",
+    "acc. answered, label-adj.": "99.2"
+   },
+   "Other": {
+    "cases": "\u00b7",
+    "defer": "26.4",
+    "defer 95% CI": "13.9\u201341.7",
+    "acc. answered": "100.0",
+    "unflagged /100": "0.0",
+    "unflagged 95% CI": "0.0\u20130.0",
+    "defer, label-adj.": "24.1",
+    "acc. answered, label-adj.": "100.0"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "defer": "\u2013",
+    "defer 95% CI": "\u2013",
+    "acc. answered": "\u2013",
+    "unflagged /100": "\u2013",
+    "unflagged 95% CI": "\u2013",
+    "defer, label-adj.": "\u2013",
+    "acc. answered, label-adj.": "\u2013"
+   },
+   "White": {
+    "cases": "317",
+    "defer": "27.3",
+    "defer 95% CI": "23.0\u201331.8",
+    "acc. answered": "94.1",
+    "unflagged /100": "4.3",
+    "unflagged 95% CI": "2.5\u20136.3",
+    "defer, label-adj.": "26.7",
+    "acc. answered, label-adj.": "93.1"
+   }
+  },
+  "deferral by insurance": {
+   "Medicaid": {
+    "cases": "50",
+    "defer": "34.7",
+    "defer 95% CI": "24.7\u201346.0",
+    "acc. answered": "100.0",
+    "unflagged /100": "0.0",
+    "unflagged 95% CI": "0.0\u20130.0",
+    "defer, label-adj.": "33.6",
+    "acc. answered, label-adj.": "100.0"
+   },
+   "Medicare": {
+    "cases": "96",
+    "defer": "45.5",
+    "defer 95% CI": "36.8\u201354.5",
+    "acc. answered": "92.4",
+    "unflagged /100": "4.2",
+    "unflagged 95% CI": "1.4\u20137.6",
+    "defer, label-adj.": "35.7",
+    "acc. answered, label-adj.": "95.2"
+   },
+   "Other": {
+    "cases": "334",
+    "defer": "20.2",
+    "defer 95% CI": "16.6\u201324.0",
+    "acc. answered": "95.2",
+    "unflagged /100": "3.8",
+    "unflagged 95% CI": "2.1\u20135.8",
+    "defer, label-adj.": "22.8",
+    "acc. answered, label-adj.": "93.6"
+   }
+  },
+  "deferral by language": {
+   "English": {
+    "cases": "417",
+    "defer": "27.1",
+    "defer 95% CI": "23.3\u201330.7",
+    "acc. answered": "95.4",
+    "unflagged /100": "3.4",
+    "unflagged 95% CI": "2.0\u20135.0",
+    "defer, label-adj.": "26.9",
+    "acc. answered, label-adj.": "94.6"
+   },
+   "Non-English/unknown": {
+    "cases": "63",
+    "defer": "24.3",
+    "defer 95% CI": "14.8\u201333.9",
+    "acc. answered": "94.4",
+    "unflagged /100": "4.2",
+    "unflagged 95% CI": "0.5\u20139.0",
+    "defer, label-adj.": "26.6",
+    "acc. answered, label-adj.": "93.6"
+   }
+  },
+  "deferral by marital_status": {
+   "DIVORCED": {
+    "cases": "\u00b7",
+    "defer": "36.9",
+    "defer 95% CI": "22.6\u201351.2",
+    "acc. answered": "84.9",
+    "unflagged /100": "9.5",
+    "unflagged 95% CI": "1.2\u201321.4",
+    "defer, label-adj.": "35.6",
+    "acc. answered, label-adj.": "90.8"
+   },
+   "MARRIED": {
+    "cases": "190",
+    "defer": "27.2",
+    "defer 95% CI": "22.3\u201332.6",
+    "acc. answered": "95.2",
+    "unflagged /100": "3.5",
+    "unflagged 95% CI": "1.2\u20136.0",
+    "defer, label-adj.": "26.8",
+    "acc. answered, label-adj.": "94.3"
+   },
+   "SINGLE": {
+    "cases": "223",
+    "defer": "23.6",
+    "defer 95% CI": "19.0\u201328.7",
+    "acc. answered": "97.5",
+    "unflagged /100": "1.9",
+    "unflagged 95% CI": "0.6\u20133.4",
+    "defer, label-adj.": "25.2",
+    "acc. answered, label-adj.": "96.6"
+   },
+   "Unknown": {
+    "cases": "<10",
+    "defer": "\u2013",
+    "defer 95% CI": "\u2013",
+    "acc. answered": "\u2013",
+    "unflagged /100": "\u2013",
+    "unflagged 95% CI": "\u2013",
+    "defer, label-adj.": "\u2013",
+    "acc. answered, label-adj.": "\u2013"
+   },
+   "WIDOWED": {
+    "cases": "31",
+    "defer": "34.4",
+    "defer 95% CI": "19.4\u201349.5",
+    "acc. answered": "90.2",
+    "unflagged /100": "6.5",
+    "unflagged 95% CI": "1.1\u201314.0",
+    "defer, label-adj.": "24.6",
+    "acc. answered, label-adj.": "91.6"
+   }
+  }
+ },
+ "deferral": {
+  "defer": 0.2674,
+  "accuracy_answered": 0.9526,
+  "unflagged_per_case": 0.0347
+ }
+}
