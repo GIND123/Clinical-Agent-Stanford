@@ -1,0 +1,7 @@
+title: "Training clinical agents to ask, test, commit and defer"
+shorttitle: "DEFER-Dx: learned escalation for diagnostic agents"
+author:
+  - "[Authors to be added]"
+affiliation: "[Affiliations to be added]"
+date: "October 2026"
+note: "Code and the MIMIC-CDM-CR benchmark: github.com/GIND123/Clinical-Agent-Stanford"
