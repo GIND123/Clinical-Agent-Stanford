@@ -13,42 +13,42 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ---
 
-## 1. Status (2026-10-14)
+## 1. Status (2026-10-16)
 
 | Component | State |
 |---|---|
 | Data: MIMIC-IV-Ext-CDM 1.1, MIMIC-IV 2.2 hosp, MIMIC-IV-Note 2.2 | downloaded; SHA256 and gzip verified |
 | Open-world set MIMIC-CDM-OW: 713 OTHER + 648 same-pipeline controls | built; deterministic (byte-identical rebuilds) |
+| **MIMIC-CDM-CR: 32 published case reports** ([benchmarks/casereports/](benchmarks/casereports/)) | built Oct 16 from open-access reports (2020–2025), cited case by case; no patient data, shareable; every model evaluated on it (queue_v10) |
 | Patient-disjoint cohorts (`data/cohorts/`) | built |
-| Single-GPU colocated GRPO trainer | built, tested and in use |
-| Case-level group-consensus arm (`configs/grpo_deferdx.yaml`; the published mechanism, kept as a comparator) | trained (150 steps); held-out evaluation done. A second training seed (`configs/ablations/seed1.yaml`) was trained on a Lambda Cloud A100, Oct 13–14; its held-out evaluation is pending ([docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md)) |
-| Zero-shot baselines (forced choice; prompted DEFER) | held-out evaluation done |
-| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | **Trained (150 steps, from step 1 on the final code) and evaluated, Oct 10: results in §3 and the abstract (docs/ABSTRACT.md).** A second training seed (`configs/ablations/cev_seed1.yaml`) was trained and evaluated, Oct 13, in `scripts/queue_v8.sh`. Another user's job on the shared GPU stopped its first attempt, and the second resumed from the step-50 checkpoint. Records, not results: the first run (`cev_dualascent`, plain dual-ascent cap, which ran a limit cycle; Fig. 8; held-out evaluation done Oct 12) and the first PI attempt (`cev_pi_crashed`, out of memory at step 29). |
-| GRPO control (no DEFER), the key comparator | trained (150 steps) and evaluated, Oct 11; a second training seed (`configs/ablations/nodefer_seed1.yaml`) trained and evaluated, Oct 14, in `scripts/queue_v9.sh`. The learned-versus-threshold comparison over both seeds of each arm is in §3 |
-| Ablations of what is new | constant deferral reward (100 steps) against DEFER-Dx at step 100: done, Oct 12 (§3). The no-handoff ablation (η = 0, 100 steps): done, Oct 13 (§3). The consensus arm's second seed: trained (150 steps) on a Lambda Cloud A100, Oct 13–14, **not yet evaluated** on the held-out suite (see below) |
-| Figures | 14 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources), shown in §3. The data figures regenerate with every report. |
+| **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | two training seeds, each trained 150 steps and evaluated (Oct 10, Oct 13). Records, not results: `cev_dualascent` (plain dual-ascent cap, limit cycle) and `cev_pi_crashed` (out of memory at step 29) |
+| GRPO control (no DEFER), the key comparator | two training seeds, trained and evaluated (Oct 11, Oct 14) |
+| Case-level group-consensus arm (the published mechanism, a comparator) | trained and evaluated. Its second seed was trained on Lambda Cloud (Oct 13–14; [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md)); the adapter is not on this machine, so it is **not evaluated** |
+| Ablations at 100 steps | constant deferral reward and no handoff score: done. Without the test-cost term and without the coverage cap: training in `scripts/queue_v10.sh` (Oct 16–17). DEFER-Dx with the handoff score weighted 1.0: queued in `scripts/queue_v11.sh` |
+| Reviewer and supervisor checks | CEV estimator audit, severity strata, human-AI team model (Barrit et al. 2026), learning-to-defer baseline, chart-artifact audit, subgroup equity, Holm correction: done (§3) |
+| Manuscript | [docs/PAPER.md](docs/PAPER.md), typeset as [docs/paper/DEFER-Dx.pdf](docs/paper/DEFER-Dx.pdf) (`bash scripts/build_paper.sh`) |
+| Figures | 18 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources) |
 | Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
 
-Held-out numbers exist for DEFER-Dx and the GRPO control (two training seeds each), the comparator arm, both ablations and the zero-shot baselines ([docs/RESULTS.md](docs/RESULTS.md)). The final Stanford AI+HEALTH abstract is in [docs/ABSTRACT.md](docs/ABSTRACT.md).
+**GPU plan to Mon Oct 19, 10:30 IST** (approved by the user). `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
 
-**The journal run.** `scripts/queue_v8.sh` finished on Tue Oct 13, 21:57 IST:
-1. DEFER-Dx second seed: trained (150 steps), evaluated and reported. Done Tue Oct 13, 08:10 IST.
-2. No-handoff ablation: trained 100 steps, evaluated against DEFER-Dx at step 100 and reported. Done Tue Oct 13, 21:44 IST.
-3. gpt-oss-20b zero-shot: **not run.** Both attempts failed at engine start-up, because vLLM's FlashInfer kernels rejected this Blackwell GPU ("requires sm75 or higher"). It is a library incompatibility, and an optional baseline, so it was not retried.
+| Job | Expected (IST) |
+|---|---|
+| CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
+| Every model on MIMIC-CDM-CR (3 seeds) | Fri ~12:00 |
+| Ablation without the test-cost term (100 steps) and its evaluation | Sat ~02:00 |
+| Ablation without the coverage cap (100 steps) and its evaluation | Sat ~16:30 |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Sun ~07:00 |
 
-**The control's second seed.** `scripts/queue_v9.sh` trained it from Tue 21:58 IST and finished on Wed Oct 14, 16:18 IST, with evaluation and report. **No GPU jobs are running or scheduled.**
+The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
+at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
 
-**The consensus arm's second seed.** Trained on a rented Lambda Cloud GPU (1x A100-SXM4-40GB) from Tue Oct 13, 19:57 IST to Wed Oct 14, 13:45 IST: 150 steps in one attempt, no crashes, $37.86. Its adapter was not on the shared GPU when `queue_v9.sh` ended, so it has **no held-out numbers yet**; nothing in §3 or RESULTS.md includes it. The in-training dev evaluations, every training step, cost and data handling are in [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md). In short:
-- **Dev results improved until step 125, then fell back.** Dev accuracy on answered cases 0.871 (step 3) → 0.951 (step 100) → 0.949 (step 125) → 0.899 (final); AURC 0.083 → 0.044 → 0.034 → 0.043; Brier score 0.119 → 0.071 → 0.062 → 0.108.
-- **Late drift:** token entropy rose from 0.31 (steps 1–50) to 1.36 at step 150, and the last step had 11.5% invalid episodes.
-- **Still to decide (PI):** the plan evaluates `final`, as for seed 0. Evaluating the step-125 or step-100 checkpoint would select on dev results, a different rule from seed 0's. Held-out evaluation (≈ 1.7 h on the shared GPU): `deferdx eval-suite --model Qwen/Qwen3-8B --adapter outputs/runs/deferdx_seed1/final --name deferdx_seed1`.
+**Hugging Face.** Uploads still fail: the account's private storage is full, mostly from other projects. The sync daemon
+retries every 15 minutes, so the adapters go up as soon as there is space; until then local archives under
+`outputs/archive/` are the backup.
 
-The queues all followed the same rules:
-- **Fixed list:** jobs run in priority order, and none is added while it runs.
-- **Start check:** a job starts only if its estimated time fits before the deadline. Every attempt is killed at the deadline.
-- **Attempts:** at most two per job; training resumes from its newest checkpoint. Whatever finishes is reported as it is.
-
-Before starting another GPU job on this machine, check that the shared card is free. Three jobs died of out-of-memory errors when another process took memory.
+**Stanford AI+HEALTH abstract.** The FDA sentence was replaced on Oct 16 (reviewer: the Nov 2025 advisory committee
+concerned mental-health devices); see [docs/ABSTRACT.md](docs/ABSTRACT.md).
 
 ## 2. Is it novel? Is it beating SOTA? (honest assessment)
 
@@ -141,8 +141,15 @@ The control (first training seed) is thresholded at DEFER-Dx's first-seed covera
   - **What the score adds:** more informative in-set handoffs (+6.5, 3.5 to 9.3), more deferral (coverage 68.1% vs 75.9%), and fewer false commits on seen OTHER groups (−3.2, −6.3 to −0.2).
   - **What it doesn't cause:** the OTHER-leaning handoffs. They are more common without the score (55% vs 35% of in-set handoffs, against 13% with a constant reward), so they come from the counterfactual credit, to a degree that depends on the seed.
 - **Robustness to the mask cue.** With every sentence containing CDM's `____` diagnosis mask removed, DEFER-Dx answers 76.0% at 96.2% accuracy, against 77.6% at 95.2%. All paired differences are within 1.6 points and AURC is unchanged, so it does not rely on the mask.
+- **Complicated disease** (Fig. S7; [docs/severity.json](docs/severity.json)). 114 of 480 in-set cases are complicated by guideline proxies from admission codes and labs (WSES/AAST, Revised Atlanta, Tokyo 2018). A confidence threshold escalates complicated disease less often than uncomplicated (16.7% vs 24.0%; −7.4, −14.1 to −0.5); DEFER-Dx does not (+1.6, −6.1 to 9.8). On complicated cases DEFER-Dx escalates more than the thresholded control in all four seed pairings (+4.4 to +7.0) and than the consensus reward (+7.6, +12.0). No system escalates complicated disease preferentially.
+- **The handoff and the clinician who reads it** (Fig. S8; [docs/team.json](docs/team.json); Barrit et al. 2026). With an independent clinician (accuracy 0.89, the MIMIC-CDM physicians) every system's team accuracy is about 94%. If the clinician adopts the handoff's top suggestion with the probability measured under adversarial AI advocacy (0.47), handoff content decides: the first seed's team accuracy falls to 86.8% (its in-set handoffs rank OTHER first) against 91.5% for the thresholded control, and the second seed's handoffs suggest an in-scope diagnosis for 84% of never-seen time-critical cases (37.0% AI-caused wrong in-scope diagnoses). A learning-to-defer rule (defer when the stated probability is below the clinician's accuracy) is safest on these terms, at 43% clinician workload.
+- **The escalation credit** (Fig. S9; [docs/cev_audit.json](docs/cev_audit.json)). With 16 forced continuations per deferral state, the K = 3 estimate used in training has the same sign in 88% and 92% of in-set states. Removing test cost changes the sign in 0% and 1%: early deferral is not driven by the cost of tests. If forced to continue, the first seed would have been right in 32% of its in-set deferral states, the second in 67%.
+- **Chart artifacts** ([docs/chart_artifacts.json](docs/chart_artifacts.json)). DEFER-Dx receives a "not performed" reply in 12–17% of episodes, and its accuracy on answered cases is lower after one (89.7 vs 95.7): no sign that it exploits test availability.
+- **Equity** ([docs/fairness/](docs/fairness/)). Escalation and unflagged errors do not differ systematically by sex, race, insurance or language; patients aged 80+ are escalated more often.
+- **Multiple comparisons.** Holm over all 218 paired tests in RESULTS.md §5: the zero-shot comparison survives (< 0.001); the pooled learned-versus-threshold difference reaches 0.052; the time-critical comparisons do not survive and rest on their replication across two seeds. Within the four primary tests (the paper's two questions), Holm p ≤ 0.02.
+- **Published case reports** (Fig. S10; [docs/casereports.json](docs/casereports.json)). [[results when the queue finishes]]
 
-**The figures.** Every figure is below, in paper order. Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
+**The figures.** Every figure is below (the paper renumbers them: [docs/PAPER.md](docs/PAPER.md)). Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
 - **Data figures:** drawn by [scripts/make_figures.py](scripts/make_figures.py) from aggregates only (`docs/results.json`, numbers-only training logs). They are regenerated with every report, so they fill in as runs finish. A figure whose inputs don't exist yet shows a labelled placeholder.
 - **Schematics:** TikZ, in [docs/figures/tikz/](docs/figures/tikz/), with shared styles in `deferdx-figures.sty`; build with `bash scripts/build_tikz.sh`.
 - **Colour:** each system has one colour in every figure, and DEFER-Dx is always blue. Every series also has a label and its own marker.
@@ -223,6 +230,22 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
 **Figure S6 | Learned versus post-hoc deferral across training seeds.** Each row compares one DEFER-Dx training seed with one seed of the GRPO control, thresholded at that DEFER-Dx seed's coverage (paired, same cases, matched coverage). The last row pools the four pairs: cases are resampled and the training runs held fixed, so its interval reflects case sampling, and the four rows show the variation between training runs. Positive values favour DEFER-Dx; filled markers have an interval that excludes 0.
 
 ![Figure S6](docs/figures/fig_seed_pairings.png)
+
+**Figure S7 | Escalation and unflagged errors by severity.** Complicated (filled) and uncomplicated (hollow) in-set cases; complicated disease from admission codes and laboratory values by the guideline for each condition.
+
+![Figure S7](docs/figures/fig_severity.png)
+
+**Figure S8 | The clinician who receives the handoff.** Team accuracy on in-set cases (a) and AI-caused wrong in-scope diagnoses on never-seen time-critical cases (b) as the probability f that the clinician adopts the handoff's top suggestion rises; otherwise the clinician decides alone with accuracy 0.89. The vertical line marks the adversarial-advocacy effect of Barrit et al. 2026.
+
+![Figure S8](docs/figures/fig_team.png)
+
+**Figure S9 | The escalation-value estimator.** (a) Share of in-set deferral states whose credit has the same sign with K forced continuations as with 16; (b) share of in-set deferrals credited as the accuracy assumed for the receiving clinician varies.
+
+![Figure S9](docs/figures/fig_cev_audit.png)
+
+**Figure S10 | MIMIC-CDM-CR.** Majority outcome over three seeds for each published case and each system: correct, escalated, wrong, or no majority.
+
+![Figure S10](docs/figures/fig_casereports.png)
 
 ## 4. Method in brief
 

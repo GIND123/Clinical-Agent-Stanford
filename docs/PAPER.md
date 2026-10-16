@@ -322,10 +322,13 @@ accuracy[15,16,21].
 
 Every number is given with a 95% case-level bootstrap interval (2,000 resamples, all evaluation seeds of a case resampled
 together); comparisons are paired bootstraps on the same cases with two-sided p-values. Pooled seed comparisons pool the
-four pairings with cases resampled and training runs held fixed. Holm-adjusted p-values over all paired tests in the
-report (one family; two-sided Wald p from the bootstrap standard error) are listed in RESULTS.md §5; the primary
-comparisons are DEFER-Dx against the thresholded control (pooled) and against the consensus reward on never-seen
-time-critical cases, and the others are exploratory.
+four pairings with cases resampled and training runs held fixed. The paper's two questions, fixed before the second
+training seeds were run, give four primary tests: pooled accuracy on answered cases and pooled unflagged errors against
+the thresholded control, and wrong commitments on never-seen time-critical cases against the consensus reward for each
+DEFER-Dx seed. Holm correction within these four gives p ≤ 0.02 for each. Across all 218 paired tests in the report (one
+family; two-sided Wald p from the bootstrap standard error; RESULTS.md §5), the pooled accuracy difference has Holm
+p = 0.052, the unflagged-error difference 0.078 and the time-critical comparisons ≥ 0.80, which therefore rest on their
+replication across two seeds; all other comparisons are exploratory.
 
 ### Severity labels
 
