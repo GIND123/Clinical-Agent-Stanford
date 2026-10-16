@@ -2,6 +2,8 @@
 
 Status: **FINAL TEXT, numbers filled from docs/results.json** (report of Oct 10, 2026, 09:29 IST: DEFER-Dx and every comparator evaluated on 480 CDM cases and the open-world sets, 3 seeds, 95% case-level bootstrap intervals). The identically trained no-DEFER control is a journal run (`scripts/queue_v7.sh`), so the submission uses outcome **D** below, which does not depend on it.
 
+**Revised Oct 16, 2026** (2 words shorter): the first Background sentence cited the FDA Digital Health Advisory Committee meeting of Nov 2025, which concerned generative-AI mental-health devices (reviewer comment). It now cites the FDA Clinical Decision Support Software guidance (revised January 6, 2026), whose fourth criterion requires that the clinician can independently review the basis of a recommendation rather than rely on it.
+
 **Revised Oct 13, 2026** (word count unchanged), after the journal runs:
 - **Zero-shot comparison:** 11.4 (7.4–15.7) became 11.1 (7.0–15.3). Post-hoc thresholds now break ties at the cut, so coverage matches exactly.
 - **Handoffs:** the conclusion now says handoff content varied between training seeds, replacing "at the cost of less specific handoffs". A second seed's handoffs rarely rank OTHER first.
@@ -32,7 +34,7 @@ DEFER-Dx is a reinforcement-learning diagnostic agent that asks, orders tests, c
 
 **Title.** Training Clinical Agents to Ask, Test, Commit, and Defer
 
-**Background.** Regulators increasingly expect clinical AI to escalate uncertain cases; the FDA's Digital Health Advisory Committee (Nov 2025) emphasised timely human intervention for generative-AI devices. Yet published interactive diagnostic agents are closed-world and forced-choice: they must name one of a fixed set of diagnoses and cannot hand a case back.
+**Background.** Regulators expect clinical decision support to let clinicians independently review its basis rather than rely on it (FDA CDS guidance, January 2026). Yet published interactive diagnostic agents are closed-world and forced-choice: they must name one of a fixed set of diagnoses and cannot hand a case back.
 
 **Methods.** DEFER-Dx is a Qwen3-8B agent trained with multi-turn reinforcement learning (GRPO) to examine, order any of 22 priced tests, commit to a diagnosis with a stated probability, or defer to a clinician with a probabilistic differential. Deferral is trained against a counterfactual: at the state where the agent escalates, continuations branched from that state with escalation disabled estimate the clinical value of deciding now or testing further, and escalation is credited only where a handoff beats continuing. We train on MIMIC-IV-Ext-CDM (2,400 admissions, four abdominal conditions) and a new open-world extension of 713 admissions with other diagnoses, holding five time-critical diagnoses out of training.
 
