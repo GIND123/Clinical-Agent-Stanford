@@ -84,28 +84,39 @@ At 0.84 tests per case, that is under 0.005 of reward per case.
 - Its stronger support is that two independently trained DEFER-Dx seeds each show it.
 - In the paper, mark the secondary comparisons exploratory and report the Holm-adjusted p.
 
-## Status of every comment
+## Status of every comment (updated Oct 16)
+
+### Methods supervisor
 
 | Comment | Status |
 |---|---|
-| Placeholder prices shape the reward | §B. Only the HIDA scan's price matters. A price perturbation run is still needed (GPU). |
-| Early deferral may come from cost | §B: plausible. Needs the cost ablation (GPU). |
-| The policy may exploit chart artifacts | §A: the shortcut exists. Auditing whether DEFER-Dx uses it needs the evaluation episodes (CPU). |
-| Rewards score outcomes, not reasoning | Needs clinicians. The blinded rating sheet exists (`scripts/handoff_rating.py`). |
-| The 30% cap is engineered | `configs/ablations/no_constraint.yaml` exists but has not been run (GPU). |
-| Only one training run | Two seeds each for DEFER-Dx and the control, both evaluated (PAPER §7.7). The consensus arm's second seed is trained, and its evaluation is pending ([CONSENSUS_SEED1.md](CONSENSUS_SEED1.md)). |
-| The win disappears under majority vote | True of the one pairing in the Oct 11 summary. With two seeds per arm, single-sample accuracy on answered cases is +3.2 (1.6 to 5.1), pooled over the four pairings (PAPER §7.7). State the voting result up front. |
-| Systems answer at different rates | Thresholds are matched to coverage exactly (`coverage_rule`). Risk–coverage curves are in PAPER §7.3. |
-| Pooled runs inflate significance | The bootstrap already resamples each case with all its runs (EXPERIMENTS, reporting rules). The summary should say so. |
-| No multiple-comparison correction | §C. |
-| The gap to the published reward is not significant on headline measures | Text fix. ABSTRACT.md already lists it under "what not to claim". |
-| The time-critical result rests on about 13 of 187 cases | Report the interval, 6.8% (4.3 to 10.0), and the replication in the second seed (−4.3, −7.7 to −1.1). |
-| CEV uses three noisy rollouts | Needs a GPU run: the CEV estimate's variance against the number of rollouts. |
-| CEV assumes the clinician is right | Needs design work: a clinician-accuracy term and a learning-to-defer baseline. |
-| Handoffs list OTHER first 68% of the time | First seed only. The second seed does this in 4.2% of handoffs (PAPER §7.6–7.7). Move it up in the summary. |
-| Unflagged errors depend on the case mix | Text fix: give open-world wrong commitments per 100 cases as well. |
-| Sample sizes vary | Text fix: one table of splits. |
-| The fairness analysis has no results | Deferral-equity tables exist for the baselines (BASELINES §7). For DEFER-Dx, run `scripts/subgroup_eval.py` on its evaluation outputs (CPU), or drop the claim. |
-| The FDA citation concerns mental-health devices | Text fix. Cite FDA's clinical decision support software guidance instead, or drop the regulator sentence. ABSTRACT.md and PAPER.md still cite the advisory committee. |
-| The caption refers to the README | Text fix in the summary. |
+| Placeholder prices shape the reward | §B: only the HIDA price matters. The CEV audit (docs/cev_audit.json) finds that removing the test cost of forced continuations changes the sign of the escalation credit in 0% and 1% of deferral states. The training ablation without the cost term (`configs/ablations/cev_no_cost.yaml`) runs in `queue_v10.sh`. |
+| Early deferral may come from cost | Not supported by the audit: forced continuations ordered a test in only 23% and 18% of cases and were right in 32% and 67%, so deferral reflects cases the agent cannot resolve. The no-cost ablation tests it directly (queue_v10). |
+| The policy may exploit chart artifacts | Audited (`scripts/chart_artifact_audit.py`, docs/chart_artifacts.json): DEFER-Dx saw a "not performed" reply in 12–17% of episodes, and its accuracy on answered cases was lower after one (89.7 vs 95.7; 88.5 vs 96.2), as for every trained model. Observational: harder cases draw more tests. |
+| Rewards score outcomes, not reasoning | Still needs clinicians: the blinded rating sheet exists (`scripts/handoff_rating.py`). |
+| The 30% cap is engineered | Ablation without the cap (`configs/ablations/cev_no_constraint.yaml`, rho_max 1.0) runs in `queue_v10.sh`. |
+| Only one training run | Two seeds each for DEFER-Dx and the control, evaluated; learned vs threshold reported for all four pairings and pooled (+3.2, 1.6 to 5.1). The consensus arm's second seed is trained but its adapter is not on this machine. |
+| The win disappears under majority vote | With two seeds per arm the single-sample difference holds in all four pairings; with three-sample voting it is +2.2 (−0.9 to 5.5) for the first pairing (PAPER results). |
+| Systems answer at different rates | Thresholds match coverage exactly (`coverage_rule`); risk–coverage curves in Extended Data Fig. 3. |
+| Pooled runs inflate significance | The bootstrap resamples cases with all their runs; pooled seed comparisons hold training runs fixed and say so. |
+| No multiple-comparison correction | Holm column in RESULTS.md §5 (218 tests, Wald p from the bootstrap SE). Primary tests (the paper's two questions): Holm p ≤ 0.02; across all 218: pooled accuracy 0.052, time-critical comparisons not significant. Stated in PAPER Methods. |
+| The gap to the published reward is not significant on headline measures | Stated: accuracy on answered cases is the same; the difference is on unfamiliar presentations. |
+| The time-critical result rests on about 13 of 187 cases | Intervals reported; replicated in the second seed (−4.6 and −4.3); does not survive Holm across all 218 tests, said so. |
+| CEV uses three noisy rollouts | Audited with K = 16 (`scripts/cev_audit.py`): K = 3 gives the credit the same sign in 88% and 92% of in-set states (K = 8: 95%, 96%). Extended Data Fig. 7. |
+| CEV assumes the clinician is right | Three answers: the credit's sensitivity to the assumed clinician accuracy (46% of deferrals credited at 0.70 vs 60% at 0.85); a human-AI team model with a clinician of accuracy 0.89 (Hager et al.) who can be steered by the handoff (Barrit et al. 2026); and a learning-to-defer baseline (defer when p < clinician accuracy). PAPER, "What the handoff says". |
+| Handoffs list OTHER first 68% of the time | First seed only (second: 4.2%); the team model shows each seed's handoff pattern costs patients under clinician susceptibility. Moved to the main results. |
+| Unflagged errors depend on the case mix | Open-world results given per 100 cases in the same units (AI-caused wrong in-scope diagnoses per 100). |
+| Sample sizes vary | One cohort table: PAPER Extended Data Table 1. |
+| The fairness analysis has no results | Done: docs/fairness/ for both DEFER-Dx seeds, the consensus reward, the control and prompted DEFER. |
+| The FDA citation concerns mental-health devices | Fixed in ABSTRACT.md and PAPER.md: FDA Clinical Decision Support Software guidance (revised January 2026). |
+| The caption refers to the README | Paper figures have self-contained legends (docs/paper/DEFER-Dx.pdf). |
 | The DiagBench leakage claim | Our re-run is in BASELINES.md. Contacting the authors is the team's decision. |
+
+### Clinical supervisor
+
+| Comment | Status |
+|---|---|
+| Acute poisoning should be recognised as OTHER and deferred | MIMIC-CDM-CR includes lead, Amanita and thallium poisoning from published case reports (benchmarks/casereports/); results per case in docs/casereports.json and PAPER Fig. 5. |
+| Unflagged errors (3.8 per 100) and false commits on time-critical cases (6.8%) are the harm | Reported with intervals, replicated in the second seed, and modelled through the clinician who receives the handoff. |
+| No staging (WSES/Hinchey, Revised Atlanta, Tokyo) | Evaluated, not built: in-set cases labelled complicated by guideline proxies from admission codes and labs; a threshold escalates complicated disease less often than uncomplicated (16.7% vs 24.0%), DEFER-Dx does not, and no system escalates it preferentially (docs/severity.json, Extended Data Fig. 6). Published cases carry the report's guideline grade. A staging output needs graded labels and retraining: future work, stated in the paper. |
+| The tool is static: no empirical treatment, monitoring or reassessment | Stated as a limitation. The environment reveals recorded results only; MIMIC-IV hosp has no time series of vital signs, so evolving states cannot be simulated faithfully. MIMIC-CDM-CR includes one patient at two visits two days apart (CR26, CR27). |
