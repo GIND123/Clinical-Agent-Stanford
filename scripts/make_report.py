@@ -64,6 +64,8 @@ SYSTEMS = [  # eval-suite directory name, label
     ("cev_dualascent", "DEFER-Dx with a plain dual-ascent coverage cap (first run; nu limit-cycled)"),
     ("abl_cev_no_handoff", "Ablation: escalation value without the scored handoff (step 100)"),
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
+    ("abl_cev_no_cost", "Ablation: escalation value without the test-cost term (step 100)"),
+    ("abl_cev_no_constraint", "Ablation: escalation value without the coverage cap (step 100)"),
 ]
 POOLED = "DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled"
 N_DRAWS = 20  # tie-break draws at the post-hoc cut, for the matched-coverage sensitivity (section 5b)
@@ -240,7 +242,8 @@ def main() -> None:
     comparisons.append(("cev_seed1", ("grpo_nodefer+thr_seed1", "deferdx", "grpo_nodefer_seed1+thr_seed1",
                                       "deferdx_seed1")))
     comparisons.append(("cev", ("cev_maskdrop",)))  # robustness to the mask cue, same cases
-    comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer")))
+    comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer", "abl_cev_no_cost",
+                                        "abl_cev_no_constraint")))
     def paired_metrics(refs: list[dict], others: list[dict]) -> dict:
         """Paired bootstrap of every comparison metric; refs[i] is paired with others[i] and the pairs are
         pooled (cases resampled, all their episodes kept together)."""
@@ -290,13 +293,36 @@ def main() -> None:
     short = {"cev": "DEFER-Dx", "cev_seed1": "its second training seed", "deferdx": "the consensus arm",
              "deferdx_seed1": "the consensus arm's second seed", "zs_defer": "prompted DEFER",
              "cev_step100": "DEFER-Dx at step 100", "abl_cev_no_handoff": "the no-handoff ablation",
-             "abl_constant_defer": "the constant-reward ablation"}
+             "abl_constant_defer": "the constant-reward ablation", "abl_cev_no_cost": "the no-cost ablation",
+             "abl_cev_no_constraint": "the no-cap ablation"}
     for k in short:
         if k in suites:
             defs = [r for r in cdm_pooled(suites[k]) if r.terminal == "defer"]
             if defs:
                 other_first[k] = sum(bool(r.differential) and r.differential[0].lower() == "other" for r in defs) / len(defs)
     other_first_note = "; ".join(f"{v * 100:.1f}% for {short[k]}" for k, v in other_first.items())
+
+    # Holm correction over every paired test in this report (one family; the paper names its primary
+    # comparisons and treats the rest as exploratory). The percentile-bootstrap p cannot resolve below
+    # 1 / n_boot, which with hundreds of tests would cap every adjusted p near 0.1 whatever the effect. Holm is
+    # therefore applied to the two-sided Wald p from the bootstrap standard error, SE = (hi - lo) / 3.92.
+    import math
+
+    def wald_p(v):
+        se = (v["hi"] - v["lo"]) / 3.92
+        if not (se == se) or se <= 0:
+            return 1.0 if v["diff"] == 0 else 0.0
+        return math.erfc(abs(v["diff"]) / se / math.sqrt(2))
+
+    tests = [(c, m) for c, d in paired.items() for m, v in d.items()
+             if v.get("diff") is not None and v["diff"] == v["diff"] and v.get("lo") == v.get("lo")]
+    for c, m in tests:
+        paired[c][m]["p_wald"] = wald_p(paired[c][m])
+    order = sorted(tests, key=lambda cm: paired[cm[0]][cm[1]]["p_wald"])
+    running = 0.0
+    for i, (c, m) in enumerate(order):
+        running = max(running, min(1.0, (len(order) - i) * paired[c][m]["p_wald"]))
+        paired[c][m]["p_holm"] = running
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
@@ -368,13 +394,18 @@ def main() -> None:
         L += [f"| {a} | {b.replace('_', ' ')} | {n} | {fc * 100:.1f} | {df * 100:.1f} |" for a, b, n, fc, df in group_rows]
     if paired:
         L += ["", "## 5. Paired differences, reference system minus comparator (same cases)", "",
-              "| Comparison | Metric | Difference (95% CI) | p |", "|---|---|---|---|"]
+              "p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted two-sided Wald p (bootstrap "
+              f"standard error from the 95% interval) over all {sum(len(d) for d in paired.values())} tests in this "
+              "section, treated as one family; it is conservative for the pre-specified primary comparisons.", "",
+              "| Comparison | Metric | Difference (95% CI) | p | Holm p |", "|---|---|---|---|---|"]
         for comp, d in paired.items():
             for m, v in d.items():
                 pct = m.split(":")[0] in PCT or m.startswith("false_commit")
                 # p = 0 means no resample crossed zero: below the bootstrap's resolution of 2 / n_boot
                 p = f"< {2 / args.n_boot:.2g}" if v["p"] == 0 else f"{v['p']:.3g}"
-                L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {p} |")
+                ph = v.get("p_holm")
+                ph = "–" if ph is None else ("< 0.001" if ph < 0.001 else f"{ph:.3g}")
+                L.append(f"| {comp} | {m} | {fmt_ci(v, pct=pct, digits=1 if pct else 3)} | {p} | {ph} |")
     if tie_draws:
         L += ["", f"## 5b. Matched-coverage comparisons over {N_DRAWS} tie-break draws (range of the point difference)", "",
               "Section 5 uses one fixed draw; this is how far the difference moves over other draws.", "",

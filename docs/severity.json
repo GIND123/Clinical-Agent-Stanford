@@ -1,0 +1,971 @@
+{
+  "definition": "DEFER-Dx names a diagnosis; it does not stage it. This script asks what it does with complicated\npresentations. Each in-set CDM evaluation case (val + test, 480) is labelled complicated or uncomplicated\nfrom structured data only: the admission's ICD diagnosis codes (MIMIC-IV 2.2 hosp) and the admission labs in\nthe case record. No note text is read. The proxies follow the guideline each surgeon would use:",
+  "prevalence": {
+    "appendicitis": {
+      "cases": 191,
+      "complicated": 48,
+      "uncomplicated": 143,
+      "criteria": {
+        "codes": 48
+      }
+    },
+    "cholecystitis": {
+      "cases": 130,
+      "complicated": 21,
+      "uncomplicated": 109,
+      "criteria": {
+        "grade II": null,
+        "grade III": 16
+      }
+    },
+    "diverticulitis": {
+      "cases": 51,
+      "complicated": 21,
+      "uncomplicated": 30,
+      "criteria": {
+        "codes": 21
+      }
+    },
+    "pancreatitis": {
+      "cases": 108,
+      "complicated": 24,
+      "uncomplicated": 84,
+      "criteria": {
+        "organ failure": 19,
+        "local complication": null
+      }
+    }
+  },
+  "n_complicated": 114,
+  "n_cases": 480,
+  "systems": {
+    "cev": {
+      "label": "DEFER-Dx",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.23684210526315788,
+            "lo": 0.17251461988304093,
+            "hi": 0.30701754385964913,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.043859649122807015,
+            "lo": 0.017543859649122806,
+            "hi": 0.07602339181286549,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.9425287356321839,
+            "lo": 0.8984197443181818,
+            "hi": 0.9771884721742137,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.7573099415204678,
+            "lo": 0.6900584795321637,
+            "hi": 0.8216374269005848,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.2204007285974499,
+            "lo": 0.18397085610200364,
+            "hi": 0.25591985428051,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.03551912568306011,
+            "lo": 0.02185792349726776,
+            "hi": 0.051001821493624776,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.9544392523364486,
+            "lo": 0.9346316878161708,
+            "hi": 0.9724462549637135,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.7896174863387978,
+            "lo": 0.7513661202185792,
+            "hi": 0.8269581056466302,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": 0.01644137666570797,
+          "lo": -0.06132202089924265,
+          "hi": 0.09788131531013325,
+          "p": 0.668
+        },
+        "unflagged_errors": {
+          "diff": 0.008340523439746908,
+          "lo": -0.02343974690825424,
+          "hi": 0.04338150704630427,
+          "p": 0.654
+        },
+        "selective_acc": {
+          "diff": -0.011910516704264684,
+          "lo": -0.05767280143617455,
+          "hi": 0.029932933649790935,
+          "p": 0.622
+        },
+        "acc_full": {
+          "diff": -0.03230754481832998,
+          "lo": -0.11155569935768392,
+          "hi": 0.04348216853609428,
+          "p": 0.41
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.13194444444444445,
+          "lo": 0.0625,
+          "hi": 0.2222222222222222,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.0979020979020979,
+          "lo": 0.06293706293706294,
+          "hi": 0.13752913752913754,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.2698412698412698,
+          "lo": 0.09523809523809523,
+          "hi": 0.4444444444444444,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.2018348623853211,
+          "lo": 0.1437308868501529,
+          "hi": 0.26605504587155965,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.23809523809523808,
+          "lo": 0.09523809523809523,
+          "hi": 0.3968253968253968,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.32222222222222224,
+          "lo": 0.17777777777777778,
+          "hi": 0.4777777777777778,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.4166666666666667,
+          "lo": 0.2638888888888889,
+          "hi": 0.5694444444444444,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.4166666666666667,
+          "lo": 0.3333333333333333,
+          "hi": 0.5040674603174597,
+          "n_cases": 84
+        }
+      }
+    },
+    "cev_seed1": {
+      "label": "DEFER-Dx, second seed",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.2807017543859649,
+            "lo": 0.2134502923976608,
+            "hi": 0.3508771929824561,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.02631578947368421,
+            "lo": 0.005847953216374269,
+            "hi": 0.05263157894736842,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.9634146341463414,
+            "lo": 0.9274120086195637,
+            "hi": 0.9915629468778137,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.8362573099415205,
+            "lo": 0.7748538011695907,
+            "hi": 0.8918128654970761,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.2641165755919854,
+            "lo": 0.22495446265938068,
+            "hi": 0.30327868852459017,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.037340619307832425,
+            "lo": 0.020947176684881604,
+            "hi": 0.05555555555555555,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.9492574257425742,
+            "lo": 0.9252574161107743,
+            "hi": 0.971502894677735,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.8715846994535519,
+            "lo": 0.8406193078324226,
+            "hi": 0.900728597449909,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": 0.01658517879397947,
+          "lo": -0.06659356725146201,
+          "hi": 0.10373286357971431,
+          "p": 0.7
+        },
+        "unflagged_errors": {
+          "diff": -0.011024829834148216,
+          "lo": -0.03801648931070846,
+          "hi": 0.01908254242162781,
+          "p": 0.431
+        },
+        "selective_acc": {
+          "diff": 0.014157208403767219,
+          "lo": -0.026804349880491067,
+          "hi": 0.05157388556827397,
+          "p": 0.465
+        },
+        "acc_full": {
+          "diff": -0.035327389512031404,
+          "lo": -0.10631770683539454,
+          "hi": 0.03187733678458437,
+          "p": 0.294
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.1388888888888889,
+          "lo": 0.06944444444444445,
+          "hi": 0.2222222222222222,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.06993006993006994,
+          "lo": 0.037296037296037296,
+          "hi": 0.10495337995337964,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.3333333333333333,
+          "lo": 0.15873015873015872,
+          "hi": 0.5238095238095238,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.3333333333333333,
+          "lo": 0.26299694189602446,
+          "hi": 0.40061162079510704,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.3333333333333333,
+          "lo": 0.14285714285714285,
+          "hi": 0.5238095238095238,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.3888888888888889,
+          "lo": 0.25555555555555554,
+          "hi": 0.5333333333333333,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.4722222222222222,
+          "lo": 0.3055555555555556,
+          "hi": 0.6392361111111091,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.4603174603174603,
+          "lo": 0.36904761904761907,
+          "hi": 0.5555555555555556,
+          "n_cases": 84
+        }
+      }
+    },
+    "grpo_nodefer+thr": {
+      "label": "GRPO control + threshold",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.16666666666666666,
+            "lo": 0.11396198830409357,
+            "hi": 0.2222222222222222,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.06140350877192982,
+            "lo": 0.029239766081871343,
+            "hi": 0.09941520467836257,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.9263157894736842,
+            "lo": 0.8786764705882353,
+            "hi": 0.9649153478100846,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.8421052631578947,
+            "lo": 0.7777777777777778,
+            "hi": 0.8947368421052632,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.24043715846994534,
+            "lo": 0.20491803278688525,
+            "hi": 0.2777777777777778,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.05373406193078324,
+            "lo": 0.03642987249544627,
+            "hi": 0.07285974499089254,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.9292565947242206,
+            "lo": 0.9037495111311673,
+            "hi": 0.9527208622810827,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.8178506375227687,
+            "lo": 0.785063752276867,
+            "hi": 0.8488387978142075,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": -0.07377049180327869,
+          "lo": -0.14078228357779698,
+          "hi": -0.005311091937494062,
+          "p": 0.037
+        },
+        "unflagged_errors": {
+          "diff": 0.007669446841146579,
+          "lo": -0.0284776148020324,
+          "hi": 0.053167241875179704,
+          "p": 0.721
+        },
+        "selective_acc": {
+          "diff": -0.0029408052505364157,
+          "lo": -0.0600249384073491,
+          "hi": 0.042565161486942955,
+          "p": 0.936
+        },
+        "acc_full": {
+          "diff": 0.024254625635126037,
+          "lo": -0.049804668775764505,
+          "hi": 0.08782115808647302,
+          "p": 0.499
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.10416666666666667,
+          "lo": 0.041666666666666664,
+          "hi": 0.1736111111111111,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.09324009324009325,
+          "lo": 0.05827505827505827,
+          "hi": 0.1351981351981352,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.3492063492063492,
+          "lo": 0.1746031746031746,
+          "hi": 0.5396825396825397,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.3547400611620795,
+          "lo": 0.2874617737003058,
+          "hi": 0.42201834862385323,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.1111111111111111,
+          "lo": 0.031746031746031744,
+          "hi": 0.20634920634920634,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.23333333333333334,
+          "lo": 0.12222222222222222,
+          "hi": 0.35555555555555557,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.18055555555555555,
+          "lo": 0.05555555555555555,
+          "hi": 0.3333333333333333,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.34523809523809523,
+          "lo": 0.27380952380952384,
+          "hi": 0.42063492063492064,
+          "n_cases": 84
+        }
+      }
+    },
+    "grpo_nodefer_seed1+thr": {
+      "label": "GRPO control (seed 2) + threshold",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.19298245614035087,
+            "lo": 0.13742690058479531,
+            "hi": 0.25146198830409355,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.0935672514619883,
+            "lo": 0.05847953216374269,
+            "hi": 0.14035087719298245,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.8840579710144928,
+            "lo": 0.8237410071942446,
+            "hi": 0.929368029739777,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.8099415204678363,
+            "lo": 0.7426900584795322,
+            "hi": 0.8713450292397661,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.23406193078324225,
+            "lo": 0.20036429872495445,
+            "hi": 0.26958105646630237,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.07377049180327869,
+            "lo": 0.05373406193078324,
+            "hi": 0.0965391621129326,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.9036860879904876,
+            "lo": 0.8736288329089058,
+            "hi": 0.9304466783375713,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.819672131147541,
+            "lo": 0.7832422586520947,
+            "hi": 0.855191256830601,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": -0.041079474642891384,
+          "lo": -0.11160243504937206,
+          "hi": 0.028523152142651702,
+          "p": 0.242
+        },
+        "unflagged_errors": {
+          "diff": 0.019796759658709612,
+          "lo": -0.024739957818042377,
+          "hi": 0.0692826670501389,
+          "p": 0.395
+        },
+        "selective_acc": {
+          "diff": -0.019628116975994758,
+          "lo": -0.08548611463220608,
+          "hi": 0.03802174509730729,
+          "p": 0.514
+        },
+        "acc_full": {
+          "diff": -0.00973061067970471,
+          "lo": -0.08825136612021854,
+          "hi": 0.06438500623142555,
+          "p": 0.803
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.09027777777777778,
+          "lo": 0.027777777777777776,
+          "hi": 0.1597222222222222,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.08391608391608392,
+          "lo": 0.04895104895104895,
+          "hi": 0.12354312354312354,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.23809523809523808,
+          "lo": 0.09523809523809523,
+          "hi": 0.3968253968253968,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.345565749235474,
+          "lo": 0.2782874617737003,
+          "hi": 0.41590214067278286,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.23809523809523808,
+          "lo": 0.09523809523809523,
+          "hi": 0.3968253968253968,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.2,
+          "lo": 0.1,
+          "hi": 0.3111111111111111,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.3194444444444444,
+          "lo": 0.19444444444444445,
+          "hi": 0.4583333333333333,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.35714285714285715,
+          "lo": 0.2896825396825397,
+          "hi": 0.42857142857142855,
+          "n_cases": 84
+        }
+      }
+    },
+    "deferdx": {
+      "label": "Group-consensus reward",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.1608187134502924,
+            "lo": 0.10526315789473684,
+            "hi": 0.2222222222222222,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.04678362573099415,
+            "lo": 0.02046783625730994,
+            "hi": 0.07894736842105263,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.9442508710801394,
+            "lo": 0.9046010530806539,
+            "hi": 0.9759450171821306,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.8391812865497076,
+            "lo": 0.7777777777777778,
+            "hi": 0.8947368421052632,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.17759562841530055,
+            "lo": 0.1448087431693989,
+            "hi": 0.21040528233151173,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.05009107468123861,
+            "lo": 0.03278688524590164,
+            "hi": 0.0692167577413479,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.9390919158361019,
+            "lo": 0.9150268179020487,
+            "hi": 0.9604010480920296,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.8642987249544627,
+            "lo": 0.8342440801457195,
+            "hi": 0.8934426229508197,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": -0.01677691496500816,
+          "lo": -0.08510928961748634,
+          "hi": 0.05825304381171499,
+          "p": 0.634
+        },
+        "unflagged_errors": {
+          "diff": -0.003307448950244464,
+          "lo": -0.03743648739334676,
+          "hi": 0.03158853417697248,
+          "p": 0.814
+        },
+        "selective_acc": {
+          "diff": 0.005158955244037533,
+          "lo": -0.03642048239440971,
+          "hi": 0.04550740418130237,
+          "p": 0.771
+        },
+        "acc_full": {
+          "diff": -0.02511743840475511,
+          "lo": -0.09651519509155398,
+          "hi": 0.03868516920717089,
+          "p": 0.461
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.08333333333333333,
+          "lo": 0.020833333333333332,
+          "hi": 0.1597222222222222,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.06526806526806526,
+          "lo": 0.03496503496503497,
+          "hi": 0.10256410256410256,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.2222222222222222,
+          "lo": 0.06349206349206349,
+          "hi": 0.38095238095238093,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.24464831804281345,
+          "lo": 0.17737003058103976,
+          "hi": 0.3149847094801223,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.2698412698412698,
+          "lo": 0.1111111111111111,
+          "hi": 0.42857142857142855,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.2222222222222222,
+          "lo": 0.1111111111111111,
+          "hi": 0.34444444444444444,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.16666666666666666,
+          "lo": 0.041666666666666664,
+          "hi": 0.3055555555555556,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.26587301587301587,
+          "lo": 0.1865079365079365,
+          "hi": 0.3492063492063492,
+          "n_cases": 84
+        }
+      }
+    },
+    "zs_defer": {
+      "label": "Zero-shot, prompted DEFER",
+      "strata": {
+        "complicated": {
+          "escalated": {
+            "value": 0.22807017543859648,
+            "lo": 0.17251461988304093,
+            "hi": 0.28654970760233917,
+            "n_cases": 114
+          },
+          "unflagged_errors": {
+            "value": 0.10818713450292397,
+            "lo": 0.06725146198830409,
+            "hi": 0.15497076023391812,
+            "n_cases": 114
+          },
+          "selective_acc": {
+            "value": 0.8598484848484849,
+            "lo": 0.8014263924227689,
+            "hi": 0.9109520123839009,
+            "n_cases": 114
+          },
+          "acc_full": {
+            "value": 0.7192982456140351,
+            "lo": 0.6549707602339181,
+            "hi": 0.7807017543859649,
+            "n_cases": 114
+          }
+        },
+        "uncomplicated": {
+          "escalated": {
+            "value": 0.2550091074681239,
+            "lo": 0.21948998178506376,
+            "hi": 0.2887067395264117,
+            "n_cases": 366
+          },
+          "unflagged_errors": {
+            "value": 0.08561020036429873,
+            "lo": 0.06466302367941712,
+            "hi": 0.10746812386156648,
+            "n_cases": 366
+          },
+          "selective_acc": {
+            "value": 0.8850855745721271,
+            "lo": 0.8533779861045018,
+            "hi": 0.9142537936399713,
+            "n_cases": 366
+          },
+          "acc_full": {
+            "value": 0.7896174863387978,
+            "lo": 0.7540983606557377,
+            "hi": 0.8269581056466302,
+            "n_cases": 366
+          }
+        }
+      },
+      "complicated_minus_uncomplicated": {
+        "escalated": {
+          "diff": -0.026938932029527407,
+          "lo": -0.09386084747387598,
+          "hi": 0.04132273990988397,
+          "p": 0.461
+        },
+        "unflagged_errors": {
+          "diff": 0.022576934138625243,
+          "lo": -0.023981401591410222,
+          "hi": 0.07094238328060588,
+          "p": 0.358
+        },
+        "selective_acc": {
+          "diff": -0.025237089723642248,
+          "lo": -0.09193712217008762,
+          "hi": 0.03548216053846083,
+          "p": 0.43
+        },
+        "acc_full": {
+          "diff": -0.0703192407247627,
+          "lo": -0.1487021857923497,
+          "hi": 0.00613795417505512,
+          "p": 0.076
+        }
+      },
+      "per_condition_escalated": {
+        "appendicitis:complicated": {
+          "value": 0.2013888888888889,
+          "lo": 0.125,
+          "hi": 0.2986111111111111,
+          "n_cases": 48
+        },
+        "appendicitis:uncomplicated": {
+          "value": 0.1585081585081585,
+          "lo": 0.11888111888111888,
+          "hi": 0.20046620046620048,
+          "n_cases": 143
+        },
+        "cholecystitis:complicated": {
+          "value": 0.30158730158730157,
+          "lo": 0.14285714285714285,
+          "hi": 0.4603174603174603,
+          "n_cases": 21
+        },
+        "cholecystitis:uncomplicated": {
+          "value": 0.308868501529052,
+          "lo": 0.23853211009174313,
+          "hi": 0.3761467889908257,
+          "n_cases": 109
+        },
+        "diverticulitis:complicated": {
+          "value": 0.2222222222222222,
+          "lo": 0.09523809523809523,
+          "hi": 0.3492063492063492,
+          "n_cases": 21
+        },
+        "diverticulitis:uncomplicated": {
+          "value": 0.36666666666666664,
+          "lo": 0.23333333333333334,
+          "hi": 0.5111111111111111,
+          "n_cases": 30
+        },
+        "pancreatitis:complicated": {
+          "value": 0.2222222222222222,
+          "lo": 0.1111111111111111,
+          "hi": 0.33368055555555365,
+          "n_cases": 24
+        },
+        "pancreatitis:uncomplicated": {
+          "value": 0.30952380952380953,
+          "lo": 0.23412698412698413,
+          "hi": 0.38492063492063494,
+          "n_cases": 84
+        }
+      }
+    }
+  },
+  "paired_complicated": {
+    "cev vs grpo_nodefer+thr": {
+      "escalated": {
+        "diff": 0.07017543859649122,
+        "lo": 0.005847953216374269,
+        "hi": 0.13742690058479531,
+        "p": 0.033,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.017543859649122806,
+        "lo": -0.05847953216374269,
+        "hi": 0.02046783625730994,
+        "p": 0.444,
+        "n_cases": 114
+      }
+    },
+    "cev vs grpo_nodefer_seed1+thr": {
+      "escalated": {
+        "diff": 0.043859649122807015,
+        "lo": -0.02046783625730994,
+        "hi": 0.1111111111111111,
+        "p": 0.186,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.049707602339181284,
+        "lo": -0.09649122807017543,
+        "hi": -0.008771929824561403,
+        "p": 0.019,
+        "n_cases": 114
+      }
+    },
+    "cev vs deferdx": {
+      "escalated": {
+        "diff": 0.07602339181286549,
+        "lo": 0.029239766081871343,
+        "hi": 0.1286549707602339,
+        "p": 0.002,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.0029239766081871343,
+        "lo": -0.03216374269005848,
+        "hi": 0.02631578947368421,
+        "p": 0.93,
+        "n_cases": 114
+      }
+    },
+    "cev vs zs_defer": {
+      "escalated": {
+        "diff": 0.008771929824561403,
+        "lo": -0.049707602339181284,
+        "hi": 0.07309941520467836,
+        "p": 0.805,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.06432748538011696,
+        "lo": -0.11403508771929824,
+        "hi": -0.017543859649122806,
+        "p": 0.008,
+        "n_cases": 114
+      }
+    },
+    "cev_seed1 vs grpo_nodefer+thr": {
+      "escalated": {
+        "diff": 0.05847953216374269,
+        "lo": -0.005847953216374269,
+        "hi": 0.12573099415204678,
+        "p": 0.078,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.02046783625730994,
+        "lo": -0.05263157894736842,
+        "hi": 0.008771929824561403,
+        "p": 0.221,
+        "n_cases": 114
+      }
+    },
+    "cev_seed1 vs grpo_nodefer_seed1+thr": {
+      "escalated": {
+        "diff": 0.049707602339181284,
+        "lo": -0.014619883040935672,
+        "hi": 0.1111111111111111,
+        "p": 0.13,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.049707602339181284,
+        "lo": -0.0847953216374269,
+        "hi": -0.017543859649122806,
+        "p": 0.004,
+        "n_cases": 114
+      }
+    },
+    "cev_seed1 vs deferdx": {
+      "escalated": {
+        "diff": 0.11988304093567251,
+        "lo": 0.06432748538011696,
+        "hi": 0.18128654970760233,
+        "p": 0.0,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.02046783625730994,
+        "lo": -0.04678362573099415,
+        "hi": 0.005847953216374269,
+        "p": 0.131,
+        "n_cases": 114
+      }
+    },
+    "cev_seed1 vs zs_defer": {
+      "escalated": {
+        "diff": 0.05263157894736842,
+        "lo": -0.005847953216374269,
+        "hi": 0.11403508771929824,
+        "p": 0.091,
+        "n_cases": 114
+      },
+      "unflagged_errors": {
+        "diff": -0.08187134502923976,
+        "lo": -0.12573099415204678,
+        "hi": -0.043859649122807015,
+        "p": 0.0,
+        "n_cases": 114
+      }
+    }
+  }
+}
