@@ -37,3 +37,6 @@ Thumbs.db
 /external/
 /.cache/
 .venv-gpu/
+
+# public benchmark built from published case reports (no MIMIC data)
+!benchmarks/casereports/casereports.jsonl
