@@ -1,0 +1,6 @@
+# Ablation: DEFER-Dx without the coverage cap (rho_max 1.0 never binds, so nu stays 0). Shows how much the
+# PI-controlled 30% cap shapes coverage, accuracy on answered cases and open-world escalation.
+base: ../grpo_cev.yaml
+constraint: {rho_max: 1.0}
+steps: 100
+output_dir: outputs/runs/abl_cev_no_constraint

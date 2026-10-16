@@ -1,0 +1,6 @@
+# Ablation: DEFER-Dx without the test-cost term (cost_scale 0): tests are free in the commit reward and in
+# the forced continuations. Tests whether early deferral (0.84 tests per case) comes from the cost of tests.
+base: ../grpo_cev.yaml
+reward: {cost_scale: 0.0}
+steps: 100
+output_dir: outputs/runs/abl_cev_no_cost
