@@ -1,6 +1,6 @@
 # Experiment runbook (final, as run)
 
-All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, October 14, 2026, 05:30 IST (Tuesday, October 13, 20:00 US Eastern)**, through `scripts/queue_v8.sh`. This page records what ran, what did not and why, and which comparisons the results can support. The numbers are in [RESULTS.md](RESULTS.md); figures and captions are in the README §3.
+All runs used one shared 48 GB GPU. The budget now runs to **Monday, October 19, 2026, 10:30 IST**, through `scripts/queue_v10.sh` and `scripts/queue_v11.sh`. This page records what ran, what did not and why, and which comparisons the results can support. The numbers are in [RESULTS.md](RESULTS.md); figures and captions are in the README §3 and the paper.
 
 ## Runs
 
@@ -19,6 +19,11 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | gpt-oss-20b zero-shot | (none) | (none) | **not run**: both attempts in `queue_v8.sh` failed at engine start-up (vLLM's FlashInfer kernels rejected the Blackwell GPU, "requires sm75 or higher"); an optional baseline, not retried | larger open model |
 | GRPO control, second training seed | `configs/ablations/nodefer_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v9.sh`, Oct 13–14) | comparator seed variance; each DEFER-Dx seed against each control seed, and pooled |
 | Consensus arm, second training seed | `configs/ablations/seed1.yaml` (`configs/grpo_deferdx.yaml` with seed 1) | 150 | trained on a Lambda Cloud A100, Oct 13–14 ([CONSENSUS_SEED1.md](CONSENSUS_SEED1.md)); **held-out evaluation pending**: its adapter was not on the shared GPU when `queue_v9.sh` ended | the consensus arm's seed variance |
+| Ablation without the test-cost term | `configs/ablations/cev_no_cost.yaml` (cost_scale 0) | 100 | `queue_v10.sh` (Oct 16–17), against DEFER-Dx's step-100 checkpoint | does early deferral come from test cost? |
+| Ablation without the coverage cap | `configs/ablations/cev_no_constraint.yaml` (rho_max 1.0) | 100 | `queue_v10.sh` (Oct 17) | how much does the 30% cap shape behaviour? |
+| DEFER-Dx with the handoff score weighted 1.0 | `configs/ablations/cev_eta1.yaml` (cev_eta 1.0) | 100 | `queue_v11.sh` (Oct 17–18) | can a stronger handoff score fix seed-dependent handoff content? |
+| CEV estimator audit | (inference only) `scripts/cev_audit.py`, K = 16 | — | `queue_v10.sh`, done Oct 16 | estimator noise, cost share, clinician-accuracy sensitivity |
+| MIMIC-CDM-CR, every model | `benchmarks/casereports/` (32 published case reports) | — | `queue_v10.sh`, Oct 16 | external, shareable test set |
 
 **Records, not results.** These two runs appear only through their training logs (README Fig. 8).
 - `cev_dualascent` is the first CEV run. Its plain dual-ascent coverage cap ran a limit cycle. It also predates the rule that deferrals left unbranched get no DEFER-turn update.
@@ -37,6 +42,8 @@ All runs used one shared 48 GB GPU. The final budget runs to **Wednesday, Octobe
 | `queue_v7.sh` | Oct 10–12 | Stanford-abstract block first (DEFER-Dx, closed-world zero-shot, mask-drop), then the control, the constant-deferral ablation with the step-100 evaluation, and the dual-ascent evaluation. The second seed did not fit its deadline. |
 | `queue_v8.sh` | Oct 12–13 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed and the no-handoff ablation; gpt-oss-20b failed at start-up. Finished Tue 21:57 IST. |
 | `queue_v9.sh` | Oct 13–14 | The control's second training seed, trained from Tue 21:58 IST, evaluated and reported Wed 16:18 IST. The consensus arm's second seed was not evaluated: no adapter had arrived. |
+| `queue_v10.sh` | Oct 16–17 | GPU time extended to Mon Oct 19, 10:30 IST (user). CEV audit, MIMIC-CDM-CR for every model, the no-cost and no-cap ablations, the consensus arm's second seed if its adapter arrives. The machine was off Oct 16, 02:00–10:16 IST; nothing ran in that window. |
+| `queue_v11.sh` | Oct 17–18 | Waits for queue_v10: DEFER-Dx with the handoff score weighted 1.0, held-out and published-case evaluation. |
 
 ## Comparisons the results support
 
