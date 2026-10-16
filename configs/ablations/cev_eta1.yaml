@@ -1,0 +1,8 @@
+# DEFER-Dx with a stronger handoff score (cev_eta 1.0 instead of 0.3). Motivated by the human-AI team analysis
+# (scripts/team_analysis.py) and Barrit et al. 2026: once clinicians can be steered by AI advice, the content of the
+# handoff decides whether escalation is safe. The strictly proper score rewards an honest differential; a larger
+# weight should make what the handoff names less seed-dependent. 100 steps, compared with DEFER-Dx at step 100.
+base: ../grpo_cev.yaml
+reward: {cev_eta: 1.0}
+steps: 100
+output_dir: outputs/runs/abl_cev_eta1

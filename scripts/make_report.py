@@ -66,6 +66,7 @@ SYSTEMS = [  # eval-suite directory name, label
     ("abl_constant_defer", "Ablation: constant deferral reward (step 100)"),
     ("abl_cev_no_cost", "Ablation: escalation value without the test-cost term (step 100)"),
     ("abl_cev_no_constraint", "Ablation: escalation value without the coverage cap (step 100)"),
+    ("abl_cev_eta1", "DEFER-Dx with a stronger handoff score, eta 1.0 (step 100)"),
 ]
 POOLED = "DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled"
 N_DRAWS = 20  # tie-break draws at the post-hoc cut, for the matched-coverage sensitivity (section 5b)
@@ -243,7 +244,7 @@ def main() -> None:
                                       "deferdx_seed1")))
     comparisons.append(("cev", ("cev_maskdrop",)))  # robustness to the mask cue, same cases
     comparisons.append(("cev_step100", ("abl_cev_no_handoff", "abl_constant_defer", "abl_cev_no_cost",
-                                        "abl_cev_no_constraint")))
+                                        "abl_cev_no_constraint", "abl_cev_eta1")))
     def paired_metrics(refs: list[dict], others: list[dict]) -> dict:
         """Paired bootstrap of every comparison metric; refs[i] is paired with others[i] and the pairs are
         pooled (cases resampled, all their episodes kept together)."""
@@ -294,7 +295,7 @@ def main() -> None:
              "deferdx_seed1": "the consensus arm's second seed", "zs_defer": "prompted DEFER",
              "cev_step100": "DEFER-Dx at step 100", "abl_cev_no_handoff": "the no-handoff ablation",
              "abl_constant_defer": "the constant-reward ablation", "abl_cev_no_cost": "the no-cost ablation",
-             "abl_cev_no_constraint": "the no-cap ablation"}
+             "abl_cev_no_constraint": "the no-cap ablation", "abl_cev_eta1": "the eta-1.0 run"}
     for k in short:
         if k in suites:
             defs = [r for r in cdm_pooled(suites[k]) if r.terminal == "defer"]

@@ -61,6 +61,7 @@ SYSTEMS = {  # eval-suite name: (label, colour slot, marker). Colour follows the
     "abl_constant_defer": ("Constant deferral reward", 7, "h"),
     "abl_cev_no_cost": ("No test-cost term", 3, "*"),
     "abl_cev_no_constraint": ("No coverage cap", 4, "d"),
+    "abl_cev_eta1": ("Handoff score eta 1.0", 6, "p"),
     "cev_step100": ("DEFER-Dx, step 100", 0, "o"),
     "cev_seed1": ("DEFER-Dx, second seed", 0, "o"),
     "grpo_nodefer_seed1": ("GRPO control, second seed", 2, "^"),
@@ -511,7 +512,7 @@ def fig_per_class(tables, out):
 
 def fig_ablations(tables, out):
     rows = [n for n in ("cev_step100", "abl_cev_no_handoff", "abl_constant_defer", "abl_cev_no_cost",
-                        "abl_cev_no_constraint") if table(tables, n, "ml", "coverage")]
+                        "abl_cev_no_constraint", "abl_cev_eta1") if table(tables, n, "ml", "coverage")]
     if len(rows) < 2:
         return placeholder(out, "fig_ablations", "DEFER-Dx at step 100 against no scored handoff and a constant "
                            "deferral reward: written when the ablations are evaluated (queue_v3).")
