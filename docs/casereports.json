@@ -1,0 +1,882 @@
+{
+  "description": "Per system:\n  out of scope (19 cases)   wrong commitment to one of the four conditions (false commit), escalation (DEFER, or\n                            COMMIT of OTHER: \"none of the four\"), and handoffs whose top suggestion is one of the\n                            four (would steer a clinician towards a wrong in-scope diagnosis); for the 7 cases from\n                            the held-out time-critical groups and the 11 from groups in no MIMIC cohort\n  in scope (13 cases)       correct commitments, escalation, wrong commitments; escalation of the 9 complicated and\n                            the 4 uncomplicated cases\n  per case                  the majority outcome over the 3 seeds (docs/figures/fig_casereports)\nThe post-hoc control is thresholded with the rule fitted on the MIMIC CDM evaluation sets at DEFER-Dx's coverage\n(an external test set has no split to fit on). Intervals: 95% bootstrap over cases (seeds kept together).\nWrites docs/casereports.json (no patient data; cases are public).",
+  "n_cases": 32,
+  "systems": {
+    "cev": {
+      "label": "DEFER-Dx",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9122807017543859,
+          "lo": 0.7719298245614035,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.08771929824561403,
+          "lo": 0.0,
+          "hi": 0.22807017543859648,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.1346153846153846,
+        "tests_per_case": 0.8245614035087719
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.7619047619047619,
+          "lo": 0.42857142857142855,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.23809523809523808,
+          "lo": 0.0,
+          "hi": 0.5714285714285714,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.125,
+        "tests_per_case": 0.8571428571428571
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.12121212121212122,
+        "tests_per_case": 0.7878787878787878
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.3076923076923077,
+          "lo": 0.10256410256410256,
+          "hi": 0.5384615384615384,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.6923076923076923,
+          "lo": 0.46153846153846156,
+          "hi": 0.8974358974358975,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.0
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.4444444444444444,
+          "lo": 0.18518518518518517,
+          "hi": 0.7037037037037037,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.5555555555555556,
+          "lo": 0.2962962962962963,
+          "hi": 0.8148148148148148,
+          "n_cases": 9
+        },
+        "tests_per_case": 0.8888888888888888
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.25
+      }
+    },
+    "cev_seed1": {
+      "label": "DEFER-Dx, second seed",
+      "out_of_scope": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.5614035087719298,
+        "tests_per_case": 1.1578947368421053
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.5238095238095238,
+        "tests_per_case": 1.2857142857142858
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.6060606060606061,
+        "tests_per_case": 1.0909090909090908
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.1282051282051282,
+          "lo": 0.0,
+          "hi": 0.28205128205128205,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.8717948717948718,
+          "lo": 0.717948717948718,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.0
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.18518518518518517,
+          "lo": 0.037037037037037035,
+          "hi": 0.37037037037037035,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.8148148148148148,
+          "lo": 0.6296296296296297,
+          "hi": 0.9629629629629629,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.0
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.0
+      }
+    },
+    "grpo_nodefer+thr": {
+      "label": "GRPO control + threshold",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9298245614035088,
+          "lo": 0.8070175438596491,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.07017543859649122,
+          "lo": 0.0,
+          "hi": 0.19298245614035087,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.3333333333333335
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.8571428571428571,
+          "lo": 0.5714285714285714,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.14285714285714285,
+          "lo": 0.0,
+          "hi": 0.42857142857142855,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.0952380952380953
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.484848484848485
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.2307692307692308
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.2962962962962963
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.0833333333333333
+      }
+    },
+    "grpo_nodefer": {
+      "label": "GRPO control (forced choice)",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9298245614035088,
+          "lo": 0.8070175438596491,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.07017543859649122,
+          "lo": 0.0,
+          "hi": 0.19298245614035087,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.3333333333333335
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.8571428571428571,
+          "lo": 0.5714285714285714,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.14285714285714285,
+          "lo": 0.0,
+          "hi": 0.42857142857142855,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.0952380952380953
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.484848484848485
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.2307692307692308
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.2962962962962963
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.0833333333333333
+      }
+    }
+  },
+  "per_case": {
+    "CR01": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR02": {
+      "cev": "wrong",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR03": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR04": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR05": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR06": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR07": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR08": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR09": {
+      "cev": "wrong",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "wrong",
+      "grpo_nodefer": "wrong"
+    },
+    "CR10": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "none",
+      "grpo_nodefer": "none"
+    },
+    "CR11": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "none",
+      "grpo_nodefer": "none"
+    },
+    "CR12": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "none",
+      "grpo_nodefer": "none"
+    },
+    "CR13": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "none",
+      "grpo_nodefer": "none"
+    },
+    "CR14": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "none",
+      "grpo_nodefer": "none"
+    },
+    "CR15": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR16": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR17": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR18": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR19": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "escalated",
+      "grpo_nodefer": "escalated"
+    },
+    "CR20": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR21": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR22": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR23": {
+      "cev": "escalated",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR24": {
+      "cev": "escalated",
+      "cev_seed1": "escalated",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR25": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR26": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR27": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR28": {
+      "cev": "escalated",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR29": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR30": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR31": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    },
+    "CR32": {
+      "cev": "correct",
+      "cev_seed1": "correct",
+      "grpo_nodefer+thr": "correct",
+      "grpo_nodefer": "correct"
+    }
+  },
+  "cases": {
+    "CR01": {
+      "label": "other",
+      "group": "mesenteric_ischemia",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR02": {
+      "label": "other",
+      "group": "abdominal_aortic_aneurysm",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR03": {
+      "label": "other",
+      "group": "ectopic_pregnancy",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR04": {
+      "label": "other",
+      "group": "peptic_ulcer_perforation_or_bleed",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR05": {
+      "label": "other",
+      "group": "splanchnic_vein_thrombosis",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR06": {
+      "label": "other",
+      "group": "peptic_ulcer_perforation_or_bleed",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR07": {
+      "label": "other",
+      "group": "lead_poisoning",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": false
+    },
+    "CR08": {
+      "label": "other",
+      "group": "diabetic_ketoacidosis",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR09": {
+      "label": "other",
+      "group": "ectopic_pregnancy",
+      "training_group": "held_out",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR10": {
+      "label": "other",
+      "group": "acute_porphyria",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR11": {
+      "label": "other",
+      "group": "toxic_ingestion",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR12": {
+      "label": "other",
+      "group": "toxic_ingestion",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR13": {
+      "label": "other",
+      "group": "adrenal_crisis",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR14": {
+      "label": "other",
+      "group": "myocardial_infarction",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR15": {
+      "label": "other",
+      "group": "adnexal_torsion",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR16": {
+      "label": "other",
+      "group": "testicular_torsion",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR17": {
+      "label": "other",
+      "group": "haemoperitoneum",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR18": {
+      "label": "other",
+      "group": "bowel_obstruction",
+      "training_group": "seen",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR19": {
+      "label": "other",
+      "group": "haemoperitoneum",
+      "training_group": "new",
+      "complicated": null,
+      "time_critical": true
+    },
+    "CR20": {
+      "label": "appendicitis",
+      "group": "appendicitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR21": {
+      "label": "appendicitis",
+      "group": "appendicitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR22": {
+      "label": "pancreatitis",
+      "group": "pancreatitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR23": {
+      "label": "cholecystitis",
+      "group": "cholecystitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR24": {
+      "label": "cholecystitis",
+      "group": "cholecystitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR25": {
+      "label": "diverticulitis",
+      "group": "diverticulitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR26": {
+      "label": "diverticulitis",
+      "group": "diverticulitis",
+      "training_group": "seen",
+      "complicated": false,
+      "time_critical": false
+    },
+    "CR27": {
+      "label": "diverticulitis",
+      "group": "diverticulitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR28": {
+      "label": "diverticulitis",
+      "group": "diverticulitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR29": {
+      "label": "diverticulitis",
+      "group": "diverticulitis",
+      "training_group": "seen",
+      "complicated": true,
+      "time_critical": true
+    },
+    "CR30": {
+      "label": "pancreatitis",
+      "group": "pancreatitis",
+      "training_group": "seen",
+      "complicated": false,
+      "time_critical": false
+    },
+    "CR31": {
+      "label": "cholecystitis",
+      "group": "cholecystitis",
+      "training_group": "seen",
+      "complicated": false,
+      "time_critical": false
+    },
+    "CR32": {
+      "label": "appendicitis",
+      "group": "appendicitis",
+      "training_group": "seen",
+      "complicated": false,
+      "time_critical": false
+    }
+  }
+}
