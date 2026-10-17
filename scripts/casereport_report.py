@@ -31,7 +31,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from deferdx.baselines.selective import apply_threshold, coverage_rule  # noqa: E402
 from deferdx.data.io import load_cases  # noqa: E402
 from deferdx.eval import stats as S  # noqa: E402
-from deferdx.eval.report import load_suite  # noqa: E402
+from deferdx.eval.report import load_suite, suite_complete  # noqa: E402
 from deferdx.labels import OTHER  # noqa: E402
 
 SET = "casereports"
@@ -85,7 +85,7 @@ def suites(ev: Path) -> dict[str, list]:
     for name, _ in SYSTEMS:
         base = name.split("+")[0]
         d = ev / f"cr_{base}"
-        if not (d / "summary.json").exists():
+        if not suite_complete(d):  # an evaluation still running, or one that did not finish every seed
             continue
         cr = load_suite(d).get(SET, [])
         if name.endswith("+thr"):
@@ -122,11 +122,13 @@ def main() -> None:
             sub = [r for r in rs if keep(cases[r.case_id])]
             if not sub:
                 continue
-            m = {"escalated": boot(sub, rate(escalated)), "wrong": boot(sub, rate(lambda r: outcome(r) == "wrong"))}
+            m = {"escalated": boot(sub, rate(lambda r: outcome(r) == "escalated")),
+                 "wrong": boot(sub, rate(lambda r: outcome(r) == "wrong")),
+                 "no_answer": boot(sub, rate(lambda r: outcome(r) == "none"))}
             if g in ("in_scope", "in_scope_complicated", "in_scope_uncomplicated"):
                 m["correct"] = boot(sub, rate(lambda r: outcome(r) == "correct"))
             else:
-                esc = [r for r in sub if escalated(r)]
+                esc = [r for r in sub if outcome(r) == "escalated"]
                 m["handoff_top_in_scope"] = (float(np.mean([top(r) not in (None, OTHER) for r in esc]))
                                              if esc else None)
             m["tests_per_case"] = float(np.mean([r.n_tests for r in sub]))
@@ -139,6 +141,7 @@ def main() -> None:
                     max(set(outs), key=outs.count)) > 1 else "mixed"
         oos, ins = e.get("out_of_scope"), e.get("in_scope")
         print(f"{label:44s} OOS wrong {oos['wrong']['value']*100:5.1f} escalated {oos['escalated']['value']*100:5.1f} "
+              f"no answer {oos['no_answer']['value']*100:5.1f} "
               f"(held-out wrong {e['held_out_time_critical']['wrong']['value']*100:5.1f}) | in-scope correct "
               f"{ins['correct']['value']*100:5.1f} escalated {ins['escalated']['value']*100:5.1f} (complicated "
               f"{e['in_scope_complicated']['escalated']['value']*100:5.1f}, uncomplicated "

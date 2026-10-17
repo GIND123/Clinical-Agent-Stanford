@@ -735,8 +735,9 @@ def fig_casereports(out):
             y += n
     handles = [plt.Rectangle((0, 0), 1, 1, facecolor=STATUS[k], label=lab) for k, lab in
                (("correct", "C: correct in-scope diagnosis"), ("escalated", "E: escalated (DEFER, or COMMIT of OTHER)"),
-                ("wrong", "W: wrong in-scope diagnosis"), ("mixed", "M: no majority over 3 seeds"))]
-    fig.legend(handles=handles, loc="outside lower center", ncols=4, fontsize=6, frameon=False)
+                ("wrong", "W: wrong in-scope diagnosis"), ("mixed", "M: no majority over 3 seeds"),
+                ("none", "–: no answer (malformed or out of budget)"))]
+    fig.legend(handles=handles, loc="outside lower center", ncols=3, fontsize=6, frameon=False)
     save(fig, out, "fig_casereports")
 
 
