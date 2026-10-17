@@ -35,10 +35,10 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Job | Expected (IST) |
 |---|---|
 | CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
-| Every model on MIMIC-CDM-CR (3 seeds) | Fri ~12:00 |
-| Ablation without the test-cost term (100 steps) and its evaluation | Sat ~02:00 |
-| Ablation without the coverage cap (100 steps) and its evaluation | Sat ~16:30 |
-| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Sun ~07:00 |
+| Every model on MIMIC-CDM-CR (3 seeds) | done Sat 07:23 (two reboots on Oct 16 stopped the queue at 11:31) |
+| Ablation without the test-cost term (100 steps) and its evaluation | Sat ~21:30 |
+| Ablation without the coverage cap (100 steps) and its evaluation | Sun ~11:30 |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Mon ~01:45 |
 
 The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
 at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
@@ -147,7 +147,7 @@ The control (first training seed) is thresholded at DEFER-Dx's first-seed covera
 - **Chart artifacts** ([docs/chart_artifacts.json](docs/chart_artifacts.json)). DEFER-Dx receives a "not performed" reply in 12–17% of episodes, and its accuracy on answered cases is lower after one (89.7 vs 95.7): no sign that it exploits test availability.
 - **Equity** ([docs/fairness/](docs/fairness/)). Escalation and unflagged errors do not differ systematically by sex, race, insurance or language; patients aged 80+ are escalated more often.
 - **Multiple comparisons.** Holm over all 218 paired tests in RESULTS.md §5: the zero-shot comparison survives (< 0.001); the pooled learned-versus-threshold difference reaches 0.052; the time-critical comparisons do not survive and rest on their replication across two seeds. Within the four primary tests (the paper's two questions), Holm p ≤ 0.02.
-- **Published case reports** (Fig. S10; [docs/casereports.json](docs/casereports.json)). [[results when the queue finishes]]
+- **Published case reports** (Fig. S10; [docs/casereports.json](docs/casereports.json); 32 cases × 3 seeds). The second DEFER-Dx seed escalated all 19 out-of-scope cases; the first was misled by two reported traps (ruptured aneurysm with an Alvarado score of 9; heterotopic pregnancy), 8.8% of out-of-scope episodes. The control gave no answer on 21% of out-of-scope episodes, exhausting its test budget on the five cases whose deciding test is outside the catalogue (porphyria, Amanita and thallium poisoning, adrenal crisis, MI without chest pain); the consensus reward called the gallstone ileus cholecystitis. DEFER-Dx escalated complicated in-scope disease (44% and 19% of episodes on 9 cases) and never uncomplicated disease (4 cases). Descriptive: too few cases for precise rates.
 
 **The figures.** Every figure is below (the paper renumbers them: [docs/PAPER.md](docs/PAPER.md)). Vector PDFs for the manuscript, SVG and 300-dpi PNG are in [docs/figures/](docs/figures/).
 - **Data figures:** drawn by [scripts/make_figures.py](scripts/make_figures.py) from aggregates only (`docs/results.json`, numbers-only training logs). They are regenerated with every report, so they fill in as runs finish. A figure whose inputs don't exist yet shows a labelled placeholder.

@@ -6,8 +6,8 @@
       "label": "DEFER-Dx",
       "out_of_scope": {
         "escalated": {
-          "value": 0.9122807017543859,
-          "lo": 0.7719298245614035,
+          "value": 0.8947368421052632,
+          "lo": 0.7543859649122807,
           "hi": 1.0,
           "n_cases": 19
         },
@@ -17,7 +17,13 @@
           "hi": 0.22807017543859648,
           "n_cases": 19
         },
-        "handoff_top_in_scope": 0.1346153846153846,
+        "no_answer": {
+          "value": 0.017543859649122806,
+          "lo": 0.0,
+          "hi": 0.05263157894736842,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.13725490196078433,
         "tests_per_case": 0.8245614035087719
       },
       "held_out_time_critical": {
@@ -33,13 +39,19 @@
           "hi": 0.5714285714285714,
           "n_cases": 7
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
         "handoff_top_in_scope": 0.125,
         "tests_per_case": 0.8571428571428571
       },
       "new_groups": {
         "escalated": {
-          "value": 1.0,
-          "lo": 1.0,
+          "value": 0.9696969696969697,
+          "lo": 0.9090909090909091,
           "hi": 1.0,
           "n_cases": 11
         },
@@ -49,7 +61,13 @@
           "hi": 0.0,
           "n_cases": 11
         },
-        "handoff_top_in_scope": 0.12121212121212122,
+        "no_answer": {
+          "value": 0.030303030303030304,
+          "lo": 0.0,
+          "hi": 0.09090909090909091,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.125,
         "tests_per_case": 0.7878787878787878
       },
       "in_scope": {
@@ -60,6 +78,12 @@
           "n_cases": 13
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -86,6 +110,12 @@
           "hi": 0.0,
           "n_cases": 9
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
         "correct": {
           "value": 0.5555555555555556,
           "lo": 0.2962962962962963,
@@ -102,6 +132,12 @@
           "n_cases": 4
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -131,6 +167,12 @@
           "hi": 0.0,
           "n_cases": 19
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
         "handoff_top_in_scope": 0.5614035087719298,
         "tests_per_case": 1.1578947368421053
       },
@@ -142,6 +184,12 @@
           "n_cases": 7
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -163,6 +211,12 @@
           "hi": 0.0,
           "n_cases": 11
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
         "handoff_top_in_scope": 0.6060606060606061,
         "tests_per_case": 1.0909090909090908
       },
@@ -174,6 +228,12 @@
           "n_cases": 13
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -200,6 +260,12 @@
           "hi": 0.0,
           "n_cases": 9
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
         "correct": {
           "value": 0.8148148148148148,
           "lo": 0.6296296296296297,
@@ -221,6 +287,12 @@
           "hi": 0.0,
           "n_cases": 4
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
         "correct": {
           "value": 1.0,
           "lo": 1.0,
@@ -234,15 +306,21 @@
       "label": "GRPO control + threshold",
       "out_of_scope": {
         "escalated": {
-          "value": 0.9298245614035088,
-          "lo": 0.8070175438596491,
-          "hi": 1.0,
+          "value": 0.7192982456140351,
+          "lo": 0.543859649122807,
+          "hi": 0.8771929824561403,
           "n_cases": 19
         },
         "wrong": {
           "value": 0.07017543859649122,
           "lo": 0.0,
           "hi": 0.19298245614035087,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.21052631578947367,
+          "lo": 0.07017543859649122,
+          "hi": 0.3684210526315789,
           "n_cases": 19
         },
         "handoff_top_in_scope": 0.0,
@@ -261,20 +339,32 @@
           "hi": 0.42857142857142855,
           "n_cases": 7
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
         "handoff_top_in_scope": 0.0,
         "tests_per_case": 2.0952380952380953
       },
       "new_groups": {
         "escalated": {
-          "value": 1.0,
-          "lo": 1.0,
-          "hi": 1.0,
+          "value": 0.6363636363636364,
+          "lo": 0.42424242424242425,
+          "hi": 0.8484848484848485,
           "n_cases": 11
         },
         "wrong": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.36363636363636365,
+          "lo": 0.15151515151515152,
+          "hi": 0.5757575757575758,
           "n_cases": 11
         },
         "handoff_top_in_scope": 0.0,
@@ -288,6 +378,12 @@
           "n_cases": 13
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -314,6 +410,12 @@
           "hi": 0.0,
           "n_cases": 9
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
         "correct": {
           "value": 1.0,
           "lo": 1.0,
@@ -330,6 +432,162 @@
           "n_cases": 4
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.0833333333333333
+      }
+    },
+    "grpo_nodefer_seed1+thr": {
+      "label": "GRPO control (seed 2) + threshold",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9122807017543859,
+          "lo": 0.8070175438596491,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.07017543859649122,
+          "lo": 0.0,
+          "hi": 0.17543859649122806,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.017543859649122806,
+          "lo": 0.0,
+          "hi": 0.05263157894736842,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.038461538461538464,
+        "tests_per_case": 3.1228070175438596
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.9047619047619048,
+          "lo": 0.7142857142857143,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.09523809523809523,
+          "lo": 0.0,
+          "hi": 0.2857142857142857,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.05263157894736842,
+        "tests_per_case": 2.4761904761904763
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 0.9696969696969697,
+          "lo": 0.9090909090909091,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.030303030303030304,
+          "lo": 0.0,
+          "hi": 0.09090909090909091,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.03125,
+        "tests_per_case": 3.6363636363636362
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.6666666666666667
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.9259259259259258
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -348,15 +606,21 @@
       "label": "GRPO control (forced choice)",
       "out_of_scope": {
         "escalated": {
-          "value": 0.9298245614035088,
-          "lo": 0.8070175438596491,
-          "hi": 1.0,
+          "value": 0.7192982456140351,
+          "lo": 0.543859649122807,
+          "hi": 0.8771929824561403,
           "n_cases": 19
         },
         "wrong": {
           "value": 0.07017543859649122,
           "lo": 0.0,
           "hi": 0.19298245614035087,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.21052631578947367,
+          "lo": 0.07017543859649122,
+          "hi": 0.3684210526315789,
           "n_cases": 19
         },
         "handoff_top_in_scope": 0.0,
@@ -375,20 +639,32 @@
           "hi": 0.42857142857142855,
           "n_cases": 7
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
         "handoff_top_in_scope": 0.0,
         "tests_per_case": 2.0952380952380953
       },
       "new_groups": {
         "escalated": {
-          "value": 1.0,
-          "lo": 1.0,
-          "hi": 1.0,
+          "value": 0.6363636363636364,
+          "lo": 0.42424242424242425,
+          "hi": 0.8484848484848485,
           "n_cases": 11
         },
         "wrong": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.36363636363636365,
+          "lo": 0.15151515151515152,
+          "hi": 0.5757575757575758,
           "n_cases": 11
         },
         "handoff_top_in_scope": 0.0,
@@ -402,6 +678,12 @@
           "n_cases": 13
         },
         "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
           "value": 0.0,
           "lo": 0.0,
           "hi": 0.0,
@@ -428,6 +710,12 @@
           "hi": 0.0,
           "n_cases": 9
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
         "correct": {
           "value": 1.0,
           "lo": 1.0,
@@ -449,6 +737,12 @@
           "hi": 0.0,
           "n_cases": 4
         },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
         "correct": {
           "value": 1.0,
           "lo": 1.0,
@@ -457,6 +751,456 @@
         },
         "tests_per_case": 1.0833333333333333
       }
+    },
+    "deferdx": {
+      "label": "Group-consensus reward",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9473684210526315,
+          "lo": 0.8421052631578947,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.05263157894736842,
+          "lo": 0.0,
+          "hi": 0.15789473684210525,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.2962962962962963,
+        "tests_per_case": 2.263157894736842
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.38095238095238093,
+        "tests_per_case": 2.2857142857142856
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.24242424242424243,
+        "tests_per_case": 2.212121212121212
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.07692307692307693,
+          "lo": 0.0,
+          "hi": 0.1794871794871795,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.9230769230769231,
+          "lo": 0.8205128205128205,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.7692307692307692
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.1111111111111111,
+          "lo": 0.0,
+          "hi": 0.25925925925925924,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.8888888888888888,
+          "lo": 0.7407407407407407,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.8518518518518519
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.5833333333333333
+      }
+    },
+    "zs_defer": {
+      "label": "Zero-shot, prompted DEFER",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9122807017543859,
+          "lo": 0.8421052631578947,
+          "hi": 0.9649122807017544,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.03508771929824561,
+          "lo": 0.0,
+          "hi": 0.08771929824561403,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.05263157894736842,
+          "lo": 0.0,
+          "hi": 0.10526315789473684,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.15384615384615385,
+        "tests_per_case": 2.210526315789474
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.9047619047619048,
+          "lo": 0.8083333333333335,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.09523809523809523,
+          "lo": 0.0,
+          "hi": 0.19166666666666016,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.21052631578947367,
+        "tests_per_case": 2.380952380952381
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 0.9090909090909091,
+          "lo": 0.8181818181818182,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.09090909090909091,
+          "lo": 0.0,
+          "hi": 0.18181818181818182,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.13333333333333333,
+        "tests_per_case": 2.090909090909091
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.10256410256410256,
+          "lo": 0.0,
+          "hi": 0.23076923076923078,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.05128205128205128,
+          "lo": 0.0,
+          "hi": 0.1282051282051282,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.8461538461538461,
+          "lo": 0.717948717948718,
+          "hi": 0.9487179487179487,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.9743589743589745
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.14814814814814814,
+          "lo": 0.037037037037037035,
+          "hi": 0.2962962962962963,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.037037037037037035,
+          "lo": 0.0,
+          "hi": 0.1111111111111111,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.8148148148148148,
+          "lo": 0.6666666666666666,
+          "hi": 0.9629629629629629,
+          "n_cases": 9
+        },
+        "tests_per_case": 2.2962962962962963
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.08333333333333333,
+          "lo": 0.0,
+          "hi": 0.25,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 0.9166666666666666,
+          "lo": 0.75,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.25
+      }
+    },
+    "zs_nodefer": {
+      "label": "Zero-shot, forced choice",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.8947368421052632,
+          "lo": 0.7543859649122807,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.10526315789473684,
+          "lo": 0.0,
+          "hi": 0.24561403508771928,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.210526315789474
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.9047619047619048,
+          "lo": 0.7142857142857143,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.09523809523809523,
+          "lo": 0.0,
+          "hi": 0.2857142857142857,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.2857142857142856
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 0.8787878787878788,
+          "lo": 0.6666666666666666,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.12121212121212122,
+          "lo": 0.0,
+          "hi": 0.3333333333333333,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.0,
+        "tests_per_case": 2.1515151515151514
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.05128205128205128,
+          "lo": 0.0,
+          "hi": 0.15384615384615385,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.02564102564102564,
+          "lo": 0.0,
+          "hi": 0.07692307692307693,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.9230769230769231,
+          "lo": 0.8205128205128205,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.8974358974358974
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.07407407407407407,
+          "lo": 0.0,
+          "hi": 0.2222222222222222,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.037037037037037035,
+          "lo": 0.0,
+          "hi": 0.1111111111111111,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.8888888888888888,
+          "lo": 0.7407407407407407,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 2.037037037037037
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.5833333333333333
+      }
     }
   },
   "per_case": {
@@ -464,193 +1208,321 @@
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR02": {
       "cev": "wrong",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR03": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR04": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR05": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR06": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR07": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR08": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR09": {
       "cev": "wrong",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "wrong",
-      "grpo_nodefer": "wrong"
+      "grpo_nodefer_seed1+thr": "wrong",
+      "grpo_nodefer": "wrong",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "wrong"
     },
     "CR10": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "none",
-      "grpo_nodefer": "none"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "none",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR11": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "none",
-      "grpo_nodefer": "none"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "none",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR12": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "none",
-      "grpo_nodefer": "none"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "none",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR13": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "none",
-      "grpo_nodefer": "none"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "none",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR14": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "none",
-      "grpo_nodefer": "none"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "none",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "wrong"
     },
     "CR15": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR16": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR17": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR18": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "wrong",
+      "grpo_nodefer": "escalated",
+      "deferdx": "wrong",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR19": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "escalated",
-      "grpo_nodefer": "escalated"
+      "grpo_nodefer_seed1+thr": "escalated",
+      "grpo_nodefer": "escalated",
+      "deferdx": "escalated",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR20": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR21": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR22": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR23": {
       "cev": "escalated",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR24": {
       "cev": "escalated",
       "cev_seed1": "escalated",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "escalated",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR25": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR26": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR27": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR28": {
       "cev": "escalated",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "escalated",
+      "zs_nodefer": "escalated"
     },
     "CR29": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR30": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR31": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     },
     "CR32": {
       "cev": "correct",
       "cev_seed1": "correct",
       "grpo_nodefer+thr": "correct",
-      "grpo_nodefer": "correct"
+      "grpo_nodefer_seed1+thr": "correct",
+      "grpo_nodefer": "correct",
+      "deferdx": "correct",
+      "zs_defer": "correct",
+      "zs_nodefer": "correct"
     }
   },
   "cases": {

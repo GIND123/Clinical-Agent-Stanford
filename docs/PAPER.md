@@ -27,7 +27,8 @@ deferral reward from prior work. A threshold sent complicated disease to the cli
 disease (16.7% vs 24.0%); DEFER-Dx did not. But what the handoff named depended on the training seed: when clinicians
 were modelled as adopting the handoff's top suggestion as often as physicians followed adversarial AI, one seed's
 handoffs lowered team accuracy (86.8% vs 91.5% with the threshold) and the other's steered towards wrong in-scope
-diagnoses on unfamiliar emergencies.
+diagnoses on unfamiliar emergencies. On 32 published case reports, the second seed escalated every out-of-scope case and
+the first was misled by two reported diagnostic traps.
 
 **Conclusions.** Crediting escalation against the counterfactual of continuing trains stable, well-targeted deferral that
 outperforms post-hoc thresholding and a published deferral reward. Whether escalation is safe depends on the content of
@@ -130,8 +131,21 @@ a source shortcut.
 
 ### Published case reports
 
-[[MIMIC-CDM-CR results: out-of-scope wrong commitments and escalation per system; held-out vs new groups; in-scope
-accuracy; complicated vs uncomplicated escalation; Fig. 5.]]
+On the 32 published cases (three evaluation seeds each), the trained agents recognised most out-of-scope presentations,
+and the differences sat in the cases that had misled clinicians in the reports (Fig. 5). The second DEFER-Dx seed
+escalated all 19 out-of-scope cases. The first escalated 17 and committed to an in-scope diagnosis on two reported
+traps: a ruptured aortic aneurysm with migratory right iliac fossa pain and an Alvarado score of 9 (CR02), and a
+heterotopic pregnancy with a viable intrauterine pregnancy on ultrasound (CR09); its wrong in-scope commitments were
+8.8% of out-of-scope episodes (0–22.8). The thresholded control committed wrongly on CR09 (7.0%) and gave no answer in
+21.1% of out-of-scope episodes: on the five cases whose deciding test lies outside the catalogue (acute porphyria,
+Amanita and thallium poisoning, adrenal crisis, myocardial infarction without chest pain) it ordered tests until its
+budget ran out instead of escalating. The consensus reward diagnosed cholecystitis in the gallstone ileus, whose CT
+showed gas in the gallbladder (CR18), and zero-shot forced choice committed wrongly on CR09 and on the myocardial
+infarction. On in-scope cases DEFER-Dx escalated complicated disease and never uncomplicated disease: 44.4% and 18.5%
+of episodes on the nine complicated cases (perforated appendicitis with necrotising fasciitis, emphysematous and
+gangrenous cholecystitis, diverticulitis with pylephlebitis), against none on the four uncomplicated cases. It was
+correct on 69.2% and 87.2% of in-scope episodes, against 100% for the control. With 32 cases these results describe
+behaviour; they are not precise rates.
 
 ![Fig. 5 | MIMIC-CDM-CR: behaviour on 32 published case reports. Majority outcome over three evaluation seeds for each case (rows) and system (columns): C, correct in-scope diagnosis; E, escalated (DEFER, or COMMIT of OTHER, which names no diagnosis to act on); W, wrong in-scope diagnosis; M, no majority. Rows are grouped by the five held-out time-critical groups, groups in no MIMIC cohort, a group seen in training, and in-scope cases with and without complications by the guideline grade the report supports. Cases and citations: benchmarks/casereports/.](docs/figures/fig_casereports.png)
 
