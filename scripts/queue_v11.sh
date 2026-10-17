@@ -8,7 +8,7 @@ set -u
 cd "$(dirname "$0")/.."
 source scripts/env_gpu.sh
 mkdir -p outputs/logs outputs/queue
-DEADLINE=$(date -d "2026-10-19 10:30 +0530" +%s)
+DEADLINE=$(date -d "2026-10-21 12:00 +0530" +%s)
 
 echo "$(date -Is) queue v11 started; deadline $(date -d @"$DEADLINE" -Is); waiting for older queues"
 while pgrep -f "^(/usr)?(/bin/)?bash [^ ]*scripts/queue_v([2-9]|10)\.sh" >/dev/null; do sleep 60; done
