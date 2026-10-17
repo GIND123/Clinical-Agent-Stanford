@@ -29,7 +29,10 @@ sys.path.insert(0, str(ROOT / "src"))
 import push_hf  # noqa: E402
 
 STATE = ROOT / "outputs" / "sync_state.json"
-GIT_ALLOW = ["docs/RESULTS.md", "docs/results.json", "docs/figures"]
+GIT_ALLOW = ["docs/RESULTS.md", "docs/results.json", "docs/figures",
+             # generated analyses (aggregates only) and the typeset manuscript
+             "docs/casereports.json", "docs/cev_audit.json", "docs/team.json", "docs/severity.json",
+             "docs/chart_artifacts.json", "docs/fairness", "docs/paper/DEFER-Dx.pdf"]
 # While a GPU queue runs, remote changes to these paths are not rebased into the working tree: every
 # job of a run must use one version of the code. Results stay committed locally until the queue ends.
 CODE_PATHS = ("src/", "configs/", "scripts/", "pyproject.toml")
