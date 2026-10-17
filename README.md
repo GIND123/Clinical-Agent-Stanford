@@ -30,17 +30,17 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Figures | 18 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources) |
 | Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
 
-**GPU plan to Mon Oct 19, 10:30 IST** (approved by the user). `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
+**GPU plan: finish every queued run** (user, Oct 17), hard stop Wed Oct 21, 12:00 IST. `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
 
 | Job | Expected (IST) |
 |---|---|
 | CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
 | Every model on MIMIC-CDM-CR (3 seeds) | done Sat 07:23 (two reboots on Oct 16 stopped the queue at 11:31) |
-| Ablation without the test-cost term (100 steps) and its evaluation | Sat ~21:30 |
-| Ablation without the coverage cap (100 steps) and its evaluation | Sun ~11:30 |
-| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Mon ~01:45 |
+| Ablation without the test-cost term (100 steps) and its evaluation | Sun ~07:20 (stopped at step 31 by the Oct 17 reboot; resumed 21:03 from step 30) |
+| Ablation without the coverage cap (100 steps) and its evaluation | Sun ~21:30 |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Mon ~13:00 |
 
-The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
+The machine restarted four times on Oct 16–17 (desktop updates and restarts), each time stopping the queue. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue. The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
 at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
 
 **Hugging Face.** Uploads still fail: the account's private storage is full, mostly from other projects. The sync daemon
