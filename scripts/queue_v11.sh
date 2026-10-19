@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# GPU job queue, version 11 (Oct 17-19): waits for queue_v10, then trains DEFER-Dx with a stronger handoff score
+# GPU job queue, version 11 (Oct 19-21): waits for queue_v10, finishes the no-cost ablation (resumed from step 35),
+# then trains DEFER-Dx with a stronger handoff score
 # (cev_eta 1.0; configs/ablations/cev_eta1.yaml; 100 steps, against DEFER-Dx at step 100), evaluates it on the
 # held-out sets (2 seeds) and the published-case benchmark (3 seeds), and reports. Hard stop Mon Oct 19, 10:30
 # IST. Same guards as before.
@@ -86,6 +87,15 @@ M=Qwen/Qwen3-8B
 TRAIN_MEM=(--set vllm_gpu_memory_utilization=0.72)
 EVAL_MEM=(--gpu-memory-utilization 0.78)
 CEV=(--config configs/grpo_cev.yaml)
+
+# the no-cost ablation, resumed from its step-35 checkpoint (both attempts in queue_v10 hit the adapter-pruning bug
+# fixed in training/grpo_vllm.py register_adapter; same step names, so whichever queue finishes it marks it done)
+train_step train_abl_cev_no_cost abl_cev_no_cost 100 470 deferdx train grpo-vllm \
+  --config configs/ablations/cev_no_cost.yaml "${TRAIN_MEM[@]}"
+evaluated eval_abl_cev_no_cost abl_cev_no_cost
+step eval_abl_cev_no_cost 60 deferdx eval-suite "${EVAL_MEM[@]}" "${CEV[@]}" --model $M \
+  --adapter outputs/runs/abl_cev_no_cost/final --name abl_cev_no_cost --seeds 0 1
+step report_v11_1 20 python scripts/make_report.py
 
 train_step train_abl_cev_eta1 abl_cev_eta1 100 470 deferdx train grpo-vllm \
   --config configs/ablations/cev_eta1.yaml "${TRAIN_MEM[@]}"

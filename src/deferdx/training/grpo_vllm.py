@@ -303,6 +303,18 @@ def turn_advantages(groups: list[list[Rollout]], rcfg, nu: float, in_set_only: b
     return out, st
 
 
+def register_adapter(adapters: "deque[Path]", path: Path, keep: int) -> None:
+    """Record a newly saved adapter and delete the oldest beyond `keep`. After a resume, an adapter left by the
+    interrupted run can have the same name as the one just saved (the crash fell within `keep` steps of the last
+    checkpoint); it is the same directory, so it is moved to the newest position instead of being counted twice,
+    which would make pruning delete the adapter just saved."""
+    if path in adapters:
+        adapters.remove(path)
+    adapters.append(path)
+    while len(adapters) > keep:
+        shutil.rmtree(adapters.popleft(), ignore_errors=True)
+
+
 def piecewise(marks: list | None, i: int, default: float):
     """Value of a piecewise-constant schedule [[index, value], ...] at index i."""
     out = default
@@ -561,9 +573,7 @@ def train_grpo_vllm(cfg: dict[str, Any]) -> Path:
             peak = torch.cuda.max_memory_allocated() / 2**30
             adapter_dir = out_dir / "adapters" / f"step_{step:04d}"
             model.save_pretrained(adapter_dir)
-            adapters.append(adapter_dir)
-            while len(adapters) > keep_adapters:
-                shutil.rmtree(adapters.popleft(), ignore_errors=True)
+            register_adapter(adapters, adapter_dir, keep_adapters)
             parker.park()
             llm.wake_up()
             policy.set_adapter(str(adapter_dir))
