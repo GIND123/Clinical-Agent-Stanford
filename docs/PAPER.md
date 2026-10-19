@@ -91,7 +91,7 @@ On the 480 held-out CDM admissions (val + test, three evaluation seeds), DEFER-D
 against 24.1 for zero-shot Qwen3-8B with forced choice and 9.1 with deferral offered in the prompt (paired −5.3, −7.5 to
 −3.3). Its stated probabilities were calibrated (ECE 0.042; Brier 0.047, the lowest of all systems), and at 70% coverage
 it was 96.5% accurate (Extended Data Fig. 3). Deferral did not collapse: the PI controller held in-set deferral near its
-cap without the limit cycle that plain dual ascent produced (Extended Data Fig. 9). The second training seed answered
+cap without the limit cycle that plain dual ascent produced (Extended Data Fig. 9); without the cap, it did (below). The second training seed answered
 73.2% (69.7–76.5) at 95.3% (93.2–97.1) with 3.5 unflagged errors per 100. Against a confidence threshold on zero-shot
 Qwen3-8B at matched coverage, DEFER-Dx was 12.4 points (9.4–15.7) more accurate on answered cases, and 11.1 (7.0–15.3)
 with three-sample voting for both.
@@ -212,7 +212,18 @@ never-seen time-critical cases (10.2% vs 10.7%), but deferred less and rarely na
 (−1.1, −2.8 to 0.6) but made handoffs less informative (−6.5 points, 3.5 to 9.3, in favour of the score), reduced
 deferral (coverage 75.9% vs 68.1%) and increased false commitments on OTHER from groups seen in training (9.5% vs 6.3%);
 OTHER-first handoffs were more common without the score (55.1% vs 35.1%), so they come with the counterfactual credit
-itself. [[No-cap ablation (ρ_max = 1) and DEFER-Dx with the handoff score weighted 1.0.]]
+itself.
+
+**Without the cap** (ρ_max = 1; Extended Data Fig. 9), in-set deferral in training batches matched DEFER-Dx's for 40
+steps (25% in both) and then rose to 69% (steps 41–50) and 95% (steps 51–100), while tests per episode fell from 1.8 to
+0.1. With the coverage multiplier at zero, 96–99% of branched deferrals were credited (E ≈ 0.9–1.0 against V̂ ≈ 0.1),
+against 55% under the controller in steps 51–100. The final policy answered 3.0% (1.9–4.4) of held-out in-set cases,
+against 68.1% (64.4–71.6) for DEFER-Dx at step 100, ordered 0.12 tests per case (1.57) and almost never committed wrongly
+on OTHER (0.0% and 0.5% for seen and never-seen groups, against 6.3% and 10.2%); its withheld guesses were right in 35% of
+in-set cases (78%). The escalation value alone therefore does not bound how much is handed over: an assumed clinician is
+worth more than the agent's forced continuation in almost every state. What it does is rank states by the value of not
+escalating; the multiplier ν, held by the controller, is the price of a deferral that turns the ranking into a budget.
+The credit decides which cases are escalated, the cap how many. [[DEFER-Dx with the handoff score weighted 1.0.]]
 
 ### Robustness and equity
 
@@ -257,7 +268,9 @@ condition, grade it by the relevant guideline[10–13] and escalate by grade.
 
 **Implications.** Learned deferral should be compared with a threshold on an identically trained model, at exactly
 matched coverage, with more than one training run of each, since both the coarse confidences of language models and
-seed-to-seed variation make unmatched or single-run comparisons easy to misread. Agents that defer should be evaluated in
+seed-to-seed variation make unmatched or single-run comparisons easy to misread. The volume of escalation should be
+set as a budget by the clinical service rather than left to the reward: a credit that assumes a competent clinician,
+trained without a budget, handed over almost every case. Agents that defer should be evaluated in
 the open world, on external cases, and with a model of the clinician who receives the case; the handoff should be
 trained with stronger pressure towards the right content and assessed by clinicians.
 
@@ -307,7 +320,7 @@ at its stated probability; further tests remain allowed). Their mean return V̂(
 values not escalating. The escalation is valued E = V_τ + η·S(q, y) − μ − ν, where V_τ is the expected commitment reward of
 a calibrated decision that succeeds with probability τ on in-set cases (1.2 on OTHER cases), S is the normalised
 multi-class Brier score of the handed-over differential (strictly proper; η = 0.3), μ = 0.1 the handoff cost and ν the
-coverage multiplier. The DEFER turn's advantage is E − V̂(s); earlier turns keep the group-relative advantage. At most 32
+coverage multiplier, the price of a deferral (without it, nearly every deferral is credited; Results). The DEFER turn's advantage is E − V̂(s); earlier turns keep the group-relative advantage. At most 32
 deferrals per step are branched; others get no update on their DEFER turn. τ is annealed from 0.95 to 0.85 over the first
 100 steps.
 
@@ -436,7 +449,7 @@ PhysioNet's credentialed channel.
 
 ![Extended Data Fig. 8 | Ablations at 100 training steps: DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, without the scored handoff (η = 0), without the test-cost term, without the coverage cap, and with the handoff score weighted 1.0. Two evaluation seeds; 95% intervals.](docs/figures/fig_ablations.png)
 
-![Extended Data Fig. 9 | Training dynamics and the coverage controller: in-set deferral against the 30% cap, the coverage multiplier ν, and development-set accuracy and coverage, for plain dual ascent (first run; ν wound up and limit-cycled) and the PI controller.](docs/figures/fig_training_dynamics.png)
+![Extended Data Fig. 9 | Training dynamics and the coverage controller: in-set deferral against the 30% cap, the coverage multiplier ν, and development-set accuracy and coverage, for plain dual ascent (first run; ν wound up and limit-cycled), the PI controller (DEFER-Dx), the same training without the cap (ρ_max = 1; ν stays at zero and in-set deferral rises to about 95% after step 50) and the case-level consensus reward.](docs/figures/fig_training_dynamics.png)
 
 ![Extended Data Fig. 10 | Reliability of stated probabilities on committed CDM val + test cases (bins with at least 10 commitments).](docs/figures/fig_reliability.png)
 

@@ -13,7 +13,7 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 
 ---
 
-## 1. Status (2026-10-16)
+## 1. Status (2026-10-19)
 
 | Component | State |
 |---|---|
@@ -24,11 +24,11 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | **DEFER-Dx with the counterfactual escalation value** (`configs/grpo_cev.yaml`, the method) | two training seeds, each trained 150 steps and evaluated (Oct 10, Oct 13). Records, not results: `cev_dualascent` (plain dual-ascent cap, limit cycle) and `cev_pi_crashed` (out of memory at step 29) |
 | GRPO control (no DEFER), the key comparator | two training seeds, trained and evaluated (Oct 11, Oct 14) |
 | Case-level group-consensus arm (the published mechanism, a comparator) | trained and evaluated. Its second seed was trained on Lambda Cloud (Oct 13–14; [docs/CONSENSUS_SEED1.md](docs/CONSENSUS_SEED1.md)); the adapter is not on this machine, so it is **not evaluated** |
-| Ablations at 100 steps | constant deferral reward and no handoff score: done. Without the test-cost term and without the coverage cap: training in `scripts/queue_v10.sh` (Oct 16–17). DEFER-Dx with the handoff score weighted 1.0: queued in `scripts/queue_v11.sh` |
+| Ablations at 100 steps | constant deferral reward, no handoff score and no coverage cap: done (no cap: Oct 19). Without the test-cost term: resumed in `scripts/queue_v11.sh` (Oct 19–20). DEFER-Dx with the handoff score weighted 1.0: queued in `scripts/queue_v11.sh` |
 | Reviewer and supervisor checks | CEV estimator audit, severity strata, human-AI team model (Barrit et al. 2026), learning-to-defer baseline, chart-artifact audit, subgroup equity, Holm correction: done (§3) |
 | Manuscript | [docs/PAPER.md](docs/PAPER.md), typeset as [docs/paper/DEFER-Dx.pdf](docs/paper/DEFER-Dx.pdf) (`bash scripts/build_paper.sh`) |
 | Figures | 18 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources) |
-| Tests | 119 pass: 117 test functions, some parametrised (`pytest`; CPU only) |
+| Tests | 121 pass, some parametrised (`pytest`; CPU only) |
 
 **GPU plan: finish every queued run** (user, Oct 17), hard stop Wed Oct 21, 12:00 IST. `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
 
@@ -36,9 +36,9 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 |---|---|
 | CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
 | Every model on MIMIC-CDM-CR (3 seeds) | done Sat 07:23 (two reboots on Oct 16 stopped the queue at 11:31) |
-| Ablation without the test-cost term (100 steps) and its evaluation | Tue ~11:40: resumes from step 35 after the coverage-cap ablation (`queue_v11.sh`; Oct 19 attempts hit a resume bug, now fixed) |
-| Ablation without the coverage cap (100 steps) and its evaluation | training since Mon Oct 19, 11:18; done Tue ~01:40 |
-| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Wed ~02:30 |
+| Ablation without the coverage cap (100 steps) and its evaluation | done Mon Oct 19, 19:41 |
+| Ablation without the test-cost term (100 steps) and its evaluation | Tue ~04:30: resumed from step 35 at 19:50 (`queue_v11.sh`; the Oct 19 morning attempts hit a resume bug, now fixed) |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Tue ~16:00 |
 
 **Hardware.** The machine reset itself repeatedly on Oct 16–17 with a firmware-logged hardware error at every boot (BERT records), mostly under full GPU load (300 W at its limit, ~85 °C); after five resets within 20 minutes on Oct 17 evening it stayed off until Oct 19, 10:30. Power delivery or cooling should be checked. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue, unless another resume ran in the last 45 minutes (crash-loop guard). The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
 at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
@@ -143,6 +143,7 @@ The control (first training seed) is thresholded at DEFER-Dx's first-seed covera
 - **Robustness to the mask cue.** With every sentence containing CDM's `____` diagnosis mask removed, DEFER-Dx answers 76.0% at 96.2% accuracy, against 77.6% at 95.2%. All paired differences are within 1.6 points and AURC is unchanged, so it does not rely on the mask.
 - **Complicated disease** (Fig. S7; [docs/severity.json](docs/severity.json)). 114 of 480 in-set cases are complicated by guideline proxies from admission codes and labs (WSES/AAST, Revised Atlanta, Tokyo 2018). A confidence threshold escalates complicated disease less often than uncomplicated (16.7% vs 24.0%; −7.4, −14.1 to −0.5); DEFER-Dx does not (+1.6, −6.1 to 9.8). On complicated cases DEFER-Dx escalates more than the thresholded control in all four seed pairings (+4.4 to +7.0) and than the consensus reward (+7.6, +12.0). No system escalates complicated disease preferentially.
 - **The handoff and the clinician who reads it** (Fig. S8; [docs/team.json](docs/team.json); Barrit et al. 2026). With an independent clinician (accuracy 0.89, the MIMIC-CDM physicians) every system's team accuracy is about 94%. If the clinician adopts the handoff's top suggestion with the probability measured under adversarial AI advocacy (0.47), handoff content decides: the first seed's team accuracy falls to 86.8% (its in-set handoffs rank OTHER first) against 91.5% for the thresholded control, and the second seed's handoffs suggest an in-scope diagnosis for 84% of never-seen time-critical cases (37.0% AI-caused wrong in-scope diagnoses). A learning-to-defer rule (defer when the stated probability is below the clinician's accuracy) is safest on these terms, at 43% clinician workload.
+- **Ablation: without the coverage cap** (ρ_max = 1; 100 steps, same cases; Fig. 8). Deferral collapses the other way: in-set deferral in training batches matches DEFER-Dx's for 40 steps (25%), then rises to 69% (steps 41–50) and 95% (51–100), and tests per episode fall from 1.8 to 0.1. With ν at zero, 96–99% of branched deferrals are credited (E ≈ 0.9–1.0 against V̂ ≈ 0.1), against 55% under the controller. The final policy answers 3.0% (1.9–4.4) of held-out in-set cases (DEFER-Dx at step 100: 68.1%), orders 0.12 tests per case (1.57) and almost never commits wrongly on OTHER (0.0% and 0.5%). So the escalation value ranks states but does not bound how many are handed over; the cap is the clinician's workload budget, and ν is the price of a deferral that enforces it.
 - **The escalation credit** (Fig. S9; [docs/cev_audit.json](docs/cev_audit.json)). With 16 forced continuations per deferral state, the K = 3 estimate used in training has the same sign in 88% and 92% of in-set states. Removing test cost changes the sign in 0% and 1%: early deferral is not driven by the cost of tests. If forced to continue, the first seed would have been right in 32% of its in-set deferral states, the second in 67%.
 - **Chart artifacts** ([docs/chart_artifacts.json](docs/chart_artifacts.json)). DEFER-Dx receives a "not performed" reply in 12–17% of episodes, and its accuracy on answered cases is lower after one (89.7 vs 95.7): no sign that it exploits test availability.
 - **Equity** ([docs/fairness/](docs/fairness/)). Escalation and unflagged errors do not differ systematically by sex, race, insurance or language; patients aged 80+ are escalated more often.
@@ -204,6 +205,7 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
 - **Panels:** (a) coverage multiplier ν; (b) in-set deferral rate in training batches (5-step mean) against the 30% cap; (c) out-of-set deferral rate; (d) in-set coverage on the 212-case dev set at each evaluation.
 - **Dual ascent:** with plain dual ascent, ν wound up while the policy lagged, and in-set deferral collapsed after each overshoot: a limit cycle. Dev coverage then depended on where an evaluation fell in the cycle.
 - **PI controller:** the method is trained with a PI controller instead (Fig. S1). The consensus arm's cap barely bound.
+- **No cap:** the same training with ρ_max = 1 (ν stays at zero) defers about 95% of in-set cases after step 50, and its dev coverage falls to 3–5%.
 
 ![Figure 8](docs/figures/fig_training_dynamics.png)
 
@@ -223,7 +225,7 @@ Hollow markers: forced choice with a post-hoc threshold at matched coverage.
 
 ![Figure S4](docs/figures/fig_unseen_groups.png)
 
-**Figure S5 | Ablations at 100 training steps.** DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, and without the scored handoff (η = 0). Both are evaluated on 2 seeds with 95% intervals.
+**Figure S5 | Ablations at 100 training steps.** DEFER-Dx's step-100 checkpoint against the same training with a constant deferral reward, without the scored handoff (η = 0) and without the coverage cap (ρ_max = 1). Both are evaluated on 2 seeds with 95% intervals.
 
 ![Figure S5](docs/figures/fig_ablations.png)
 

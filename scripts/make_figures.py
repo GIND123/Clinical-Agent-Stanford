@@ -422,9 +422,10 @@ def fig_training_dynamics(runs_dir: Path, queue_dir: Path, out):
     paths = {"cev": runs_dir / "cev", "cev_dualascent": runs_dir / "cev_dualascent"} if archived else \
             {"cev_dualascent": runs_dir / "cev"}
     paths["deferdx"] = runs_dir / "deferdx"
+    paths["abl_cev_no_constraint"] = runs_dir / "abl_cev_no_constraint"  # the same training without the cap
     logs = {n: read_log(p / "train_log.jsonl") for n, p in paths.items()}
     logs = {n: rs for n, rs in logs.items() if rs}
-    order = [n for n in ("cev", "cev_dualascent", "deferdx") if n in logs]
+    order = [n for n in ("cev", "cev_dualascent", "abl_cev_no_constraint", "deferdx") if n in logs]
     if not order:
         return placeholder(out, "fig_training_dynamics", "Needs outputs/runs/<run>/train_log.jsonl.")
     fig, axes = plt.subplots(2, 2, figsize=(FULL, 3.9), sharex=True, layout="constrained")
@@ -458,7 +459,7 @@ def fig_training_dynamics(runs_dir: Path, queue_dir: Path, out):
         ax.set_xlabel("Training step")
     for ax in (b, c):
         ax.set_ylim(0, 100)
-    d.set_ylim(40, 100)
+    d.set_ylim(0, 100)  # the run without the cap falls to ~5% coverage
     a.set_ylim(bottom=0)
     for ax in (a, b, c, d):
         ticks(ax, "y", 5)
