@@ -36,11 +36,11 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 |---|---|
 | CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
 | Every model on MIMIC-CDM-CR (3 seeds) | done Sat 07:23 (two reboots on Oct 16 stopped the queue at 11:31) |
-| Ablation without the test-cost term (100 steps) and its evaluation | Sun ~07:20 (stopped at step 31 by the Oct 17 reboot; resumed 21:03 from step 30) |
-| Ablation without the coverage cap (100 steps) and its evaluation | Sun ~21:30 |
-| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Mon ~13:00 |
+| Ablation without the test-cost term (100 steps) and its evaluation | Tue ~11:40: resumes from step 35 after the coverage-cap ablation (`queue_v11.sh`; Oct 19 attempts hit a resume bug, now fixed) |
+| Ablation without the coverage cap (100 steps) and its evaluation | training since Mon Oct 19, 11:18; done Tue ~01:40 |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Wed ~02:30 |
 
-The machine restarted four times on Oct 16–17 (desktop updates and restarts), each time stopping the queue. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue. The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
+**Hardware.** The machine reset itself repeatedly on Oct 16–17 with a firmware-logged hardware error at every boot (BERT records), mostly under full GPU load (300 W at its limit, ~85 °C); after five resets within 20 minutes on Oct 17 evening it stayed off until Oct 19, 10:30. Power delivery or cooling should be checked. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue, unless another resume ran in the last 45 minutes (crash-loop guard). The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
 at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
 
 **Hugging Face.** Uploads still fail: the account's private storage is full, mostly from other projects. The sync daemon
