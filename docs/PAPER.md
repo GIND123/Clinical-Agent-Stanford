@@ -198,8 +198,15 @@ better targeted, and 60% of them were credited against 37% of the second seed's.
 
 **Test cost.** Removing the cost of tests ordered after the deferral changed the sign of the credit in 0% and 1% of
 states, and forced continuations ordered a test in only 23% and 18% of cases. The early deferral (0.84 tests per case)
-reflects the agent's inability to resolve these cases, not the price of investigating. [[No-cost ablation: DEFER-Dx
-trained without the test-cost term, against DEFER-Dx at step 100.]]
+reflects the agent's inability to resolve these cases, not the price of investigating. Training without the test-cost
+term (c = 0, 100 steps; Extended Data Fig. 8) confirmed this. Against DEFER-Dx at step 100 the agent ordered fewer tests
+per case (1.01 vs 1.57), though costlier ones ($1,166 vs $1,042 per case at our prices), and escalated less (coverage
+78.2% vs 68.1%; −10.1, −13.3 to −7.0), at the same accuracy on answered cases (93.6% vs 94.5%; 0.9, −1.3 to 3.0). Its
+handoffs were less informative (−12.9 points, 9.1 to 16.8) and ranked OTHER first in 63% of in-set handoffs (35%), and it
+committed wrongly to one of the four conditions more often on OTHER cases (10.4% vs 6.3% for groups seen in training,
+14.4% vs 10.2% for never-seen time-critical groups; neither difference survives Holm correction across all 218
+comparisons). Pricing tests is not why DEFER-Dx escalates early; with tests priced, it escalated more and handed over
+better differentials.
 
 **The clinician the credit assumes.** The escalation value credits a deferral with the value of a clinician who decides
 correctly with probability τ = 0.85. If that clinician were right in 70% instead, 46% rather than 60% of the first seed's
