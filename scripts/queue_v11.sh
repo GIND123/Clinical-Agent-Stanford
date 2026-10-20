@@ -2,14 +2,15 @@
 # GPU job queue, version 11 (Oct 19-21): waits for queue_v10, finishes the no-cost ablation (resumed from step 35),
 # then trains DEFER-Dx with a stronger handoff score
 # (cev_eta 1.0; configs/ablations/cev_eta1.yaml; 100 steps, against DEFER-Dx at step 100), evaluates it on the
-# held-out sets (2 seeds) and the published-case benchmark (3 seeds), and reports. Hard stop Mon Oct 19, 10:30
-# IST. Same guards as before.
+# held-out sets (2 seeds) and the published-case benchmark (3 seeds), and reports. Hard stop Wed Oct 21, 18:00
+# IST (moved from 12:00 after a desktop logout on Oct 20, 02:01 stopped this queue for 19.5 h). Same guards as before.
+# Start it from cron, not from a desktop app: a logout stops every process in the desktop session (Linger=no).
 #   setsid nohup bash scripts/queue_v11.sh >> outputs/logs/queue_v11.log 2>&1 < /dev/null &
 set -u
 cd "$(dirname "$0")/.."
 source scripts/env_gpu.sh
 mkdir -p outputs/logs outputs/queue
-DEADLINE=$(date -d "2026-10-21 12:00 +0530" +%s)
+DEADLINE=$(date -d "2026-10-21 18:00 +0530" +%s)
 
 echo "$(date -Is) queue v11 started; deadline $(date -d @"$DEADLINE" -Is); waiting for older queues"
 while pgrep -f "^(/usr)?(/bin/)?bash [^ ]*scripts/queue_v([2-9]|10)\.sh" >/dev/null; do sleep 60; done

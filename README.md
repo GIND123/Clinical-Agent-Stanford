@@ -30,17 +30,17 @@ An interactive clinical diagnostic agent trained with reinforcement learning ove
 | Figures | 18 publication figures in [docs/figures/](docs/figures/) (PDF, PNG, SVG; TikZ sources) |
 | Tests | 121 pass, some parametrised (`pytest`; CPU only) |
 
-**GPU plan: finish every queued run** (user, Oct 17), hard stop Wed Oct 21, 12:00 IST. `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
+**GPU plan: finish every queued run** (user, Oct 17), hard stop Wed Oct 21, 18:00 IST (moved from 12:00 to make up 19.5 h lost on Oct 20, below). `scripts/queue_v10.sh`, then `scripts/queue_v11.sh`:
 
 | Job | Expected (IST) |
 |---|---|
 | CEV estimator audit, both DEFER-Dx seeds | done Fri 11:12 |
 | Every model on MIMIC-CDM-CR (3 seeds) | done Sat 07:23 (two reboots on Oct 16 stopped the queue at 11:31) |
 | Ablation without the coverage cap (100 steps) and its evaluation | done Mon Oct 19, 19:41 |
-| Ablation without the test-cost term (100 steps) and its evaluation | Tue ~04:30: resumed from step 35 at 19:50 (`queue_v11.sh`; the Oct 19 morning attempts hit a resume bug, now fixed) |
-| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Tue ~16:00 |
+| Ablation without the test-cost term (100 steps) and its evaluation | Tue ~23:50: resumed from step 85 at 21:41 (stopped at step 86 by a desktop logout, Tue 02:01; the Oct 19 morning attempts hit a resume bug, now fixed) |
+| DEFER-Dx with the handoff score weighted 1.0 (100 steps), held-out and published-case evaluation | Wed ~12:00 |
 
-**Hardware.** The machine reset itself repeatedly on Oct 16–17 with a firmware-logged hardware error at every boot (BERT records), mostly under full GPU load (300 W at its limit, ~85 °C); after five resets within 20 minutes on Oct 17 evening it stayed off until Oct 19, 10:30. Power delivery or cooling should be checked. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue, unless another resume ran in the last 45 minutes (crash-loop guard). The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
+**Hardware.** The machine reset itself repeatedly on Oct 16–17 with a firmware-logged hardware error at every boot (BERT records), mostly under full GPU load (300 W at its limit, ~85 °C); after five resets within 20 minutes on Oct 17 evening it stayed off until Oct 19, 10:30. Power delivery or cooling should be checked. No reset since Oct 19, 10:30. **Logout, Oct 20 02:01:** the desktop session ended, and systemd stopped every process started from it (Linger=no), including `queue_v11.sh`, which had been restarted from the editor; the GPU sat idle until 21:41. Queues are now started from cron (outside the desktop session), like the sync daemon, which kept running. A crontab `@reboot` entry now waits for the data disk and runs `scripts/resume_after_reboot.sh`, which restarts the sync daemon and any unfinished queue, unless another resume ran in the last 45 minutes (crash-loop guard). The rules are unchanged: a fixed list; a job starts only if its estimate fits before the deadline; every attempt is killed
 at the deadline; at most two attempts, training resuming from its newest checkpoint; whatever finishes is reported.
 
 **Hugging Face.** Uploads still fail: the account's private storage is full, mostly from other projects. The sync daemon

@@ -1,6 +1,6 @@
 # Experiment runbook (final, as run)
 
-All runs used one shared 48 GB GPU. The user asked for every queued run to finish; the hard stop is **Wednesday, October 21, 2026, 12:00 IST**, through `scripts/queue_v10.sh` and `scripts/queue_v11.sh`. See *Hardware resets* below for the GPU time lost between Oct 16 and Oct 19. This page records what ran, what did not and why, and which comparisons the results can support. The numbers are in [RESULTS.md](RESULTS.md); figures and captions are in the README §3 and the paper.
+All runs used one shared 48 GB GPU. The user asked for every queued run to finish; the hard stop is **Wednesday, October 21, 2026, 18:00 IST** (moved from 12:00 to make up 19.5 hours lost on Oct 20), through `scripts/queue_v10.sh` and `scripts/queue_v11.sh`. See *Hardware resets* and *Logout* below for the GPU time lost between Oct 16 and Oct 20. This page records what ran, what did not and why, and which comparisons the results can support. The numbers are in [RESULTS.md](RESULTS.md); figures and captions are in the README §3 and the paper.
 
 ## Runs
 
@@ -19,9 +19,9 @@ All runs used one shared 48 GB GPU. The user asked for every queued run to finis
 | gpt-oss-20b zero-shot | (none) | (none) | **not run**: both attempts in `queue_v8.sh` failed at engine start-up (vLLM's FlashInfer kernels rejected the Blackwell GPU, "requires sm75 or higher"); an optional baseline, not retried | larger open model |
 | GRPO control, second training seed | `configs/ablations/nodefer_seed1.yaml` (seed 1, otherwise identical) | 150 | trained and evaluated (`queue_v9.sh`, Oct 13–14) | comparator seed variance; each DEFER-Dx seed against each control seed, and pooled |
 | Consensus arm, second training seed | `configs/ablations/seed1.yaml` (`configs/grpo_deferdx.yaml` with seed 1) | 150 | trained on a Lambda Cloud A100, Oct 13–14 ([CONSENSUS_SEED1.md](CONSENSUS_SEED1.md)); **held-out evaluation pending**: its adapter was not on the shared GPU when `queue_v9.sh` ended | the consensus arm's seed variance |
-| Ablation without the test-cost term | `configs/ablations/cev_no_cost.yaml` (cost_scale 0) | 100 | `queue_v10.sh` reached step 37 before the Oct 17 resets; both resume attempts on Oct 19 failed (adapter-pruning bug, below). Requeued in `queue_v11.sh`, resumed from step 35 on Mon Oct 19 at 19:50 IST (expected Tue Oct 20, ~04:30 IST with evaluation), against DEFER-Dx's step-100 checkpoint | does early deferral come from test cost? |
+| Ablation without the test-cost term | `configs/ablations/cev_no_cost.yaml` (cost_scale 0) | 100 | `queue_v10.sh` reached step 37 before the Oct 17 resets; both resume attempts on Oct 19 failed (adapter-pruning bug, below). Requeued in `queue_v11.sh`, resumed from step 35 on Mon Oct 19 at 19:50 IST; stopped at step 86 by the Oct 20 logout and resumed from step 85 at 21:41 (expected Tue Oct 20, ~23:50 IST with evaluation), against DEFER-Dx's step-100 checkpoint | does early deferral come from test cost? |
 | Ablation without the coverage cap | `configs/ablations/cev_no_constraint.yaml` (rho_max 1.0) | 100 | trained and evaluated (`queue_v10.sh`, Mon Oct 19, 11:18–19:41 IST), against DEFER-Dx's step-100 checkpoint: deferral collapses to about 95% without it | how much does the 30% cap shape behaviour? |
-| DEFER-Dx with the handoff score weighted 1.0 | `configs/ablations/cev_eta1.yaml` (cev_eta 1.0) | 100 | `queue_v11.sh`, after the no-cost run (expected Tue Oct 20, ~16:00 IST with held-out and published-case evaluation) | can a stronger handoff score fix seed-dependent handoff content? |
+| DEFER-Dx with the handoff score weighted 1.0 | `configs/ablations/cev_eta1.yaml` (cev_eta 1.0) | 100 | `queue_v11.sh`, after the no-cost run (expected Wed Oct 21, ~12:00 IST with held-out and published-case evaluation) | can a stronger handoff score fix seed-dependent handoff content? |
 | CEV estimator audit | (inference only) `scripts/cev_audit.py`, K = 16 | — | `queue_v10.sh`, done Oct 16 | estimator noise, cost share, clinician-accuracy sensitivity |
 | MIMIC-CDM-CR, every model | `benchmarks/casereports/` (32 published case reports) | — | `queue_v10.sh`, Oct 16 | external, shareable test set |
 
@@ -43,7 +43,7 @@ All runs used one shared 48 GB GPU. The user asked for every queued run to finis
 | `queue_v8.sh` | Oct 12–13 | Budget extended to Wed 05:30 IST: the second DEFER-Dx seed and the no-handoff ablation; gpt-oss-20b failed at start-up. Finished Tue 21:57 IST. |
 | `queue_v9.sh` | Oct 13–14 | The control's second training seed, trained from Tue 21:58 IST, evaluated and reported Wed 16:18 IST. The consensus arm's second seed was not evaluated: no adapter had arrived. |
 | `queue_v10.sh` | Oct 16–20 | GPU time extended to Mon Oct 19, 10:30 IST, then to Wed Oct 21, 12:00 IST (user: finish every run). CEV audit, MIMIC-CDM-CR for every model, the no-cost and no-cap ablations, the consensus arm's second seed if its adapter arrives. Restarted at each boot by `scripts/resume_after_reboot.sh`; the no-cost run moved to `queue_v11.sh` after the resume bug. |
-| `queue_v11.sh` | Oct 17–21 | Waits for queue_v10. Rewritten Oct 19: resumes the no-cost ablation from step 35 (evaluation, report), then DEFER-Dx with the handoff score weighted 1.0 (held-out and published-case evaluation, report). |
+| `queue_v11.sh` | Oct 17–21 | Waits for queue_v10. Hard stop moved to Wed Oct 21, 18:00 IST after the Oct 20 logout. Rewritten Oct 19: resumes the no-cost ablation from step 35 (evaluation, report), then DEFER-Dx with the handoff score weighted 1.0 (held-out and published-case evaluation, report). |
 
 ## Hardware resets, Oct 16–19
 
@@ -54,6 +54,12 @@ All runs used one shared 48 GB GPU. The user asked for every queued run to finis
   - A crash-loop guard: if the previous resume was under 45 minutes ago, GPU work is not restarted. Otherwise it starts after a 5-minute delay.
 - **Resume bug.** When a run resumed fewer than `keep_adapters` steps after its last checkpoint, the adapter pruning deleted the adapter it had just saved. vLLM then failed with `LoRAAdapterNotFoundError` at the next step. This killed both no-cost attempts on Oct 19. `register_adapter` in `src/deferdx/training/grpo_vllm.py` fixes it, with a regression test in `tests/test_register_adapter.py`. No finished run was affected: the bug stops a run with an error rather than changing its training, and the earlier resumes (the control from step 20, the second DEFER-Dx seed from step 50) trained to completion.
 - **Lost work.** No finished result was lost. The no-cost ablation restarts from its step-35 checkpoint.
+
+## Logout, Oct 20
+
+- **What happened.** At 02:01 IST on Oct 20 the desktop session logged out. systemd then stopped every process started from that session, because user lingering is off. That included `queue_v11.sh`, which had been restarted from the code editor on Oct 19, and the no-cost training at step 86 (SIGTERM in `outputs/logs/train_abl_cev_no_cost.log`). The sync daemon and `queue_v10.sh` had been started from cron and were not affected.
+- **Cost.** The GPU was idle from 02:01 to 21:41, 19.5 hours. The hard stop moved from Wed Oct 21 12:00 to 18:00 IST so that the last run still fits; the queue's time check would otherwise have skipped it.
+- **Fix.** GPU queues are started from cron (a one-shot crontab entry, removed after it fired), so they run outside the desktop session. Training resumed from the step-85 checkpoint.
 
 ## Comparisons the results support
 
