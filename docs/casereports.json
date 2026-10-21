@@ -1201,6 +1201,306 @@
         },
         "tests_per_case": 1.5833333333333333
       }
+    },
+    "abl_cev_eta1": {
+      "label": "DEFER-Dx, handoff score eta 1.0 (step 100)",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.8947368421052632,
+          "lo": 0.7894736842105263,
+          "hi": 0.9824561403508771,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.10526315789473684,
+          "lo": 0.017543859649122806,
+          "hi": 0.21052631578947367,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.17647058823529413,
+        "tests_per_case": 1.2105263157894737
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.8571428571428571,
+          "lo": 0.6666666666666666,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.14285714285714285,
+          "lo": 0.0,
+          "hi": 0.3333333333333333,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.05555555555555555,
+        "tests_per_case": 1.380952380952381
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 0.9696969696969697,
+          "lo": 0.9090909090909091,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.030303030303030304,
+          "lo": 0.0,
+          "hi": 0.09090909090909091,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.25,
+        "tests_per_case": 1.0606060606060606
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.10256410256410256,
+          "lo": 0.0,
+          "hi": 0.23076923076923078,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.8974358974358975,
+          "lo": 0.7692307692307693,
+          "hi": 1.0,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.2307692307692308
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.14814814814814814,
+          "lo": 0.0,
+          "hi": 0.2962962962962963,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.8518518518518519,
+          "lo": 0.7037037037037037,
+          "hi": 1.0,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.3333333333333333
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.0
+      }
+    },
+    "cev_step100": {
+      "label": "DEFER-Dx at step 100",
+      "out_of_scope": {
+        "escalated": {
+          "value": 0.9649122807017544,
+          "lo": 0.9122807017543859,
+          "hi": 1.0,
+          "n_cases": 19
+        },
+        "wrong": {
+          "value": 0.03508771929824561,
+          "lo": 0.0,
+          "hi": 0.08771929824561403,
+          "n_cases": 19
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 19
+        },
+        "handoff_top_in_scope": 0.16363636363636364,
+        "tests_per_case": 1.8245614035087718
+      },
+      "held_out_time_critical": {
+        "escalated": {
+          "value": 0.9047619047619048,
+          "lo": 0.8095238095238095,
+          "hi": 1.0,
+          "n_cases": 7
+        },
+        "wrong": {
+          "value": 0.09523809523809523,
+          "lo": 0.0,
+          "hi": 0.19047619047619047,
+          "n_cases": 7
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 7
+        },
+        "handoff_top_in_scope": 0.10526315789473684,
+        "tests_per_case": 1.8095238095238095
+      },
+      "new_groups": {
+        "escalated": {
+          "value": 1.0,
+          "lo": 1.0,
+          "hi": 1.0,
+          "n_cases": 11
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 11
+        },
+        "handoff_top_in_scope": 0.15151515151515152,
+        "tests_per_case": 1.7575757575757576
+      },
+      "in_scope": {
+        "escalated": {
+          "value": 0.3076923076923077,
+          "lo": 0.10256410256410256,
+          "hi": 0.5384615384615384,
+          "n_cases": 13
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 13
+        },
+        "correct": {
+          "value": 0.6923076923076923,
+          "lo": 0.46153846153846156,
+          "hi": 0.8974358974358975,
+          "n_cases": 13
+        },
+        "tests_per_case": 1.7179487179487178
+      },
+      "in_scope_complicated": {
+        "escalated": {
+          "value": 0.4074074074074074,
+          "lo": 0.1111111111111111,
+          "hi": 0.7037037037037037,
+          "n_cases": 9
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 9
+        },
+        "correct": {
+          "value": 0.5925925925925926,
+          "lo": 0.2962962962962963,
+          "hi": 0.8888888888888888,
+          "n_cases": 9
+        },
+        "tests_per_case": 1.7407407407407407
+      },
+      "in_scope_uncomplicated": {
+        "escalated": {
+          "value": 0.08333333333333333,
+          "lo": 0.0,
+          "hi": 0.25,
+          "n_cases": 4
+        },
+        "wrong": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "no_answer": {
+          "value": 0.0,
+          "lo": 0.0,
+          "hi": 0.0,
+          "n_cases": 4
+        },
+        "correct": {
+          "value": 0.9166666666666666,
+          "lo": 0.75,
+          "hi": 1.0,
+          "n_cases": 4
+        },
+        "tests_per_case": 1.6666666666666667
+      }
     }
   },
   "per_case": {
@@ -1212,7 +1512,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR02": {
       "cev": "wrong",
@@ -1222,7 +1524,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR03": {
       "cev": "escalated",
@@ -1232,7 +1536,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR04": {
       "cev": "escalated",
@@ -1242,7 +1548,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR05": {
       "cev": "escalated",
@@ -1252,7 +1560,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR06": {
       "cev": "escalated",
@@ -1262,7 +1572,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR07": {
       "cev": "escalated",
@@ -1272,7 +1584,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR08": {
       "cev": "escalated",
@@ -1282,7 +1596,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR09": {
       "cev": "wrong",
@@ -1292,7 +1608,9 @@
       "grpo_nodefer": "wrong",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "wrong"
+      "zs_nodefer": "wrong",
+      "abl_cev_eta1": "wrong",
+      "cev_step100": "escalated"
     },
     "CR10": {
       "cev": "escalated",
@@ -1302,7 +1620,9 @@
       "grpo_nodefer": "none",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR11": {
       "cev": "escalated",
@@ -1312,7 +1632,9 @@
       "grpo_nodefer": "none",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR12": {
       "cev": "escalated",
@@ -1322,7 +1644,9 @@
       "grpo_nodefer": "none",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR13": {
       "cev": "escalated",
@@ -1332,7 +1656,9 @@
       "grpo_nodefer": "none",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR14": {
       "cev": "escalated",
@@ -1342,7 +1668,9 @@
       "grpo_nodefer": "none",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "wrong"
+      "zs_nodefer": "wrong",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR15": {
       "cev": "escalated",
@@ -1352,7 +1680,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR16": {
       "cev": "escalated",
@@ -1362,7 +1692,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR17": {
       "cev": "escalated",
@@ -1372,7 +1704,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR18": {
       "cev": "escalated",
@@ -1382,7 +1716,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "wrong",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "wrong",
+      "cev_step100": "escalated"
     },
     "CR19": {
       "cev": "escalated",
@@ -1392,7 +1728,9 @@
       "grpo_nodefer": "escalated",
       "deferdx": "escalated",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR20": {
       "cev": "correct",
@@ -1402,7 +1740,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "escalated"
     },
     "CR21": {
       "cev": "escalated",
@@ -1412,7 +1752,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR22": {
       "cev": "correct",
@@ -1422,7 +1764,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR23": {
       "cev": "escalated",
@@ -1432,7 +1776,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "escalated",
+      "cev_step100": "escalated"
     },
     "CR24": {
       "cev": "escalated",
@@ -1442,7 +1788,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "escalated",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "escalated"
     },
     "CR25": {
       "cev": "correct",
@@ -1452,7 +1800,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR26": {
       "cev": "correct",
@@ -1462,7 +1812,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR27": {
       "cev": "correct",
@@ -1472,7 +1824,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR28": {
       "cev": "escalated",
@@ -1482,7 +1836,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "escalated",
-      "zs_nodefer": "escalated"
+      "zs_nodefer": "escalated",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "escalated"
     },
     "CR29": {
       "cev": "correct",
@@ -1492,7 +1848,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR30": {
       "cev": "correct",
@@ -1502,7 +1860,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR31": {
       "cev": "correct",
@@ -1512,7 +1872,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     },
     "CR32": {
       "cev": "correct",
@@ -1522,7 +1884,9 @@
       "grpo_nodefer": "correct",
       "deferdx": "correct",
       "zs_defer": "correct",
-      "zs_nodefer": "correct"
+      "zs_nodefer": "correct",
+      "abl_cev_eta1": "correct",
+      "cev_step100": "correct"
     }
   },
   "cases": {

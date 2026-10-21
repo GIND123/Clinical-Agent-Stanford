@@ -27,11 +27,12 @@ deferral reward from prior work. A threshold sent complicated disease to the cli
 disease (16.7% vs 24.0%); DEFER-Dx did not. But what the handoff named depended on the training seed: when clinicians
 were modelled as adopting the handoff's top suggestion as often as physicians followed adversarial AI, one seed's
 handoffs lowered team accuracy (86.8% vs 91.5% with the threshold) and the other's steered towards wrong in-scope
-diagnoses on unfamiliar emergencies. On 32 published case reports, the second seed escalated every out-of-scope case and
+diagnoses on unfamiliar emergencies; weighting the handoff score more heavily traded one failure for the other. On 32 published case reports, the second seed escalated every out-of-scope case and
 the first was misled by two reported diagnostic traps.
 
-**Conclusions.** Crediting escalation against the counterfactual of continuing trains stable, well-targeted deferral that
-outperforms post-hoc thresholding and a published deferral reward. Whether escalation is safe depends on the content of
+**Conclusions.** Crediting escalation against the counterfactual of continuing, within a fixed escalation budget, trains
+stable, well-targeted deferral that outperforms post-hoc thresholding and a published deferral reward; without the budget
+the agent escalated almost every case. Whether escalation is safe depends on the content of
 the handoff, which should be trained and evaluated as carefully as the decision to escalate.
 
 ## Introduction
@@ -147,7 +148,7 @@ gangrenous cholecystitis, diverticulitis with pylephlebitis), against none on th
 correct on 69.2% and 87.2% of in-scope episodes, against 100% for the control. With 32 cases these results describe
 behaviour; they are not precise rates.
 
-![Fig. 5 | MIMIC-CDM-CR: behaviour on 32 published case reports. Majority outcome over three evaluation seeds for each case (rows) and system (columns): C, correct in-scope diagnosis; E, escalated (DEFER, or COMMIT of OTHER, which names no diagnosis to act on); W, wrong in-scope diagnosis; M, no majority. Rows are grouped by the five held-out time-critical groups, groups in no MIMIC cohort, a group seen in training, and in-scope cases with and without complications by the guideline grade the report supports. Cases and citations: benchmarks/casereports/.](docs/figures/fig_casereports.png)
+![Fig. 5 | MIMIC-CDM-CR: behaviour on 32 published case reports. Majority outcome over three evaluation seeds for each case (rows) and system (columns): C, correct in-scope diagnosis; E, escalated (DEFER, or COMMIT of OTHER, which names no diagnosis to act on); W, wrong in-scope diagnosis; M, no majority. Rows are grouped by the five held-out time-critical groups, groups in no MIMIC cohort, a group seen in training, and in-scope cases with and without complications by the guideline grade the report supports. The last two columns compare DEFER-Dx's step-100 checkpoint with the same training with the handoff score weighted 1.0. Cases and citations: benchmarks/casereports/.](docs/figures/fig_casereports.png)
 
 ### Complicated disease
 
@@ -204,7 +205,7 @@ per case (1.01 vs 1.57), though costlier ones ($1,166 vs $1,042 per case at our 
 78.2% vs 68.1%; −10.1, −13.3 to −7.0), at the same accuracy on answered cases (93.6% vs 94.5%; 0.9, −1.3 to 3.0). Its
 handoffs were less informative (−12.9 points, 9.1 to 16.8) and ranked OTHER first in 63% of in-set handoffs (35%), and it
 committed wrongly to one of the four conditions more often on OTHER cases (10.4% vs 6.3% for groups seen in training,
-14.4% vs 10.2% for never-seen time-critical groups; neither difference survives Holm correction across all 218
+14.4% vs 10.2% for never-seen time-critical groups; neither difference survives Holm correction across all 251
 comparisons). Pricing tests is not why DEFER-Dx escalates early; with tests priced, it escalated more and handed over
 better differentials.
 
@@ -230,7 +231,19 @@ on OTHER (0.0% and 0.5% for seen and never-seen groups, against 6.3% and 10.2%);
 in-set cases (78%). The escalation value alone therefore does not bound how much is handed over: an assumed clinician is
 worth more than the agent's forced continuation in almost every state. What it does is rank states by the value of not
 escalating; the multiplier ν, held by the controller, is the price of a deferral that turns the ranking into a budget.
-The credit decides which cases are escalated, the cap how many. [[DEFER-Dx with the handoff score weighted 1.0.]]
+The credit decides which cases are escalated, the cap how many.
+
+**A stronger handoff score** (η = 1.0, 100 steps) did not fix the handoff's content; it moved the agent along the
+trade-off that separated the two DEFER-Dx seeds. Against η = 0.3 at the same step, it ranked OTHER first in more in-set
+handoffs (45% vs 35%), so the top suggestion of an in-set handoff was wrong more often (68% vs 55%) and in-set handoffs
+scored lower (59.3 vs 63.2; −3.9, −6.9 to −0.7). On never-seen time-critical cases its handoffs suggested an in-scope
+diagnosis less often (16% vs 34%), and at f = 0.47 it caused fewer wrong in-scope diagnoses (17.1% vs 24.1%; −7.0, −10.1
+to −3.9), with in-set team accuracy unchanged (85.6% vs 86.9%; −1.3, −3.1 to 0.6). It also escalated less (coverage 74.1%
+vs 68.1%), named OTHER by committing to it rather than by deferring (24% and 32% of OTHER cases from seen and never-seen
+groups, against 10% and 12%) and made more unflagged errors (5.9 vs 3.8 per 100; 2.2, 0.2 to 4.3; not significant after
+Holm correction). On the 32 published cases it committed wrongly on 10.5% of out-of-scope cases (3.5%) and escalated
+complicated in-scope disease less often (15% vs 41%). A heavier proper score rewards a better differential, but it does
+not tell the agent which differential the clinician should receive.
 
 ### Robustness and equity
 
@@ -263,7 +276,9 @@ are not independent of AI advice[3,14,18], and once the clinician can be steered
 one DEFER-Dx run labelled uncertain in-set cases "none of the four", the other escalated unfamiliar emergencies with an
 in-scope suggestion, and either pattern would have cost patients under the susceptibility measured in physicians. Both
 runs were trained with the same strictly proper handoff score; at η = 0.3 it improved handoff content (the no-handoff
-ablation) but did not pin down which kind of differential the agent learned. A threshold, by contrast, hands over its
+ablation) but did not pin down which kind of differential the agent learned, and weighting it more heavily (η = 1.0)
+moved the agent towards OTHER-first handoffs, safer on unfamiliar emergencies and worse on in-set cases, rather than
+improving both. A threshold, by contrast, hands over its
 own withheld guess, and a learning-to-defer rule hands over fewer guesses but doubles the clinician's workload.
 Regulatory guidance asks that clinicians be able to review the basis of a recommendation independently[2]; our results
 suggest that agents should be trained and evaluated against a clinician who might not.
@@ -279,7 +294,8 @@ seed-to-seed variation make unmatched or single-run comparisons easy to misread.
 set as a budget by the clinical service rather than left to the reward: a credit that assumes a competent clinician,
 trained without a budget, handed over almost every case. Agents that defer should be evaluated in
 the open world, on external cases, and with a model of the clinician who receives the case; the handoff should be
-trained with stronger pressure towards the right content and assessed by clinicians.
+trained against the clinician who receives it, for example by scoring the team's decision under a model of how often
+clinicians adopt the top suggestion rather than the differential alone, and assessed by clinicians.
 
 **Limitations.** The data come from one centre and one organ system (abdominal pain at BIDMC). Labels for OTHER cases are
 principal ICD codes, severity labels are proxies from codes and admission laboratory values, and the severity matrix and
@@ -359,9 +375,9 @@ together); comparisons are paired bootstraps on the same cases with two-sided p-
 four pairings with cases resampled and training runs held fixed. The paper's two questions, fixed before the second
 training seeds were run, give four primary tests: pooled accuracy on answered cases and pooled unflagged errors against
 the thresholded control, and wrong commitments on never-seen time-critical cases against the consensus reward for each
-DEFER-Dx seed. Holm correction within these four gives p ≤ 0.02 for each. Across all 218 paired tests in the report (one
+DEFER-Dx seed. Holm correction within these four gives p ≤ 0.02 for each. Across all 251 paired tests in the report (one
 family; two-sided Wald p from the bootstrap standard error; RESULTS.md §5), the pooled accuracy difference has Holm
-p = 0.052, the unflagged-error difference 0.078 and the time-critical comparisons ≥ 0.80, which therefore rest on their
+p = 0.060, the unflagged-error difference 0.088 and the time-critical comparisons ≥ 0.92, which therefore rest on their
 replication across two seeds; all other comparisons are exploratory.
 
 ### Severity labels

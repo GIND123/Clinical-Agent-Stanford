@@ -68,19 +68,19 @@ At 0.84 tests per case, that is under 0.005 of reward per case.
 
 ## C. Multiple comparisons
 
-**Across all paired tests in `docs/results.json`:** 218 tests. 107 have p < 0.05, and 58 remain below 0.05 after Holm correction.
+**Across all paired tests in `docs/results.json`:** 251 tests (Oct 21, with every ablation). 125 have p < 0.05, and 60 remain below 0.05 after Holm correction.
 
 **The three comparisons the abstract reports:**
 
-| Comparison | p | Holm, within the three | Holm, across all 218 |
+| Comparison | p | Holm, within the three | Holm, across all 251 |
 |---|---|---|---|
 | Accuracy on answered cases, against a threshold on the zero-shot model (three-sample voting, matched coverage) | < 0.001 | < 0.001 | < 0.001 |
-| Wrong commitments on never-seen time-critical cases, against the consensus arm (first DEFER-Dx seed) | 0.013 | 0.020 | 1.0 |
+| Wrong commitments on never-seen time-critical cases, against the consensus arm (first DEFER-Dx seed) | 0.013 | 0.020 | 0.92 |
 | The same, second DEFER-Dx seed | 0.010 | 0.020 | 1.0 |
 
 **Reading:**
 - The zero-shot comparison survives any correction.
-- The time-critical result survives correction within the abstract's three claims, but not across all 218 tests.
+- The time-critical result survives correction within the abstract's three claims, but not across all 251 tests.
 - Its stronger support is that two independently trained DEFER-Dx seeds each show it.
 - In the paper, mark the secondary comparisons exploratory and report the Holm-adjusted p.
 
@@ -99,12 +99,12 @@ At 0.84 tests per case, that is under 0.005 of reward per case.
 | The win disappears under majority vote | With two seeds per arm the single-sample difference holds in all four pairings; with three-sample voting it is +2.2 (−0.9 to 5.5) for the first pairing (PAPER results). |
 | Systems answer at different rates | Thresholds match coverage exactly (`coverage_rule`); risk–coverage curves in Extended Data Fig. 3. |
 | Pooled runs inflate significance | The bootstrap resamples cases with all their runs; pooled seed comparisons hold training runs fixed and say so. |
-| No multiple-comparison correction | Holm column in RESULTS.md §5 (218 tests, Wald p from the bootstrap SE). Primary tests (the paper's two questions): Holm p ≤ 0.02; across all 218: pooled accuracy 0.052, time-critical comparisons not significant. Stated in PAPER Methods. |
+| No multiple-comparison correction | Holm column in RESULTS.md §5 (251 tests, Wald p from the bootstrap SE). Primary tests (the paper's two questions): Holm p ≤ 0.02; across all 251: pooled accuracy 0.060, time-critical comparisons not significant. Stated in PAPER Methods. |
 | The gap to the published reward is not significant on headline measures | Stated: accuracy on answered cases is the same; the difference is on unfamiliar presentations. |
-| The time-critical result rests on about 13 of 187 cases | Intervals reported; replicated in the second seed (−4.6 and −4.3); does not survive Holm across all 218 tests, said so. |
+| The time-critical result rests on about 13 of 187 cases | Intervals reported; replicated in the second seed (−4.6 and −4.3); does not survive Holm across all 251 tests, said so. |
 | CEV uses three noisy rollouts | Audited with K = 16 (`scripts/cev_audit.py`): K = 3 gives the credit the same sign in 88% and 92% of in-set states (K = 8: 95%, 96%). Extended Data Fig. 7. |
 | CEV assumes the clinician is right | Three answers: the credit's sensitivity to the assumed clinician accuracy (46% of deferrals credited at 0.70 vs 60% at 0.85); a human-AI team model with a clinician of accuracy 0.89 (Hager et al.) who can be steered by the handoff (Barrit et al. 2026); and a learning-to-defer baseline (defer when p < clinician accuracy). PAPER, "What the handoff says". |
-| Handoffs list OTHER first 68% of the time | First seed only (second: 4.2%); the team model shows each seed's handoff pattern costs patients under clinician susceptibility. Moved to the main results. |
+| Handoffs list OTHER first 68% of the time | First seed only (second: 4.2%); the team model shows each seed's handoff pattern costs patients under clinician susceptibility. Moved to the main results. A heavier handoff score (η = 1.0, `configs/ablations/cev_eta1.yaml`) does not fix it: against η = 0.3 at step 100 it ranks OTHER first in more in-set handoffs (45% vs 35%), lowering in-set handoff quality (−3.9) while cutting AI-caused wrong in-scope diagnoses on never-seen time-critical cases at f = 0.47 (17.1% vs 24.1%). |
 | Unflagged errors depend on the case mix | Open-world results given per 100 cases in the same units (AI-caused wrong in-scope diagnoses per 100). |
 | Sample sizes vary | One cohort table: PAPER Extended Data Table 1. |
 | The fairness analysis has no results | Done: docs/fairness/ for both DEFER-Dx seeds, the consensus reward, the control and prompted DEFER. |

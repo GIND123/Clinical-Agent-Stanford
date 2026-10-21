@@ -688,9 +688,11 @@ def fig_cev_audit(out):
     save(fig, out, "fig_cev_audit")
 
 
-CR_COLUMNS = [("cev", "DEFER-Dx"), ("cev_seed1", "DEFER-Dx\nseed 2"), ("abl_cev_eta1", "DEFER-Dx\neta 1.0"),
+CR_COLUMNS = [("cev", "DEFER-Dx"), ("cev_seed1", "DEFER-Dx\nseed 2"),
               ("grpo_nodefer+thr", "Control\n+ threshold"), ("grpo_nodefer", "Control\nforced"),
-              ("deferdx", "Consensus\nreward"), ("zs_defer", "Zero-shot\nDEFER"), ("zs_nodefer", "Zero-shot\nforced")]
+              ("deferdx", "Consensus\nreward"), ("zs_defer", "Zero-shot\nDEFER"), ("zs_nodefer", "Zero-shot\nforced"),
+              # the handoff-weight ablation against its own comparator, DEFER-Dx at the same step
+              ("cev_step100", "DEFER-Dx\nstep 100"), ("abl_cev_eta1", "η = 1.0\nstep 100")]
 CR_SECTIONS = [("held_out", "Held-out time-critical groups"), ("new", "Groups in no MIMIC cohort"),
                ("seen", "Seen group"), ("complicated", "In scope, complicated"), ("uncomplicated", "In scope, uncomplicated")]
 

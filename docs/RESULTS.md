@@ -37,6 +37,7 @@ probability (one fixed hash per case and evaluation seed), which matches the ref
 | Ablation: constant deferral reward (step 100) | 84.9 (81.9–87.7) | 83.5 (80.0–86.7) | 86.0 (82.8–88.8) | 77.5 (74.1–80.6) | 94.9 (92.8–96.8) | 93.1 (90.6–96.1) | 0.042 (0.031–0.066) | 0.068 (0.049–0.087) | 0.055 (0.043–0.070) | 86.9 (84.9–88.8) |
 | Ablation: escalation value without the test-cost term (step 100) | 79.3 (76.1–82.5) | 76.7 (73.0–80.5) | 83.3 (80.1–86.2) | 78.2 (75.0–81.4) | 93.6 (91.5–95.5) | 92.1 (88.5–95.1) | 0.062 (0.044–0.091) | 0.028 (0.016–0.046) | 0.060 (0.045–0.076) | 85.9 (84.0–87.9) |
 | Ablation: escalation value without the coverage cap (step 100) | 35.3 (31.8–38.9) | 33.4 (29.6–37.4) | 48.2 (43.4–52.7) | 3.0 (1.9–4.4) | 93.1 (81.5–100.0) | 36.8 (31.6–39.8) | 0.548 (0.530–0.636) | 0.088 (0.066–0.200) | 0.077 (0.024–0.160) | 52.2 (51.4–53.0) |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | 77.0 (73.5–80.2) | 74.7 (70.8–78.4) | 79.7 (76.1–82.9) | 74.1 (70.4–77.4) | 92.0 (89.4–94.3) | 87.6 (83.9–91.1) | 0.075 (0.053–0.097) | 0.067 (0.047–0.090) | 0.077 (0.063–0.093) | 85.5 (83.5–87.5) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 82.4 (79.6–85.1) | 79.6 (76.1–83.0) | 86.5 (83.9–89.0) | 77.7 (74.7–80.6) | 92.9 (90.7–94.9) | 91.5 (88.5–94.3) | 0.047 (0.034–0.066) | 0.029 (0.021–0.046) | 0.061 (0.047–0.077) | 90.9 (89.3–92.5) |
 | GRPO control (no DEFER), second training seed + threshold at matched coverage (78%) | 81.7 (78.5–84.7) | 77.9 (74.1–81.6) | 84.0 (80.9–86.9) | 77.6 (74.7–80.2) | 89.9 (87.4–92.3) | 88.9 (85.6–91.7) | 0.075 (0.059–0.104) | 0.027 (0.013–0.051) | 0.087 (0.068–0.107) | 88.3 (86.5–90.1) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 74.3 (70.9–77.6) | 71.9 (67.9–75.5) | 80.9 (77.8–83.7) | 77.2 (74.4–79.7) | 82.8 (79.8–85.7) | 81.7 (77.8–84.8) | 0.130 (0.103–0.162) | 0.071 (0.048–0.102) | 0.136 (0.114–0.159) | 87.2 (85.3–89.1) |
@@ -50,7 +51,7 @@ probability (one fixed hash per case and evaluation seed), which matches the ref
 
 ## 2. Clinical safety (CDM, val + test; time-critical column from the unseen OTHER groups)
 
-Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx; 4.2% for its second training seed; 8.6% for the consensus arm; 27.6% for prompted DEFER; 35.1% for DEFER-Dx at step 100; 55.1% for the no-handoff ablation; 12.8% for the constant-reward ablation; 62.7% for the no-cost ablation; 62.0% for the no-cap ablation).
+Unflagged errors: wrong diagnoses committed without escalation, per case. Severity-weighted error uses the matrix in configs/severity_matrix.yaml (a proxy). Deferral precision: share of deferrals whose best guess was wrong; errors caught: share of would-be errors that were deferred. Both judge a deferral by the top of its differential, so a handoff that ranks OTHER first on an in-set case always counts as justified; read them with the share of in-set handoffs ranked OTHER first (68.4% for DEFER-Dx; 4.2% for its second training seed; 8.6% for the consensus arm; 27.6% for prompted DEFER; 35.1% for DEFER-Dx at step 100; 55.1% for the no-handoff ablation; 12.8% for the constant-reward ablation; 62.7% for the no-cost ablation; 62.0% for the no-cap ablation; 44.8% for the eta-1.0 run).
 
 | System | Diverticulitis acc | Unflagged errors ↓ | Confident errors ↓ | Severity-wtd error ↓ | Time-critical OTHER missed ↓ | Deferral precision | Errors caught | Tests/case | $/case |
 |---|---|---|---|---|---|---|---|---|---|
@@ -79,6 +80,7 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Ablation: constant deferral reward (step 100) | 85.3 (76.0–93.6) | 4.0 (2.5–5.5) | 2.1 (1.1–3.1) | 0.020 (0.012–0.028) | 0.107 (0.070–0.147) | 48.3 (40.7–55.9) | 70.3 (60.9–78.7) | 2.019 (1.914–2.129) | 1356.327 (1290.007–1424.588) |
 | Ablation: escalation value without the test-cost term (step 100) | 77.5 (66.9–87.5) | 5.0 (3.4–6.7) | 3.5 (2.4–5.0) | 0.025 (0.017–0.033) | 0.144 (0.104–0.190) | 71.6 (65.1–77.7) | 73.4 (66.1–79.7) | 1.010 (0.948–1.077) | 1165.921 (1085.239–1252.130) |
 | Ablation: escalation value without the coverage cap (step 100) | 28.4 (18.1–39.7) | 0.2 (0.0–0.5) | 0.1 (0.0–0.3) | 0.001 (0.000–0.003) | 0.005 (0.000–0.013) | 66.5 (63.0–70.1) | 99.7 (99.2–100.0) | 0.116 (0.093–0.139) | 20.370 (13.318–28.626) |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | 75.5 (65.2–85.0) | 5.9 (4.2–7.8) | 1.9 (0.9–3.0) | 0.031 (0.022–0.041) | 0.104 (0.067–0.144) | 65.7 (58.9–72.3) | 73.8 (66.7–80.5) | 0.901 (0.848–0.953) | 919.168 (860.196–980.105) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 76.5 (66.7–86.0) | 5.6 (4.0–7.2) | 2.5 (1.5–3.6) | 0.026 (0.019–0.034) | 0.075 (0.046–0.107) | 36.6 (29.4–44.0) | 33.5 (26.7–40.0) | 1.479 (1.403–1.558) | 1296.199 (1237.468–1356.854) |
 | GRPO control (no DEFER), second training seed + threshold at matched coverage (78%) | 75.8 (65.0–86.2) | 7.8 (6.0–9.7) | 7.0 (5.3–8.8) | 0.038 (0.029–0.046) | 0.098 (0.066–0.135) | 46.4 (39.3–53.4) | 57.0 (50.2–64.1) | 2.184 (2.073–2.298) | 1767.569 (1667.646–1873.695) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 73.9 (63.5–83.7) | 13.3 (11.0–15.6) | 7.9 (6.3–9.6) | 0.062 (0.052–0.073) | 0.111 (0.077–0.150) | 51.0 (44.3–57.4) | 42.2 (36.4–47.9) | 1.933 (1.833–2.026) | 1158.322 (1090.184–1227.468) |
@@ -115,6 +117,7 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Ablation: constant deferral reward (step 100) | 10.7 (6.8–14.6) | 5.3 (2.9–8.3) | 15.3 (11.4–19.4) | 72.8 (67.7–77.9) | 26.0 (20.8–31.4) |
 | Ablation: escalation value without the test-cost term (step 100) | 10.4 (7.0–14.1) | 6.1 (3.4–9.0) | 20.6 (15.8–25.5) | 67.5 (62.1–72.8) | 97.1 (95.0–98.9) |
 | Ablation: escalation value without the coverage cap (step 100) | 0.0 (0.0–0.0) | 0.0 (0.0–0.0) | 0.7 (0.0–1.7) | 99.3 (98.3–100.0) | 99.5 (98.8–100.0) |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | 10.7 (7.0–14.8) | 2.7 (1.0–4.6) | 23.8 (19.4–28.4) | 65.5 (60.2–70.4) | 98.5 (96.9–99.6) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 6.1 (3.6–8.9) | 3.1 (1.3–5.3) | 45.0 (39.8–50.3) | 35.4 (31.1–40.0) | 74.4 (67.7–81.3) |
 | GRPO control (no DEFER), second training seed + threshold at matched coverage (78%) | 5.7 (3.2–8.4) | 5.2 (2.9–7.8) | 42.1 (37.1–46.9) | 49.8 (45.1–54.7) | 76.6 (70.8–82.7) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 6.6 (3.9–9.5) | 4.0 (2.1–6.1) | 62.5 (57.6–67.2) | 27.8 (23.8–32.2) | 77.9 (71.0–84.3) |
@@ -151,6 +154,7 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Ablation: constant deferral reward (step 100) | 10.7 (7.0–14.7) | 5.1 (2.4–8.0) | 23.8 (18.7–28.9) | 62.8 (57.2–68.4) | 24.7 (18.8–30.9) |
 | Ablation: escalation value without the test-cost term (step 100) | 14.4 (10.4–19.0) | 10.4 (7.0–14.2) | 25.9 (20.9–30.7) | 58.6 (52.9–64.2) | 92.7 (88.7–96.0) |
 | Ablation: escalation value without the coverage cap (step 100) | 0.5 (0.0–1.3) | 0.0 (0.0–0.0) | 3.2 (1.6–5.3) | 96.3 (94.1–98.1) | 99.4 (98.6–100.0) |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | 10.4 (6.7–14.4) | 5.1 (2.4–8.0) | 31.8 (26.5–38.0) | 57.8 (51.1–63.4) | 97.7 (95.5–99.5) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 7.5 (4.6–10.7) | 4.1 (2.0–6.6) | 64.3 (58.5–69.9) | 21.0 (16.6–25.5) | 64.4 (54.5–74.0) |
 | GRPO control (no DEFER), second training seed + threshold at matched coverage (78%) | 9.8 (6.6–13.5) | 9.1 (5.9–12.8) | 58.1 (52.6–63.6) | 30.7 (25.8–35.3) | 64.5 (55.8–72.8) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 11.1 (7.7–15.0) | 5.5 (3.4–8.0) | 68.6 (62.6–74.0) | 17.3 (13.5–21.2) | 61.9 (50.0–72.8) |
@@ -187,6 +191,7 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Ablation: constant deferral reward (step 100) | 68.2 (63.2–73.1) | 62.6 (57.4–67.6) | 77.7 (71.7–83.0) | 2.3 (1.2–3.9) | 36.8 (31.8–42.1) |
 | Ablation: escalation value without the test-cost term (step 100) | 72.9 (68.0–77.5) | 75.6 (70.9–79.8) | 86.2 (81.7–90.2) | 2.1 (1.0–3.7) | 23.6 (19.4–28.1) |
 | Ablation: escalation value without the coverage cap (step 100) | 35.5 (30.4–40.3) | 4.3 (2.5–6.4) | 50.0 (25.0–74.1) | 0.2 (0.0–0.6) | 95.7 (93.6–97.5) |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | 68.2 (63.2–73.3) | 63.4 (57.9–68.4) | 81.7 (76.0–87.0) | 2.7 (1.4–4.5) | 36.6 (31.6–42.1) |
 | GRPO control (no DEFER) + threshold at matched coverage (78%) | 67.3 (62.1–72.1) | 64.5 (60.1–69.1) | 79.8 (74.3–84.7) | 5.4 (3.2–7.9) | 27.6 (23.6–31.8) |
 | GRPO control (no DEFER), second training seed + threshold at matched coverage (78%) | 75.1 (70.5–79.3) | 60.1 (55.7–64.9) | 80.0 (74.6–85.1) | 4.8 (3.0–6.8) | 39.8 (35.1–44.1) |
 | Qwen3-8B zero-shot, forced choice + threshold at matched coverage (78%) | 57.6 (52.6–62.7) | 66.1 (62.1–70.2) | 62.1 (55.8–67.9) | 17.8 (14.5–21.3) | 31.7 (27.8–35.7) |
@@ -232,6 +237,7 @@ Unflagged errors: wrong diagnoses committed without escalation, per case. Severi
 | Ablation: constant deferral reward (step 100) | LA-CDM test | 84.8 (80.1–89.2) | 86.0 (82.1–90.0) | 86.0 (73.2–96.7) | this report |
 | Ablation: escalation value without the test-cost term (step 100) | LA-CDM test | 77.2 (71.9–82.5) | 80.0 (75.4–84.4) | 74.0 (58.3–88.1) | this report |
 | Ablation: escalation value without the coverage cap (step 100) | LA-CDM test | 30.8 (25.0–36.7) | 31.7 (26.7–36.9) | 30.0 (14.7–46.3) | this report |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | LA-CDM test | 75.3 (69.8–80.5) | 77.5 (72.9–81.9) | 74.0 (58.3–87.5) | this report |
 | GRPO control (no DEFER) + SGR (5% risk, delta 0.05) | LA-CDM test | 82.7 (77.9–87.1) | 85.4 (81.7–89.0) | 76.0 (60.8–89.5) | this report |
 | Qwen3-8B zero-shot, forced choice + SGR (5% risk, delta 0.05) | LA-CDM test | 74.4 (69.1–79.5) | 76.7 (72.2–81.1) | 76.0 (60.8–90.1) | this report |
 
@@ -280,16 +286,19 @@ Environments differ across rows (history summary vs full history, 12 vs 22 tests
 | Ablation: escalation value without the coverage cap (step 100) | diabetic ketoacidosis | 17 | 0.0 | 100.0 |
 | Ablation: escalation value without the coverage cap (step 100) | mesenteric ischemia | 91 | 0.5 | 96.7 |
 | Ablation: escalation value without the coverage cap (step 100) | peptic ulcer perforation or bleed | 69 | 0.7 | 94.9 |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | diabetic ketoacidosis | 17 | 8.8 | 67.6 |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | mesenteric ischemia | 91 | 14.8 | 63.2 |
+| DEFER-Dx with a stronger handoff score, eta 1.0 (step 100) | peptic ulcer perforation or bleed | 69 | 6.5 | 43.5 |
 
 ## 5. Paired differences, reference system minus comparator (same cases)
 
-p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted two-sided Wald p (bootstrap standard error from the 95% interval) over all 240 tests in this section, treated as one family; it is conservative for the pre-specified primary comparisons.
+p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted two-sided Wald p (bootstrap standard error from the 95% interval) over all 251 tests in this section, treated as one family; it is conservative for the pre-specified primary comparisons.
 
 | Comparison | Metric | Difference (95% CI) | p | Holm p |
 |---|---|---|---|---|
 | cev vs grpo_nodefer+thr | selective_acc | 2.3 (0.1–4.6) | 0.037 | 1 |
 | cev vs grpo_nodefer+thr | coverage | -0.1 (-3.3–3.1) | 0.964 | 1 |
-| cev vs grpo_nodefer+thr | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.86 |
+| cev vs grpo_nodefer+thr | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.911 |
 | cev vs grpo_nodefer+thr | unsafe_errors | -1.8 (-3.5–-0.1) | 0.046 | 1 |
 | cev vs grpo_nodefer+thr | confident_errors | -0.2 (-1.5–1.0) | 0.802 | 1 |
 | cev vs grpo_nodefer+thr | acc_diverticulitis | -7.2 (-15.5–0.0) | 0.071 | 1 |
@@ -300,7 +309,7 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev vs grpo_nodefer+thr | false_commit:eval_other_unseen | -0.7 (-3.7–2.3) | 0.705 | 1 |
 | cev vs zs_nodefer+thr | selective_acc | 12.4 (9.4–15.7) | < 0.001 | < 0.001 |
 | cev vs zs_nodefer+thr | coverage | 0.4 (-3.1–3.9) | 0.847 | 1 |
-| cev vs zs_nodefer+thr | acc_full | 3.9 (1.1–6.7) | 0.007 | 0.982 |
+| cev vs zs_nodefer+thr | acc_full | 3.9 (1.1–6.7) | 0.007 | 1 |
 | cev vs zs_nodefer+thr | unsafe_errors | -9.5 (-12.1–-7.2) | < 0.001 | < 0.001 |
 | cev vs zs_nodefer+thr | confident_errors | -5.6 (-7.4–-3.9) | < 0.001 | < 0.001 |
 | cev vs zs_nodefer+thr | acc_diverticulitis | -4.6 (-11.4–2.3) | 0.219 | 1 |
@@ -311,40 +320,40 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev vs zs_nodefer+thr | false_commit:eval_other_unseen | -4.3 (-7.7–-1.1) | 0.01 | 1 |
 | cev vs grpo_nodefer+sgr | selective_acc | -1.7 (-4.5–1.4) | 0.289 | 1 |
 | cev vs grpo_nodefer+sgr | coverage | 49.1 (44.8–53.5) | < 0.001 | < 0.001 |
-| cev vs grpo_nodefer+sgr | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.86 |
-| cev vs grpo_nodefer+sgr | unsafe_errors | 2.8 (1.4–4.3) | < 0.001 | 0.0237 |
+| cev vs grpo_nodefer+sgr | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.911 |
+| cev vs grpo_nodefer+sgr | unsafe_errors | 2.8 (1.4–4.3) | < 0.001 | 0.0252 |
 | cev vs grpo_nodefer+sgr | confident_errors | 1.4 (0.1–2.6) | 0.036 | 1 |
 | cev vs grpo_nodefer+sgr | acc_diverticulitis | -7.2 (-15.5–0.0) | 0.071 | 1 |
-| cev vs grpo_nodefer+sgr | aurc | -0.038 (-0.072–-0.023) | < 0.001 | 0.372 |
+| cev vs grpo_nodefer+sgr | aurc | -0.038 (-0.072–-0.023) | < 0.001 | 0.395 |
 | cev vs grpo_nodefer+sgr | ece | 0.011 (-0.015–0.035) | 0.472 | 1 |
 | cev vs grpo_nodefer+sgr | handoff_quality | -39.8 (-44.1–-35.4) | < 0.001 | < 0.001 |
 | cev vs grpo_nodefer+sgr | false_commit:eval_other_seen | 3.4 (1.0–6.0) | 0.007 | 1 |
 | cev vs grpo_nodefer+sgr | false_commit:eval_other_unseen | 2.7 (0.0–5.5) | 0.057 | 1 |
 | cev vs deferdx | selective_acc | 1.1 (-0.5–2.9) | 0.193 | 1 |
-| cev vs deferdx | coverage | -5.1 (-7.8–-2.6) | 0.001 | 0.0245 |
+| cev vs deferdx | coverage | -5.1 (-7.8–-2.6) | 0.001 | 0.026 |
 | cev vs deferdx | acc_full | -7.6 (-10.1–-5.3) | < 0.001 | < 0.001 |
 | cev vs deferdx | unsafe_errors | -1.2 (-2.6–0.2) | 0.114 | 1 |
 | cev vs deferdx | confident_errors | -0.6 (-1.8–0.6) | 0.336 | 1 |
-| cev vs deferdx | acc_diverticulitis | -16.3 (-24.3–-8.8) | < 0.001 | 0.00668 |
+| cev vs deferdx | acc_diverticulitis | -16.3 (-24.3–-8.8) | < 0.001 | 0.00706 |
 | cev vs deferdx | aurc | 0.013 (-0.009–0.025) | 0.306 | 1 |
 | cev vs deferdx | ece | 0.012 (-0.009–0.026) | 0.269 | 1 |
 | cev vs deferdx | handoff_quality | -24.5 (-28.7–-19.7) | < 0.001 | < 0.001 |
 | cev vs deferdx | false_commit:eval_other_seen | -7.0 (-9.9–-4.4) | < 0.001 | < 0.001 |
-| cev vs deferdx | false_commit:eval_other_unseen | -4.6 (-8.0–-1.4) | 0.013 | 0.87 |
+| cev vs deferdx | false_commit:eval_other_unseen | -4.6 (-8.0–-1.4) | 0.013 | 0.923 |
 | cev vs zs_defer | selective_acc | 7.3 (4.5–10.0) | < 0.001 | < 0.001 |
 | cev vs zs_defer | coverage | 2.4 (-0.6–5.3) | 0.118 | 1 |
 | cev vs zs_defer | acc_full | 0.9 (-1.9–3.5) | 0.494 | 1 |
 | cev vs zs_defer | unsafe_errors | -5.3 (-7.5–-3.3) | < 0.001 | < 0.001 |
 | cev vs zs_defer | confident_errors | -2.2 (-3.7–-0.6) | 0.007 | 1 |
 | cev vs zs_defer | acc_diverticulitis | -10.5 (-18.6–-2.7) | 0.01 | 1 |
-| cev vs zs_defer | aurc | -0.040 (-0.080–-0.026) | < 0.001 | 0.675 |
+| cev vs zs_defer | aurc | -0.040 (-0.080–-0.026) | < 0.001 | 0.719 |
 | cev vs zs_defer | ece | 0.009 (-0.016–0.026) | 0.615 | 1 |
 | cev vs zs_defer | handoff_quality | -20.2 (-24.3–-16.0) | < 0.001 | < 0.001 |
 | cev vs zs_defer | false_commit:eval_other_seen | -1.0 (-3.9–1.8) | 0.491 | 1 |
-| cev vs zs_defer | false_commit:eval_other_unseen | -7.7 (-11.6–-4.3) | < 0.001 | 0.0074 |
+| cev vs zs_defer | false_commit:eval_other_unseen | -7.7 (-11.6–-4.3) | < 0.001 | 0.00783 |
 | cev vs grpo_nodefer | selective_acc | 7.4 (4.7–10.1) | < 0.001 | < 0.001 |
 | cev vs grpo_nodefer | coverage | -16.2 (-19.5–-13.3) | < 0.001 | < 0.001 |
-| cev vs grpo_nodefer | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.86 |
+| cev vs grpo_nodefer | acc_full | -4.2 (-7.2–-1.2) | 0.006 | 0.911 |
 | cev vs grpo_nodefer | unsafe_errors | -7.7 (-10.3–-5.2) | < 0.001 | < 0.001 |
 | cev vs grpo_nodefer | confident_errors | -0.2 (-1.5–1.0) | 0.802 | 1 |
 | cev vs grpo_nodefer | acc_diverticulitis | -7.2 (-15.5–0.0) | 0.071 | 1 |
@@ -352,34 +361,34 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev vs grpo_nodefer | ece | -0.001 (-0.025–0.017) | 0.789 | 1 |
 | cev vs grpo_nodefer | handoff_quality | – | nan | – |
 | cev vs grpo_nodefer | false_commit:eval_other_seen | -8.7 (-12.1–-5.7) | < 0.001 | < 0.001 |
-| cev vs grpo_nodefer | false_commit:eval_other_unseen | -8.2 (-12.1–-4.6) | < 0.001 | 0.00341 |
+| cev vs grpo_nodefer | false_commit:eval_other_unseen | -8.2 (-12.1–-4.6) | < 0.001 | 0.00361 |
 | cev vs cev_dualascent | selective_acc | -1.0 (-2.9–0.8) | 0.285 | 1 |
-| cev vs cev_dualascent | coverage | 4.9 (2.1–7.8) | < 0.001 | 0.12 |
+| cev vs cev_dualascent | coverage | 4.9 (2.1–7.8) | < 0.001 | 0.126 |
 | cev vs cev_dualascent | acc_full | -6.6 (-9.3–-4.0) | < 0.001 | < 0.001 |
 | cev vs cev_dualascent | unsafe_errors | 1.0 (-0.4–2.4) | 0.199 | 1 |
 | cev vs cev_dualascent | confident_errors | 0.6 (-0.6–1.9) | 0.331 | 1 |
-| cev vs cev_dualascent | acc_diverticulitis | -15.7 (-24.2–-8.3) | < 0.001 | 0.0191 |
+| cev vs cev_dualascent | acc_diverticulitis | -15.7 (-24.2–-8.3) | < 0.001 | 0.0203 |
 | cev vs cev_dualascent | aurc | 0.019 (-0.002–0.031) | 0.092 | 1 |
 | cev vs cev_dualascent | ece | -0.024 (-0.042–-0.005) | 0.014 | 1 |
 | cev vs cev_dualascent | handoff_quality | -24.4 (-27.7–-21.2) | < 0.001 | < 0.001 |
 | cev vs cev_dualascent | false_commit:eval_other_seen | -2.9 (-5.8–-0.2) | 0.034 | 1 |
-| cev vs cev_dualascent | false_commit:eval_other_unseen | -6.6 (-10.3–-3.0) | < 0.001 | 0.0715 |
-| cev vs grpo_nodefer_seed1+thr | selective_acc | 5.3 (3.0–7.7) | < 0.001 | 0.00171 |
+| cev vs cev_dualascent | false_commit:eval_other_unseen | -6.6 (-10.3–-3.0) | < 0.001 | 0.0755 |
+| cev vs grpo_nodefer_seed1+thr | selective_acc | 5.3 (3.0–7.7) | < 0.001 | 0.0018 |
 | cev vs grpo_nodefer_seed1+thr | coverage | 0.0 (-3.1–3.1) | 1 | 1 |
-| cev vs grpo_nodefer_seed1+thr | acc_full | -3.5 (-5.9–-1.3) | 0.003 | 0.388 |
-| cev vs grpo_nodefer_seed1+thr | unsafe_errors | -4.1 (-6.0–-2.2) | < 0.001 | 0.00501 |
+| cev vs grpo_nodefer_seed1+thr | acc_full | -3.5 (-5.9–-1.3) | 0.003 | 0.412 |
+| cev vs grpo_nodefer_seed1+thr | unsafe_errors | -4.1 (-6.0–-2.2) | < 0.001 | 0.0053 |
 | cev vs grpo_nodefer_seed1+thr | confident_errors | -4.7 (-6.5–-3.0) | < 0.001 | < 0.001 |
 | cev vs grpo_nodefer_seed1+thr | acc_diverticulitis | -6.5 (-13.8–0.9) | 0.095 | 1 |
 | cev vs grpo_nodefer_seed1+thr | aurc | -0.023 (-0.047–-0.007) | 0.006 | 1 |
 | cev vs grpo_nodefer_seed1+thr | ece | 0.015 (-0.016–0.040) | 0.333 | 1 |
-| cev vs grpo_nodefer_seed1+thr | handoff_quality | -9.5 (-16.1–-2.6) | 0.011 | 0.86 |
+| cev vs grpo_nodefer_seed1+thr | handoff_quality | -9.5 (-16.1–-2.6) | 0.011 | 0.912 |
 | cev vs grpo_nodefer_seed1+thr | false_commit:eval_other_seen | 0.8 (-1.5–3.1) | 0.524 | 1 |
 | cev vs grpo_nodefer_seed1+thr | false_commit:eval_other_unseen | -3.0 (-6.1–-0.4) | 0.038 | 1 |
 | cev@sc vs grpo_nodefer@sc+thr | selective_acc | 2.2 (-0.9–5.5) | 0.155 | 1 |
 | cev@sc vs grpo_nodefer@sc+thr | coverage | 1.3 (-2.7–5.2) | 0.578 | 1 |
-| cev@sc vs grpo_nodefer@sc+thr | acc_full | -7.3 (-10.8–-4.0) | < 0.001 | 0.00614 |
+| cev@sc vs grpo_nodefer@sc+thr | acc_full | -7.3 (-10.8–-4.0) | < 0.001 | 0.0065 |
 | cev@sc vs grpo_nodefer@sc+thr | unsafe_errors | -1.7 (-4.2–0.8) | 0.207 | 1 |
-| cev@sc vs grpo_nodefer@sc+thr | confident_errors | -3.5 (-5.8–-1.5) | < 0.001 | 0.247 |
+| cev@sc vs grpo_nodefer@sc+thr | confident_errors | -3.5 (-5.8–-1.5) | < 0.001 | 0.262 |
 | cev@sc vs grpo_nodefer@sc+thr | acc_diverticulitis | -15.7 (-28.3–-4.9) | 0.007 | 1 |
 | cev@sc vs grpo_nodefer@sc+thr | aurc | 0.013 (-0.008–0.026) | 0.38 | 1 |
 | cev@sc vs grpo_nodefer@sc+thr | ece | -0.031 (-0.064–0.002) | 0.061 | 1 |
@@ -392,9 +401,9 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev@sc vs zs_nodefer@sc+thr | unsafe_errors | -8.8 (-12.3–-5.4) | < 0.001 | < 0.001 |
 | cev@sc vs zs_nodefer@sc+thr | confident_errors | -9.4 (-12.5–-6.5) | < 0.001 | < 0.001 |
 | cev@sc vs zs_nodefer@sc+thr | acc_diverticulitis | -9.8 (-21.5–0.0) | 0.12 | 1 |
-| cev@sc vs zs_nodefer@sc+thr | aurc | -0.032 (-0.061–-0.016) | < 0.001 | 0.671 |
+| cev@sc vs zs_nodefer@sc+thr | aurc | -0.032 (-0.061–-0.016) | < 0.001 | 0.714 |
 | cev@sc vs zs_nodefer@sc+thr | ece | -0.110 (-0.152–-0.069) | < 0.001 | < 0.001 |
-| cev@sc vs zs_nodefer@sc+thr | handoff_quality | -18.7 (-30.2–-6.9) | 0.006 | 0.271 |
+| cev@sc vs zs_nodefer@sc+thr | handoff_quality | -18.7 (-30.2–-6.9) | 0.006 | 0.288 |
 | cev@sc vs zs_nodefer@sc+thr | false_commit:eval_other_seen | 0.5 (-1.9–2.9) | 0.924 | 1 |
 | cev@sc vs zs_nodefer@sc+thr | false_commit:eval_other_unseen | -4.3 (-9.6–0.5) | 0.088 | 1 |
 | cev@sc vs deferdx@sc | selective_acc | 1.1 (-1.1–3.3) | 0.37 | 1 |
@@ -402,42 +411,42 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev@sc vs deferdx@sc | acc_full | -7.5 (-10.6–-4.4) | < 0.001 | < 0.001 |
 | cev@sc vs deferdx@sc | unsafe_errors | -1.0 (-2.9–0.8) | 0.332 | 1 |
 | cev@sc vs deferdx@sc | confident_errors | -0.2 (-1.5–1.0) | 0.835 | 1 |
-| cev@sc vs deferdx@sc | acc_diverticulitis | -17.6 (-28.9–-7.8) | < 0.001 | 0.171 |
-| cev@sc vs deferdx@sc | aurc | 0.020 (0.006–0.033) | 0.003 | 0.585 |
+| cev@sc vs deferdx@sc | acc_diverticulitis | -17.6 (-28.9–-7.8) | < 0.001 | 0.181 |
+| cev@sc vs deferdx@sc | aurc | 0.020 (0.006–0.033) | 0.003 | 0.622 |
 | cev@sc vs deferdx@sc | ece | 0.017 (-0.011–0.037) | 0.236 | 1 |
 | cev@sc vs deferdx@sc | handoff_quality | -37.1 (-47.4–-26.7) | < 0.001 | < 0.001 |
-| cev@sc vs deferdx@sc | false_commit:eval_other_seen | -7.3 (-11.2–-3.9) | < 0.001 | 0.0168 |
+| cev@sc vs deferdx@sc | false_commit:eval_other_seen | -7.3 (-11.2–-3.9) | < 0.001 | 0.0178 |
 | cev@sc vs deferdx@sc | false_commit:eval_other_unseen | -5.9 (-10.7–-1.1) | 0.018 | 1 |
-| cev@sc vs zs_defer@sc | selective_acc | 5.3 (2.2–8.6) | 0.003 | 0.175 |
+| cev@sc vs zs_defer@sc | selective_acc | 5.3 (2.2–8.6) | 0.003 | 0.186 |
 | cev@sc vs zs_defer@sc | coverage | 0.8 (-3.3–4.8) | 0.721 | 1 |
 | cev@sc vs zs_defer@sc | acc_full | -0.8 (-4.2–2.3) | 0.666 | 1 |
-| cev@sc vs zs_defer@sc | unsafe_errors | -4.2 (-6.9–-1.7) | 0.007 | 0.277 |
+| cev@sc vs zs_defer@sc | unsafe_errors | -4.2 (-6.9–-1.7) | 0.007 | 0.295 |
 | cev@sc vs zs_defer@sc | confident_errors | -1.5 (-3.3–0.4) | 0.127 | 1 |
 | cev@sc vs zs_defer@sc | acc_diverticulitis | -15.7 (-27.6–-4.4) | 0.011 | 1 |
 | cev@sc vs zs_defer@sc | aurc | -0.017 (-0.047–0.003) | 0.082 | 1 |
 | cev@sc vs zs_defer@sc | ece | -0.015 (-0.049–0.017) | 0.322 | 1 |
-| cev@sc vs zs_defer@sc | handoff_quality | -23.1 (-33.6–-12.4) | < 0.001 | 0.00361 |
+| cev@sc vs zs_defer@sc | handoff_quality | -23.1 (-33.6–-12.4) | < 0.001 | 0.00382 |
 | cev@sc vs zs_defer@sc | false_commit:eval_other_seen | -4.4 (-8.3–-0.5) | 0.039 | 1 |
-| cev@sc vs zs_defer@sc | false_commit:eval_other_unseen | -10.2 (-15.5–-5.3) | < 0.001 | 0.0166 |
-| cev@sc vs grpo_nodefer_seed1@sc+thr | selective_acc | 5.4 (2.3–8.5) | 0.001 | 0.137 |
+| cev@sc vs zs_defer@sc | false_commit:eval_other_unseen | -10.2 (-15.5–-5.3) | < 0.001 | 0.0175 |
+| cev@sc vs grpo_nodefer_seed1@sc+thr | selective_acc | 5.4 (2.3–8.5) | 0.001 | 0.145 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | coverage | 1.0 (-2.7–4.8) | 0.626 | 1 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | acc_full | -1.5 (-4.4–1.5) | 0.36 | 1 |
-| cev@sc vs grpo_nodefer_seed1@sc+thr | unsafe_errors | -4.2 (-6.9–-1.7) | 0.003 | 0.277 |
+| cev@sc vs grpo_nodefer_seed1@sc+thr | unsafe_errors | -4.2 (-6.9–-1.7) | 0.003 | 0.295 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | confident_errors | -6.2 (-8.5–-4.0) | < 0.001 | < 0.001 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | acc_diverticulitis | -3.9 (-13.5–5.7) | 0.545 | 1 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | aurc | -0.006 (-0.025–0.009) | 0.334 | 1 |
-| cev@sc vs grpo_nodefer_seed1@sc+thr | ece | -0.057 (-0.091–-0.024) | 0.001 | 0.128 |
-| cev@sc vs grpo_nodefer_seed1@sc+thr | handoff_quality | -18.6 (-30.3–-6.6) | < 0.001 | 0.332 |
+| cev@sc vs grpo_nodefer_seed1@sc+thr | ece | -0.057 (-0.091–-0.024) | 0.001 | 0.135 |
+| cev@sc vs grpo_nodefer_seed1@sc+thr | handoff_quality | -18.6 (-30.3–-6.6) | < 0.001 | 0.352 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | false_commit:eval_other_seen | 1.9 (-1.0–4.9) | 0.224 | 1 |
 | cev@sc vs grpo_nodefer_seed1@sc+thr | false_commit:eval_other_unseen | -1.6 (-5.3–2.1) | 0.488 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | selective_acc | 1.1 (-0.8–3.3) | 0.281 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | coverage | 1.1 (-2.2–4.5) | 0.535 | 1 |
-| cev_seed1 vs grpo_nodefer+thr_seed1 | acc_full | 4.0 (1.6–6.5) | 0.002 | 0.233 |
+| cev_seed1 vs grpo_nodefer+thr_seed1 | acc_full | 4.0 (1.6–6.5) | 0.002 | 0.247 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | unsafe_errors | -0.8 (-2.4–0.8) | 0.359 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | confident_errors | 0.3 (-1.1–1.6) | 0.736 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | acc_diverticulitis | 6.5 (-1.9–15.3) | 0.141 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | aurc | -0.003 (-0.022–0.008) | 0.345 | 1 |
-| cev_seed1 vs grpo_nodefer+thr_seed1 | ece | 0.031 (0.009–0.046) | 0.014 | 0.231 |
+| cev_seed1 vs grpo_nodefer+thr_seed1 | ece | 0.031 (0.009–0.046) | 0.014 | 0.245 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | handoff_quality | 3.1 (-2.9–9.0) | 0.352 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | false_commit:eval_other_seen | 1.5 (-0.8–4.0) | 0.264 | 1 |
 | cev_seed1 vs grpo_nodefer+thr_seed1 | false_commit:eval_other_unseen | 0.7 (-2.1–3.6) | 0.659 | 1 |
@@ -448,17 +457,17 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev_seed1 vs deferdx | confident_errors | -0.1 (-1.3–1.1) | 0.801 | 1 |
 | cev_seed1 vs deferdx | acc_diverticulitis | -2.6 (-9.0–4.3) | 0.509 | 1 |
 | cev_seed1 vs deferdx | aurc | -0.002 (-0.016–0.013) | 0.835 | 1 |
-| cev_seed1 vs deferdx | ece | 0.029 (0.007–0.045) | 0.012 | 0.457 |
+| cev_seed1 vs deferdx | ece | 0.029 (0.007–0.045) | 0.012 | 0.487 |
 | cev_seed1 vs deferdx | handoff_quality | 1.3 (-2.0–5.0) | 0.459 | 1 |
-| cev_seed1 vs deferdx | false_commit:eval_other_seen | -6.6 (-9.9–-3.6) | < 0.001 | 0.00713 |
+| cev_seed1 vs deferdx | false_commit:eval_other_seen | -6.6 (-9.9–-3.6) | < 0.001 | 0.00754 |
 | cev_seed1 vs deferdx | false_commit:eval_other_unseen | -4.3 (-7.7–-1.1) | 0.01 | 1 |
-| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | selective_acc | 4.1 (1.9–6.5) | < 0.001 | 0.0828 |
+| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | selective_acc | 4.1 (1.9–6.5) | < 0.001 | 0.0875 |
 | cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | coverage | 0.3 (-2.6–3.3) | 0.852 | 1 |
-| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | acc_full | 4.6 (2.2–7.1) | 0.001 | 0.0483 |
-| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | unsafe_errors | -3.0 (-4.8–-1.3) | 0.001 | 0.128 |
-| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | confident_errors | -3.7 (-5.4–-2.1) | < 0.001 | 0.00299 |
+| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | acc_full | 4.6 (2.2–7.1) | 0.001 | 0.0513 |
+| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | unsafe_errors | -3.0 (-4.8–-1.3) | 0.001 | 0.135 |
+| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | confident_errors | -3.7 (-5.4–-2.1) | < 0.001 | 0.00316 |
 | cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | acc_diverticulitis | 7.2 (-1.7–16.7) | 0.149 | 1 |
-| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | aurc | -0.039 (-0.058–-0.019) | < 0.001 | 0.0182 |
+| cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | aurc | -0.039 (-0.058–-0.019) | < 0.001 | 0.0193 |
 | cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | ece | 0.039 (0.008–0.065) | 0.017 | 1 |
 | cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | handoff_quality | 13.4 (7.7–19.1) | < 0.001 | < 0.001 |
 | cev_seed1 vs grpo_nodefer_seed1+thr_seed1 | false_commit:eval_other_seen | 2.8 (0.5–5.2) | 0.013 | 1 |
@@ -480,7 +489,7 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev_step100 vs abl_cev_no_handoff | acc_diverticulitis | -4.9 (-15.3–5.4) | 0.385 | 1 |
 | cev_step100 vs abl_cev_no_handoff | aurc | 0.005 (-0.007–0.024) | 0.217 | 1 |
 | cev_step100 vs abl_cev_no_handoff | ece | -0.007 (-0.022–0.015) | 0.599 | 1 |
-| cev_step100 vs abl_cev_no_handoff | handoff_quality | 6.5 (3.5–9.3) | < 0.001 | 0.00283 |
+| cev_step100 vs abl_cev_no_handoff | handoff_quality | 6.5 (3.5–9.3) | < 0.001 | 0.00298 |
 | cev_step100 vs abl_cev_no_handoff | false_commit:eval_other_seen | -3.2 (-6.3–-0.2) | 0.039 | 1 |
 | cev_step100 vs abl_cev_no_handoff | false_commit:eval_other_unseen | -2.7 (-5.9–0.5) | 0.113 | 1 |
 | cev_step100 vs abl_constant_defer | selective_acc | -0.4 (-2.3–1.5) | 0.694 | 1 |
@@ -491,8 +500,8 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev_step100 vs abl_constant_defer | acc_diverticulitis | -11.8 (-21.2–-3.6) | 0.003 | 1 |
 | cev_step100 vs abl_constant_defer | aurc | 0.016 (-0.003–0.032) | 0.105 | 1 |
 | cev_step100 vs abl_constant_defer | ece | -0.028 (-0.045–0.000) | 0.052 | 1 |
-| cev_step100 vs abl_constant_defer | handoff_quality | -6.5 (-10.2–-2.6) | 0.001 | 0.138 |
-| cev_step100 vs abl_constant_defer | false_commit:eval_other_seen | -4.4 (-7.5–-1.5) | 0.004 | 0.729 |
+| cev_step100 vs abl_constant_defer | handoff_quality | -6.5 (-10.2–-2.6) | 0.001 | 0.146 |
+| cev_step100 vs abl_constant_defer | false_commit:eval_other_seen | -4.4 (-7.5–-1.5) | 0.004 | 0.777 |
 | cev_step100 vs abl_constant_defer | false_commit:eval_other_unseen | -0.5 (-3.5–2.4) | 0.795 | 1 |
 | cev_step100 vs abl_cev_no_cost | selective_acc | 0.9 (-1.3–3.0) | 0.406 | 1 |
 | cev_step100 vs abl_cev_no_cost | coverage | -10.1 (-13.3–-7.0) | < 0.001 | < 0.001 |
@@ -504,26 +513,37 @@ p is the two-sided percentile paired-bootstrap p. Holm p is the Holm-adjusted tw
 | cev_step100 vs abl_cev_no_cost | ece | 0.012 (-0.007–0.035) | 0.194 | 1 |
 | cev_step100 vs abl_cev_no_cost | handoff_quality | 12.9 (9.1–16.8) | < 0.001 | < 0.001 |
 | cev_step100 vs abl_cev_no_cost | false_commit:eval_other_seen | -4.1 (-7.5–-1.0) | 0.012 | 1 |
-| cev_step100 vs abl_cev_no_cost | false_commit:eval_other_unseen | -4.3 (-7.5–-1.3) | 0.012 | 0.94 |
+| cev_step100 vs abl_cev_no_cost | false_commit:eval_other_unseen | -4.3 (-7.5–-1.3) | 0.012 | 0.997 |
 | cev_step100 vs abl_cev_no_constraint | selective_acc | 1.4 (-5.9–12.5) | 0.828 | 1 |
 | cev_step100 vs abl_cev_no_constraint | coverage | 65.1 (61.4–68.6) | < 0.001 | < 0.001 |
 | cev_step100 vs abl_cev_no_constraint | acc_full | 43.1 (39.5–46.7) | < 0.001 | < 0.001 |
 | cev_step100 vs abl_cev_no_constraint | unsafe_errors | 3.5 (2.2–5.0) | < 0.001 | < 0.001 |
-| cev_step100 vs abl_cev_no_constraint | confident_errors | 2.1 (1.1–3.2) | < 0.001 | 0.0166 |
+| cev_step100 vs abl_cev_no_constraint | confident_errors | 2.1 (1.1–3.2) | < 0.001 | 0.0175 |
 | cev_step100 vs abl_cev_no_constraint | acc_diverticulitis | 45.1 (33.0–57.3) | < 0.001 | < 0.001 |
 | cev_step100 vs abl_cev_no_constraint | aurc | -0.533 (-0.573–-0.470) | < 0.001 | < 0.001 |
 | cev_step100 vs abl_cev_no_constraint | ece | -0.047 (-0.157–-0.021) | 0.003 | 1 |
 | cev_step100 vs abl_cev_no_constraint | handoff_quality | 2.6 (-0.4–5.6) | 0.079 | 1 |
-| cev_step100 vs abl_cev_no_constraint | false_commit:eval_other_seen | 6.3 (3.6–9.2) | < 0.001 | 0.00185 |
+| cev_step100 vs abl_cev_no_constraint | false_commit:eval_other_seen | 6.3 (3.6–9.2) | < 0.001 | 0.00195 |
 | cev_step100 vs abl_cev_no_constraint | false_commit:eval_other_unseen | 9.6 (6.1–13.4) | < 0.001 | < 0.001 |
-| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | selective_acc | 3.2 (1.6–5.1) | 0.001 | 0.0562 |
+| cev_step100 vs abl_cev_eta1 | selective_acc | 2.5 (-0.1–5.3) | 0.058 | 1 |
+| cev_step100 vs abl_cev_eta1 | coverage | -5.9 (-9.4–-2.8) | < 0.001 | 0.0737 |
+| cev_step100 vs abl_cev_eta1 | acc_full | 1.5 (-1.4–4.4) | 0.341 | 1 |
+| cev_step100 vs abl_cev_eta1 | unsafe_errors | -2.2 (-4.3–-0.2) | 0.03 | 1 |
+| cev_step100 vs abl_cev_eta1 | confident_errors | 0.3 (-0.8–1.5) | 0.672 | 1 |
+| cev_step100 vs abl_cev_eta1 | acc_diverticulitis | -2.0 (-12.0–8.3) | 0.826 | 1 |
+| cev_step100 vs abl_cev_eta1 | aurc | -0.009 (-0.032–0.008) | 0.234 | 1 |
+| cev_step100 vs abl_cev_eta1 | ece | -0.027 (-0.048–0.001) | 0.06 | 1 |
+| cev_step100 vs abl_cev_eta1 | handoff_quality | 3.9 (0.7–6.9) | 0.01 | 1 |
+| cev_step100 vs abl_cev_eta1 | false_commit:eval_other_seen | -4.4 (-7.5–-1.5) | 0.006 | 0.777 |
+| cev_step100 vs abl_cev_eta1 | false_commit:eval_other_unseen | -0.3 (-3.5–2.9) | 0.958 | 1 |
+| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | selective_acc | 3.2 (1.6–5.1) | 0.001 | 0.0596 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | coverage | 0.3 (-2.2–2.8) | 0.799 | 1 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | acc_full | 0.2 (-1.6–2.1) | 0.863 | 1 |
-| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | unsafe_errors | -2.4 (-3.9–-1.1) | 0.001 | 0.0835 |
-| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | confident_errors | -2.1 (-3.3–-1.0) | 0.001 | 0.0715 |
+| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | unsafe_errors | -2.4 (-3.9–-1.1) | 0.001 | 0.0883 |
+| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | confident_errors | -2.1 (-3.3–-1.0) | 0.001 | 0.0755 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | acc_diverticulitis | 0.0 (-6.1–6.6) | 1 | 1 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | aurc | -0.014 (-0.031–-0.005) | 0.004 | 1 |
-| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | ece | 0.036 (0.014–0.050) | < 0.001 | 0.0176 |
+| DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | ece | 0.036 (0.014–0.050) | < 0.001 | 0.0187 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | handoff_quality | -1.5 (-6.6–3.5) | 0.593 | 1 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | false_commit:eval_other_seen | 1.3 (-0.2–3.1) | 0.117 | 1 |
 | DEFER-Dx (2 seeds) vs GRPO control + threshold (2 seeds), pooled | false_commit:eval_other_unseen | -1.0 (-3.3–1.2) | 0.364 | 1 |

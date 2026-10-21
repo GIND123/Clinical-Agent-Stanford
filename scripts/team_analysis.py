@@ -50,6 +50,8 @@ OW = ("eval_other_unseen", "eval_other_seen")
 F_GRID = [0.0, 0.1, 0.2, 0.3, 0.4, 0.47, 0.5]
 AC_GRID = [0.80, 0.89, 0.95]
 BARRIT_F = 0.47  # adversarial-minus-aligned harmful decisions per targeted decision point (46.9 per 100)
+# 100-step ablations, compared with DEFER-Dx's step-100 checkpoint (evaluated as cev_step100)
+ABLATIONS = ("cev_step100", "abl_cev_eta1", "abl_cev_no_handoff", "abl_constant_defer", "abl_cev_no_cost")
 
 
 def top(r) -> str | None:
@@ -103,9 +105,9 @@ def boot(rs, stat, n=1000, seed=0):
 
 def systems(ev: Path, ac: float) -> dict[str, dict[str, list]]:
     out: dict[str, dict[str, list]] = {}
-    raw = {n: load_suite(ev / n) for n in ("cev", "cev_seed1", "grpo_nodefer", "grpo_nodefer_seed1", "deferdx", "zs_defer")
-           if (ev / n).exists()}
-    for n in ("cev", "cev_seed1", "deferdx", "zs_defer"):
+    raw = {n: load_suite(ev / n) for n in ("cev", "cev_seed1", "grpo_nodefer", "grpo_nodefer_seed1", "deferdx", "zs_defer",
+                                           *ABLATIONS) if (ev / n).exists()}
+    for n in ("cev", "cev_seed1", "deferdx", "zs_defer", *ABLATIONS):
         if n in raw:
             out[n] = raw[n]
     for ctrl in ("grpo_nodefer", "grpo_nodefer_seed1"):
@@ -119,6 +121,20 @@ def systems(ev: Path, ac: float) -> dict[str, dict[str, list]]:
         # learning to defer: escalate when the stated probability is below the clinician's accuracy
         out[f"{ctrl}+l2d"] = {s: apply_threshold(v, ac) for s, v in raw[ctrl].items()}
     return out
+
+
+def paired(x: dict, y: dict, ac: float, n_boot: int) -> dict:
+    """Paired differences x - y on the same cases: team accuracy on in-set cases and AI-caused wrong in-scope
+    diagnoses on never-seen OTHER, with an independent clinician (f = 0) and at Barrit's susceptibility."""
+    d = {}
+    for f in (0.0, BARRIT_F):
+        a = [r for s in CDM for r in x.get(s, [])]
+        b = [r for s in CDM for r in y.get(s, [])]
+        d[f"team_acc_inset_f{f:.2f}"] = S.paired_bootstrap(a, b, lambda rs, f=f: np.mean([p_correct(r, f, ac) for r in rs]), n_boot)
+        a, b = x.get("eval_other_unseen", []), y.get("eval_other_unseen", [])
+        d[f"wrong_inset_unseen_f{f:.2f}"] = S.paired_bootstrap(a, b, lambda rs, f=f: np.mean([p_wrong_inset(r, f, ac) for r in rs]),
+                                                              n_boot)
+    return d
 
 
 def main() -> None:
@@ -161,17 +177,13 @@ def main() -> None:
         for other in (f"grpo_nodefer+thr@{ref}", f"grpo_nodefer_seed1+thr@{ref}", "deferdx", "grpo_nodefer+l2d"):
             if ref not in sy or other not in sy:
                 continue
-            d = {}
-            for f in (0.0, BARRIT_F):
-                a = [r for s in CDM for r in sy[ref].get(s, [])]
-                b = [r for s in CDM for r in sy[other].get(s, [])]
-                d[f"team_acc_inset_f{f:.2f}"] = S.paired_bootstrap(a, b, lambda rs, f=f: np.mean([p_correct(r, f, args.ac) for r in rs]),
-                                                                  args.n_boot)
-                a, b = sy[ref].get("eval_other_unseen", []), sy[other].get("eval_other_unseen", [])
-                d[f"wrong_inset_unseen_f{f:.2f}"] = S.paired_bootstrap(a, b, lambda rs, f=f: np.mean([p_wrong_inset(r, f, args.ac) for r in rs]),
-                                                                      args.n_boot)
+            d = paired(sy[ref], sy[other], args.ac, args.n_boot)
             res["paired"][f"{ref} vs {other}"] = d
             print(f"{ref} vs {other:30s} " + " | ".join(f"{k} {v['diff']*100:+.1f} ({v['lo']*100:+.1f},{v['hi']*100:+.1f})" for k, v in d.items()))
+    for other in ABLATIONS[1:]:
+        if "cev_step100" in sy and other in sy:
+            res["paired"][f"cev_step100 vs {other}"] = d = paired(sy["cev_step100"], sy[other], args.ac, args.n_boot)
+            print(f"cev_step100 vs {other:24s} " + " | ".join(f"{k} {v['diff']*100:+.1f} ({v['lo']*100:+.1f},{v['hi']*100:+.1f})" for k, v in d.items()))
     (ROOT / args.out).write_text(json.dumps(res, indent=2), encoding="utf-8")
     print(f"wrote {args.out}")
 
