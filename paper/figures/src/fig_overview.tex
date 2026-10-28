@@ -40,7 +40,8 @@
 \draw[flow] (6.35,4.52) -- (6.35,2.13);
 \node[lbl, align=right, anchor=east] at (6.05,3.3) {%
   \faIcon{stethoscope}\ \act{ASK}(exam)\\ no cost\\[5pt]
-  \faIcon{vial}\ \act{TEST}$(x)$\\ 22 priced tests,\\ at most 8};
+  \faIcon{vial}\ \act{TEST}$(x)$\\ 22 priced tests\\[5pt]
+  at most 8 \act{ASK}\\ or \act{TEST} turns};
 \draw[flow] (7.9,2.13) -- (7.9,4.52);
 \node[lbl, align=left, anchor=west] at (8.05,3.33) {%
   {\large\faIcon{notes-medical}}\\[1pt] observation $o_t$};
@@ -49,24 +50,30 @@
 \draw[flow] (hist.east) -- (3.7,3.7) |- (agent.west);
 
 % ---------------- terminal actions ----------------
-\node[card, minimum width=3.6cm, minimum height=2.15cm] (commit) at (12.7,5.0) {};
+\node[card, minimum width=3.6cm, minimum height=2.3cm] (commit) at (12.7,4.95) {};
 \node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]commit.north west) {%
   {\large\textcolor{dfxinktwo}{\faIcon{check-circle}}}\hspace{4pt}\act{COMMIT}$(d, p)$\\[1pt]
-  {\scriptsize diagnosis $d$ with stated probability $p$}};
-\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,4.38) rectangle (14.25,4.58);
-\fill[dfxinktwo, rounded corners=1pt] (11.15,4.38) rectangle (13.79,4.58);
-\node[lbl, anchor=north west, font=\sffamily\tiny] at (11.1,4.32) {example: $d$ = appendicitis, $p$ = 0.85};
+  {\scriptsize diagnosis $d$, stated probability $p$}};
+% result bars: DEFER-Dx (first seed) on the 480 held out in set admissions (docs/RESULTS.md, section 1)
+\node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,4.62) {in set (480), seed 1: answered 77.6\%};
+\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,4.46) rectangle (14.25,4.62);
+\fill[dfxinktwo, rounded corners=1pt] (11.15,4.46) rectangle ({11.15+3.1*0.776},4.62);
+\node[lbl, anchor=north west, font=\sffamily\tiny] at (11.1,4.43) {accuracy on answered cases 95.2\%};
 
 \node[mcard, minimum width=3.6cm, minimum height=3.0cm] (defer) at (12.7,1.85) {};
 \node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]defer.north west) {%
   {\large\textcolor{dfxblue}{\faIcon{share}}}\hspace{4pt}\act{DEFER}$(q)$\\[1pt]
   {\scriptsize escalation to a clinician with a ranked differential $q$}};
-\minibars{11.25,0.68}{dfxblue!75}{7,4,2.4,1.2,3.2}
-\foreach \l [count=\i from 0] in {A,C,D,P,O}
-  \node[lbl, font=\sffamily\tiny, anchor=north] at (11.25+0.105+\i*0.27,0.66) {\l};
+% result bars: DEFER-Dx (first seed) on 187 unseen time critical OTHER admissions (docs/RESULTS.md, section 3b)
+\node[lbl, anchor=west, font=\sffamily\tiny] at (11.1,1.8) {unseen time critical (187), seed 1:};
+\node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,1.4) {deferred 87.0\%};
+\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,1.24) rectangle (13.45,1.4);
+\fill[dfxblue, rounded corners=1pt] (11.15,1.24) rectangle ({11.15+2.3*0.870},1.4);
+\node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,0.84) {wrong commitment 6.8\%};
+\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,0.68) rectangle (13.45,0.84);
+\fill[dfxred, rounded corners=1pt] (11.15,0.68) rectangle ({11.15+2.3*0.068},0.84);
 \node[bigicon=dfxblue, font=\LARGE] (doc) at (14.0,1.15) {\faIcon{user-md}};
-\node[lbl, font=\sffamily\tiny] at (14.0,0.62) {clinician};
-\draw[mflow] (12.75,1.15) -- ([xshift=-2pt]doc.west);
+\node[lbl, font=\sffamily\tiny] at (14.0,0.63) {clinician};
 
 \draw[flow] (agent.east) -- ++(0.2,0) |- (commit.west);
 \draw[mflow] (agent.east) -- ++(0.2,0) |- (defer.west);
