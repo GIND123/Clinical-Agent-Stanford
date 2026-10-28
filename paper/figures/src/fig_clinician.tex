@@ -1,0 +1,44 @@
+% Figure 5a: the clinician who receives the handoff (the team model of the Methods).
+\documentclass[tikz,border=3pt]{standalone}
+\usepackage{dfxviz}
+\begin{document}
+\begin{tikzpicture}[viz]
+\fill[plav, draw=blav, rounded corners=7pt, line width=0.8pt] (0,0) rectangle (19.3,4.1);
+\node[plabel, font=\sffamily\bfseries\small] at (0.15,4.0) {The team model: an escalated case reaches a clinician who may follow the handoff};
+
+% escalated case and its handoff
+\node[mcard, minimum width=3.9cm, minimum height=2.55cm] (ho) at (2.35,1.75) {};
+\node[anchor=north west, align=left] at ([shift={(0.08,-0.06)}]ho.north west) {%
+  {\textcolor{dfxblue}{\faIcon{share}}}\ \textbf{\small Escalated case}\\
+  {\scriptsize \act{DEFER}, or \act{COMMIT} of OTHER}};
+\minibars{0.85,0.75}{dfxblue!35}{2.4,6.5,3,1.2,1.8}
+\fill[dfxblue] (0.85+0.27,0.75) rectangle ++(0.21,0.65);
+\foreach \l [count=\i from 0] in {A,C,D,P,O}
+  \node[lbl, font=\sffamily\tiny, anchor=north] at (0.85+0.105+\i*0.27,0.73) {\l};
+\node[lbl, font=\sffamily\tiny, anchor=west, align=left] at (2.3,1.2) {handoff $q$;\\ top suggestion\\ in dark blue};
+
+% the clinician
+\node[bigicon=dfxviolet] (doc) at (6.1,1.75) {\faIcon{user-md}};
+\node[lbl, below=0pt of doc] {clinician};
+\draw[mflow] (ho.east) -- (doc.west);
+
+% two paths
+\node[card, text width=4.6cm, align=left] (adopt) at (10.0,2.85) {%
+  {\textcolor{dfxred}{\faIcon{hand-point-right}}}\ \textbf{\small Adopts the top suggestion}\\
+  {\scriptsize with probability $f$; the team's answer is the handoff's top choice}};
+\node[card, text width=4.6cm, align=left] (indep) at (10.0,0.85) {%
+  {\textcolor{dfxaqua}{\faIcon{brain}}}\ \textbf{\small Decides independently}\\
+  {\scriptsize with probability $1 - f$; correct with probability $a_c = 0.89$, the MIMIC-CDM physicians}};
+\draw[flow, draw=dfxred] (doc.east) -- ++(0.45,0) |- node[pos=0.25, left, lbl, text=dfxred] {$f$} (adopt.west);
+\draw[flow, draw=dfxaqua] (doc.east) -- ++(0.45,0) |- node[pos=0.25, left, lbl, text=dfxaqua] {$1 - f$} (indep.west);
+
+% outcomes
+\node[card, fill=white, text width=4.4cm, align=left] (out) at (16.65,1.85) {%
+  \textbf{\small Team outcomes}\\[2pt]
+  {\scriptsize\textcolor{dfxinktwo}{\faIcon{check}}\ accuracy on in set cases (a, below)\\[1pt]
+  \textcolor{dfxred}{\faIcon{heartbeat}}\ wrong in scope diagnoses caused by the AI on never seen time critical cases (b, below)}\\[3pt]
+  {\scriptsize\textcolor{dfxviolet}{\faIcon{exclamation-triangle}}\ $f = 0.47$: the effect of adversarial AI advice measured in 225 physicians by Barrit et al.}};
+\draw[flow] (adopt.east) -- ++(0.35,0) |- (out.west);
+\draw[flow] (indep.east) -- ++(0.35,0) |- (out.west);
+\end{tikzpicture}
+\end{document}

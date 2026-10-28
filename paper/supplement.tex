@@ -1,0 +1,113 @@
+% DEFER-Dx: Supplementary Material for the JAMIA manuscript. Build: bash paper/build.sh
+% Same house style as main.tex: no em dashes, no hyphens in running prose.
+\documentclass[11pt]{article}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{fontspec}
+\setmainfont{texgyretermes}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic]
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx}
+\usepackage[font=small,labelfont=bf,labelsep=period,justification=raggedright,singlelinecheck=false]{caption}
+\usepackage{ragged2e}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\hyphenpenalty=10000 \exhyphenpenalty=10000 \sloppy
+\renewcommand{\thefigure}{S\arabic{figure}}
+\renewcommand{\thetable}{S\arabic{table}}
+\newcommand{\alttext}[1]{\par\smallskip{\RaggedRight\footnotesize\textit{Alt text:} #1\par}}
+\newcolumntype{L}{>{\RaggedRight\arraybackslash}X}
+
+\begin{document}
+\RaggedRight
+\begin{center}
+{\Large\bfseries Supplementary Material\par}\vspace{4pt}
+{\large Training clinical agents to ask, test, commit and defer\par}
+\end{center}
+
+\section*{Supplementary Methods}
+
+\subsection*{Data construction}
+When a test repeats within an admission, the earliest result is used. MIMIC-CDM-OW selects MIMIC-IV 2.2 admissions with an abdominal chief complaint whose principal diagnosis falls in one of nine groups outside MIMIC-CDM and that carry no MIMIC-CDM condition code at any position. Each case is built with MIMIC-CDM's own text pipeline: the history and examination windows, the radiology section filter, masking of the case's own diagnosis, the inclusion rule, and earliest value deduplication under a total row order. Rebuilds are byte identical. A classifier separates the same pipeline controls from MIMIC-CDM cases only weakly (AUROC 0.563), so the controls remove the shortcut ``built by the open world pipeline, therefore OTHER''.
+
+\subsection*{Environment}
+The hidden state is the diagnosis $y \in \{$appendicitis, cholecystitis, diverticulitis, pancreatitis, OTHER$\}$. Tests: blood count, metabolic panels, liver tests, lipase, amylase, CRP, lactate, coagulation, triglycerides, pregnancy test, urinalysis, blood and urine cultures, CT, ultrasound, MRI, abdominal and chest radiographs and HIDA, each charged at its 2025 standard charge where published and at a placeholder otherwise. At most eight investigations and two malformed turns are allowed.
+
+\subsection*{Training}
+LoRA rank 16 and $\alpha = 32$ on every linear layer; batches of 12 cases with 8 episodes at temperature 1.0; advantages centred without standard deviation normalisation; a token level clipped surrogate ($\epsilon$ 0.2 and 0.28) with truncated importance weights against the sampler's log probabilities; AdamW; no KL term. The PI controller on the coverage multiplier used $K_p = 1.5$, $K_i = 0.2$ and $\nu_{\max} = 2$. At most 32 deferrals per step are branched; others receive no update on their DEFER turn. The consensus reward uses $\gamma = 2$ and is identical to TIAR at $\tau = 0.5$. Second seeds change only the seed (case order, sampling and LoRA initialisation).
+
+\subsection*{Thresholds at matched coverage}
+Commitments tied at the cut are kept with probability $k = (\text{target} \times N - n_{\text{above}})/n_{\text{tied}}$, decided by a fixed hash of the case and evaluation seed. One draw was pre specified; the range of the point difference over 20 draws is reported in the repository (\texttt{docs/RESULTS.md}, section 5b).
+
+\subsection*{Severity labels}
+Complicated disease was defined from the admission's ICD-9 and ICD-10 codes and the first admission laboratory values (no note text): appendicitis with gangrene, perforation, abscess or generalised peritonitis; diverticulitis with perforation, abscess, peritonitis, fistula or obstruction; pancreatitis with necrosis or pseudocyst, organ failure codes or creatinine above 1.9 mg/dL; cholecystitis with Tokyo 2018 grade II (white cell count above $18 \times 10^9$/L; perforation, fistula, pericholecystic or liver abscess, peritonitis) or grade III (organ failure codes; creatinine above 2.0 mg/dL, INR above 1.5, platelets below $100 \times 10^9$/L). 114 of 480 cases were complicated: appendicitis 48 of 191, cholecystitis 21 of 130, diverticulitis 21 of 51, pancreatitis 24 of 108.
+
+\subsection*{The clinician model}
+Episodes without a usable answer carry no suggestion. On OTHER cases only wrong in scope diagnoses caused by the AI are counted (the AI's own wrong commitments, and clinicians adopting an in scope suggestion), because the only measured physician accuracy is for the four way task.
+
+\subsection*{Estimator audit}
+From the deferral states recorded in each final policy's held out evaluation (100 in set and 60 OTHER, sampled at random), 16 forced continuations were sampled with the trainer's own branching function and training time sampling, and each continuation's return was stored by component; $\nu$ is the run's final value. With one continuation the credit had the same sign as with 16 in 83\% and 88\% of in set states; with eight, 95\% and 96\%.
+
+\subsection*{MIMIC-CDM-CR}
+Europe PMC was searched for open access case reports with full text published 2020 or later, by target diagnosis. Reports with adult patients presenting with abdominal pain were kept; reports with an ambiguous principal diagnosis, in hospital postoperative presentations or children were excluded. Each case section was paraphrased into the case format (history with past history, medications and social history; examination; laboratory values at presentation in MIMIC-IV units; imaging findings and impression). Tests outside the catalogue were left out and noted, and nothing was added. Cases, citations and licences are in \texttt{benchmarks/casereports/}; the texts are released under CC BY 4.0 with attribution to the source reports.
+
+\subsection*{Multiple comparisons}
+Holm correction within the four primary tests gives $p \le 0.02$ for each. Across all 251 paired tests in the report (one family; two sided Wald $p$ from the bootstrap standard error), the pooled accuracy difference has Holm $p = 0.060$, the unflagged error difference 0.088 and the time critical comparisons $\ge 0.92$; these therefore rest on their replication across two seeds.
+
+\section*{Supplementary Tables}
+
+\begin{table}[H]
+\caption{Reward and training constants.}
+\small
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Constant & Value \\
+\midrule
+Commitment reward & $\alpha = \lambda = 1$, $\kappa = 0.5$, $C$ a $5 \times 5$ time to harm matrix, $c$ such that ordering every test costs one correct diagnosis \\
+Escalation value & $K = 3$ continuations; $\tau$ annealed from 0.95 to 0.85 over 100 steps (1.2 on OTHER cases); $\eta = 0.3$; $\mu = 0.1$ \\
+Coverage control & in set deferral cap 30\%; PI controller $K_p = 1.5$, $K_i = 0.2$, $\nu_{\max} = 2$ \\
+Optimisation & 150 steps; 12 cases $\times$ 8 episodes; clipped surrogate $\epsilon$ 0.2 and 0.28; no KL term \\
+Model & Qwen3-8B, thinking mode; LoRA rank 16, $\alpha = 32$, every linear layer; one 48 GB GPU \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{table}[H]
+\caption{Escalation equity by subgroup. Escalation, accuracy on answered cases and unflagged errors per 100 cases by sex, age group, race, insurance and language, crude and label adjusted, with 95\% intervals, for both DEFER-Dx seeds, the consensus reward, the control and prompted zero shot deferral, are in the repository (\texttt{docs/fairness/}; cells with fewer than 10 cases suppressed). Patients aged 80 or older were escalated more often (crude 28.8\% and 36.9\% for the two seeds), consistent with atypical presentations in older patients; no other systematic difference was found.}
+\small
+\begin{tabularx}{\linewidth}{@{}lL@{}}
+\toprule
+Subgroups & sex; age group; race; insurance; language \\
+Systems & DEFER-Dx (two seeds); group consensus reward; GRPO control; zero shot with DEFER in the prompt \\
+Files & \texttt{docs/fairness/*.groups.json} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section*{Supplementary Figures}
+
+\newcommand{\sfig}[3]{\begin{figure}[H]\centering\includegraphics[width=\linewidth]{figures/#1.pdf}\caption{#2}\alttext{#3}\end{figure}}
+
+\sfig{fig_data}{Data and evaluation design. Sources, patient disjoint cohorts, and what is measured. The five time critical OTHER groups are held out of training entirely.}{Three shaded panels. Sources on the left: MIMIC-IV-Ext-CDM, MIMIC-CDM-OW and MIMIC-CDM-CR. Cohorts in the middle: training 2,404 and development 212, then held out sets of 480, 206, 187, 258 and 32 cases. Measured outcomes on the right: closed world, clinical safety, open world, and team and severity.}
+
+\sfig{fig_risk_coverage}{Risk and coverage on CDM validation and test (480 cases, three seeds). (a) Accuracy on answered in set cases as the stated probability threshold is lowered; each curve ends at the system's own coverage. Hollow markers: forced choice systems thresholded at the reference coverage. (b) Area under the risk coverage curve.}{Line chart of accuracy against coverage for each system, and a bar chart of the area under the risk coverage curve.}
+
+\sfig{fig_paired_differences}{Paired differences against each comparator on the same cases. Positive values favour DEFER-Dx; filled points have an interval that excludes 0.}{Forest plots of paired differences for several metrics, one row per comparator.}
+
+\sfig{fig_clinical_safety}{Clinical safety on CDM validation and test: unflagged errors, confident errors (wrong commitments stated with probability above 0.8), severity weighted error, and tests per case.}{Four bar chart panels comparing systems on unflagged errors, confident errors, severity weighted error and tests ordered.}
+
+\sfig{fig_severity}{Escalation by severity. (a) Share of complicated and uncomplicated in set cases escalated; (b) unflagged errors per 100 cases.}{Paired dot charts per system showing escalation and unflagged errors for complicated against uncomplicated cases.}
+
+\sfig{fig_cev_audit}{The escalation value estimator. (a) Share of in set deferral states whose credit has the same sign with $K$ continuations as with 16. (b) Share of in set deferrals credited as a function of the accuracy assumed for the clinician.}{Two line charts: sign agreement rising with the number of continuations, and the share of credited deferrals falling as the assumed clinician accuracy falls.}
+
+\sfig{fig_ablations}{Ablations at 100 training steps against DEFER-Dx at step 100: constant deferral reward, no handoff score, no test cost, no coverage cap, and handoff score weighted 1.0. Two evaluation seeds; 95\% intervals.}{Dot plots comparing the step 100 reference with five ablations on several metrics.}
+
+\sfig{fig_training_dynamics}{Training dynamics and the coverage controller: in set deferral against the 30\% cap, the coverage multiplier, and development accuracy and coverage, for plain dual ascent, the PI controller, training without the cap, and the consensus reward.}{Line charts over training steps; with plain dual ascent the multiplier cycles, with the PI controller deferral settles at the cap, and without the cap deferral rises to about 95 percent after step 50.}
+
+\sfig{fig_reliability}{Reliability of stated probabilities on committed CDM validation and test cases (bins with at least 10 commitments).}{Reliability diagram of observed accuracy against stated probability for each system.}
+
+\sfig{fig_per_class}{Accuracy at full coverage by condition; a deferral counts through the top of its differential.}{Grouped bar chart of accuracy per condition for each system.}
+
+\sfig{fig_unseen_groups}{Never seen time critical OTHER groups: wrong commitments and deferral by diagnosis group (groups with at least 10 cases; ruptured aneurysm and ectopic pregnancy pooled).}{Bar charts of wrong commitments and deferral for each time critical diagnosis group and system.}
+
+\end{document}

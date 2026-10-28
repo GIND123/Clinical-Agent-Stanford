@@ -1,0 +1,102 @@
+% Figure 1: DEFER-Dx at a glance. One admission per episode; the agent asks, tests, commits or defers.
+\documentclass[tikz,border=3pt]{standalone}
+\usepackage{dfxviz}
+\begin{document}
+\begin{tikzpicture}[viz]
+
+% ---------------- panels ----------------
+\fill[pgrey, draw=bgrey, rounded corners=7pt, line width=0.8pt, dash pattern=on 4pt off 2pt] (0,0) rectangle (3.5,7.2);
+\fill[pblue, draw=bblue, rounded corners=7pt, line width=0.8pt] (3.9,0) rectangle (10.3,7.2);
+\fill[ppeach, draw=bpeach, rounded corners=7pt, line width=0.8pt] (10.7,0) rectangle (14.7,7.2);
+\fill[pgreen, draw=bgreen, rounded corners=7pt, line width=0.8pt] (15.1,0) rectangle (19.3,7.2);
+\node[ptitle] at (1.75,6.8) {Input};
+\node[ptitle] at (7.1,6.8) {Interactive episode};
+\node[ptitle] at (12.7,6.8) {Terminal action};
+\node[ptitle] at (17.2,6.8) {Reward};
+
+% ---------------- input ----------------
+\node[bigicon=dfxinktwo] (hosp) at (1.75,5.85) {\faIcon{hospital}};
+\node[lbl, below=1pt of hosp] {Emergency admission,\\ acute abdominal pain};
+\node[card, text width=2.75cm, align=left] (hist) at (1.75,3.7) {%
+  {\large\textcolor{dfxblue}{\faIcon{file-medical}}}\hspace{4pt}\textbf{Visible}\\[2pt]
+  {\scriptsize history at presentation: present illness; past, social and family history}};
+\node[card, text width=2.75cm, align=left] (hid) at (1.75,1.35) {%
+  {\large\textcolor{dfxmuted}{\faIcon{eye-slash}}}\hspace{4pt}\textbf{Hidden} $y$\\[2pt]
+  {\scriptsize appendicitis, cholecystitis, diverticulitis, pancreatitis, or \textcolor{dfxviolet}{\textbf{OTHER}}: an open label space}};
+
+% ---------------- interactive episode ----------------
+\node[mcard, minimum width=5.0cm, minimum height=1.45cm] (agent) at (7.1,5.25) {};
+\node[bigicon=dfxblue] at ([xshift=0.55cm]agent.west) {\faIcon{robot}};
+\node[anchor=west, align=left] at ([xshift=1.15cm]agent.west) {%
+  \textbf{\small Agent} $\pi_\theta$\hspace{3pt}\trainable\\[1pt]
+  {\scriptsize Qwen3-8B with LoRA adapters;}\\ {\scriptsize reasons, then emits one action}};
+\node[card, minimum width=5.0cm, minimum height=1.45cm] (rec) at (7.1,1.4) {};
+\node[bigicon=dfxinktwo] at ([xshift=0.55cm]rec.west) {\faIcon{database}};
+\node[anchor=west, align=left] at ([xshift=1.15cm]rec.west) {%
+  \textbf{\small Patient record}\\[1pt]
+  {\scriptsize returns what was recorded for this}\\ {\scriptsize admission; nothing is generated}};
+% the loop
+\draw[flow] (5.75,4.52) -- (5.75,2.13);
+\node[lbl, align=right, anchor=east] at (5.6,3.33) {%
+  {\large\faIcon{stethoscope}}\\ \act{ASK} exam, free\\[5pt]
+  {\large\faIcon{vial}\,\faIcon{x-ray}}\\ \act{TEST}$(x)$: 22 priced\\ tests, at most 8};
+\draw[flow] (8.45,2.13) -- (8.45,4.52);
+\node[lbl, align=left, anchor=west] at (8.6,3.33) {%
+  {\large\faIcon{notes-medical}}\\ finding $o_t$};
+\node[icon=dfxblue, font=\LARGE] at (7.1,3.5) {\faIcon{sync-alt}};
+\node[lbl] at (7.1,2.95) {turn $t = 1, 2, \dots$};
+\draw[flow] (hist.east) -- ++(0.35,0) |- (agent.west);
+
+% ---------------- terminal actions ----------------
+\node[card, minimum width=3.6cm, minimum height=1.85cm] (commit) at (12.7,5.1) {};
+\node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]commit.north west) {%
+  {\large\textcolor{dfxinktwo}{\faIcon{check-circle}}}\hspace{4pt}\act{COMMIT}$(d, p)$\\[1pt]
+  {\scriptsize names a diagnosis $d$ with a stated probability $p$}};
+\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,4.5) rectangle (14.25,4.72);
+\fill[dfxinktwo, rounded corners=1pt] (11.15,4.5) rectangle (13.79,4.72);
+\node[lbl, anchor=north west, font=\sffamily\tiny] at (11.1,4.47) {$d$ = appendicitis, $p$ = 0.85};
+
+\node[mcard, minimum width=3.6cm, minimum height=3.0cm] (defer) at (12.7,1.85) {};
+\node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]defer.north west) {%
+  {\large\textcolor{dfxblue}{\faIcon{share}}}\hspace{4pt}\act{DEFER}$(q)$\\[1pt]
+  {\scriptsize hands the case to a clinician with a ranked, probabilistic differential $q$}};
+\minibars{11.25,0.68}{dfxblue!75}{7,4,2.4,1.2,3.2}
+\foreach \l [count=\i from 0] in {A,C,D,P,O}
+  \node[lbl, font=\sffamily\tiny, anchor=north] at (11.25+0.105+\i*0.27,0.66) {\l};
+\node[bigicon=dfxblue, font=\LARGE] (doc) at (14.0,1.15) {\faIcon{user-md}};
+\node[lbl, font=\sffamily\tiny] at (14.0,0.62) {clinician};
+\draw[mflow] (12.75,1.15) -- ([xshift=-2pt]doc.west);
+
+\draw[flow] (agent.east) -- ++(0.2,0) |- (commit.west);
+\draw[mflow] (agent.east) -- ++(0.2,0) |- (defer.west);
+
+% ---------------- rewards ----------------
+\node[card, text width=3.55cm, align=left] (rc) at (17.2,5.1) {%
+  \textbf{\small Scored in clinical units}\\[3pt]
+  {\scriptsize\textcolor{dfxaqua}{\faIcon{check}}\ accuracy of $d$\\[1pt]
+  \textcolor{dfxblue}{\faIcon{bullseye}}\ Brier score of $p$\\[1pt]
+  \textcolor{dfxred}{\faIcon{exclamation-triangle}}\ severity of a wrong $d$\\[1pt]
+  \textcolor{dfxinktwo}{\faIcon{dollar-sign}}\ price of the tests ordered}};
+\node[mcard, text width=3.55cm, align=left] (rd) at (17.2,1.85) {%
+  \textbf{\small Credited against the counterfactual}\\[3pt]
+  {\scriptsize credit $A = E - \hat V(s)$: the value of escalating minus the value of continuing from the same state (Fig.~2)}\\[3pt]
+  {\scriptsize\textcolor{dfxblue}{\faIcon{balance-scale}}\ handoff $q$ scored by a strictly proper rule}};
+\draw[flow] (commit.east) -- (rc.west);
+\draw[mflow] (defer.east) -- (rd.west);
+
+% ---------------- evaluation strip ----------------
+\fill[pyellow, draw=dfxaxis, rounded corners=7pt, line width=0.8pt] (0,-2.5) rectangle (19.3,-0.4);
+\node[ptitle, anchor=west, align=left] at (0.25,-1.45) {Held out\\ evaluation};
+\foreach \x/\ic/\col/\n/\t in {
+  3.2/clipboard-list/dfxinktwo/480/{MIMIC-IV-Ext-CDM\\ validation and test},
+  6.45/procedures/dfxviolet/206/{OTHER admissions from\\ groups seen in training},
+  9.7/heartbeat/dfxred/187/{OTHER from five time critical\\ groups never seen},
+  12.95/clone/dfxinktwo/258/{same pipeline\\ in set controls},
+  16.2/book-medical/dfxaqua/32/{MIMIC-CDM-CR: published\\ case reports, shareable}} {
+  \node[card, minimum width=3.0cm, minimum height=1.5cm] at (\x+1.5,-1.45) {};
+  \node[icon=\col] at (\x+0.45,-1.17) {\faIcon{\ic}};
+  \node[font=\sffamily\bfseries\normalsize, anchor=west] at (\x+0.8,-1.15) {\n};
+  \node[lbl, font=\sffamily\tiny] at (\x+1.5,-1.82) {\t};
+}
+\end{tikzpicture}
+\end{document}

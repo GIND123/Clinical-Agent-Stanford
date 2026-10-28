@@ -1,0 +1,81 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{dfxviz}[2026/10/28 DEFER-Dx illustrated method diagrams]
+% Shared style for the illustrated method diagrams of the JAMIA manuscript (paper/figures/src/fig_*.tex).
+% Layout follows academic methodology illustrations: shaded phase panels with bold titles, icons for
+% people, records and tests, small embedded charts for probabilities, solid arrows for the data flow and
+% dashed arrows for counterfactual or feedback paths. System colours match scripts/make_figures.py:
+% DEFER-Dx blue, group consensus orange, GRPO control aqua.
+% Build: bash paper/build.sh (tectonic).
+\RequirePackage{amsmath,amssymb}
+\RequirePackage{fontspec}
+\setsansfont{texgyreheros}[Extension=.otf, UprightFont=*-regular, BoldFont=*-bold, ItalicFont=*-italic, BoldItalicFont=*-bolditalic, Scale=0.95]
+\renewcommand{\familydefault}{\sfdefault}
+\RequirePackage{fontawesome5}
+\RequirePackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,backgrounds,shadows,
+  decorations.pathreplacing,shapes.misc,shapes.geometric}
+
+\definecolor{dfxblue}{HTML}{2A78D6}
+\definecolor{dfxorange}{HTML}{EB6834}
+\definecolor{dfxaqua}{HTML}{1BAF7A}
+\definecolor{dfxred}{HTML}{D23B3A}
+\definecolor{dfxviolet}{HTML}{6A4FC2}
+\definecolor{dfxink}{HTML}{1A1A1A}
+\definecolor{dfxinktwo}{HTML}{4A4945}
+\definecolor{dfxmuted}{HTML}{8A8880}
+\definecolor{dfxaxis}{HTML}{C3C2B7}
+% phase panels (pastel washes)
+\definecolor{pblue}{HTML}{E3ECF8}
+\definecolor{ppeach}{HTML}{FBE7D6}
+\definecolor{pgreen}{HTML}{E2F2E6}
+\definecolor{plav}{HTML}{ECE6F7}
+\definecolor{pgrey}{HTML}{F3F3F0}
+\definecolor{pyellow}{HTML}{FFF4D1}
+% panel borders
+\definecolor{bblue}{HTML}{9DB8DE}
+\definecolor{bpeach}{HTML}{EDB58A}
+\definecolor{bgreen}{HTML}{98CBA4}
+\definecolor{blav}{HTML}{B9A9DE}
+\definecolor{bgrey}{HTML}{BDBCB4}
+
+\tikzset{
+  viz/.style={
+    font=\sffamily\footnotesize, text=dfxink, line width=0.7pt, line cap=round, line join=round,
+    >={Stealth[length=5pt,width=4pt]},
+    background rectangle/.style={fill=white}, show background rectangle, inner frame sep=3pt,
+    every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}}},
+  panel/.style 2 args={draw=#2, fill=#1, rounded corners=7pt, line width=0.8pt, inner sep=7pt},
+  ptitle/.style={font=\sffamily\bfseries\small, text=dfxink, align=center},
+  plabel/.style={font=\sffamily\bfseries\footnotesize, text=dfxinktwo, anchor=north west, inner sep=2pt},
+  card/.style={draw=dfxaxis, fill=white, rounded corners=4pt, align=center, inner xsep=5pt, inner ysep=4pt,
+    drop shadow={shadow xshift=0.6pt, shadow yshift=-0.8pt, opacity=0.22, fill=black!60}},
+  mcard/.style={card, draw=dfxblue, line width=1pt},
+  ocard/.style={card, draw=dfxorange, line width=1pt},
+  chip/.style={draw=dfxaxis, fill=white, rounded corners=2.5pt, inner xsep=3.5pt, inner ysep=2pt,
+    font=\sffamily\scriptsize},
+  icon/.style={font=\Large, text=#1, inner sep=1pt},
+  icon/.default=dfxinktwo,
+  bigicon/.style={font=\huge, text=#1, inner sep=1pt},
+  bigicon/.default=dfxinktwo,
+  lbl/.style={font=\sffamily\scriptsize, text=dfxinktwo, align=center},
+  flow/.style={->, draw=dfxink, line width=1.1pt},
+  mflow/.style={->, draw=dfxblue, line width=1.3pt},
+  cflow/.style={->, draw=dfxmuted, line width=0.9pt, dash pattern=on 3pt off 2pt},
+  fback/.style={->, draw=dfxred, line width=1.2pt, dash pattern=on 4pt off 2.5pt},
+  state/.style={circle, draw=dfxinktwo, fill=white, minimum size=17pt, inner sep=0pt, font=\sffamily\scriptsize,
+    drop shadow={shadow xshift=0.5pt, shadow yshift=-0.6pt, opacity=0.2, fill=black!60}},
+  dstate/.style={state, draw=dfxblue, fill=dfxblue, text=white, line width=1pt},
+  brace/.style={decorate, decoration={brace, amplitude=5pt, raise=1pt}, draw=dfxmuted, line width=0.8pt},
+}
+
+\newcommand{\act}[1]{\textsf{\bfseries #1}}
+% a small bar chart, bottom left at (#1): \minibars{<coordinate>}{<colour>}{h1,h2,...} with heights in mm
+\newcommand{\minibars}[3]{%
+  \begin{scope}[shift={(#1)}]
+  \foreach \h [count=\i from 0] in {#3} {%
+    \fill[#2, rounded corners=0.4pt] (\i*2.7mm, 0) rectangle ++(2.1mm, \h mm);
+    \draw[dfxmuted, line width=0.5pt] (\i*2.7mm-0.3mm, 0) -- ++(2.7mm, 0);}%
+  \end{scope}}
+% a flame marking trainable parameters
+\newcommand{\trainable}{\textcolor{dfxorange}{\faIcon{fire}}}
+\endinput

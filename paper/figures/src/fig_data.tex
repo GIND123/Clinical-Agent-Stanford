@@ -1,0 +1,58 @@
+% Supplementary Figure S1: data sources, patient disjoint cohorts and what is measured.
+\documentclass[tikz,border=3pt]{standalone}
+\usepackage{dfxviz}
+\begin{document}
+\begin{tikzpicture}[viz]
+\fill[pgrey, draw=bgrey, rounded corners=7pt, line width=0.8pt] (0,0) rectangle (5.6,8.4);
+\fill[pblue, draw=bblue, rounded corners=7pt, line width=0.8pt] (6.0,0) rectangle (13.2,8.4);
+\fill[pgreen, draw=bgreen, rounded corners=7pt, line width=0.8pt] (13.6,0) rectangle (19.3,8.4);
+\node[ptitle] at (2.8,8.05) {Sources};
+\node[ptitle] at (9.6,8.05) {Patient disjoint cohorts};
+\node[ptitle] at (16.45,8.05) {Measured};
+
+% sources
+\node[card, text width=4.9cm, align=left] (cdm) at (2.8,6.8) {%
+  {\large\textcolor{dfxinktwo}{\faIcon{database}}}\ \textbf{MIMIC-IV-Ext-CDM 1.1}\\[2pt]
+  {\scriptsize 2,400 emergency admissions with abdominal pain: 957 appendicitis, 648 cholecystitis, 538 pancreatitis, 257 diverticulitis; the LA-CDM split}};
+\node[card, text width=4.9cm, align=left] (ow) at (2.8,3.95) {%
+  {\large\textcolor{dfxviolet}{\faIcon{procedures}}}\ \textbf{MIMIC-CDM-OW} {\scriptsize(this work)}\\[2pt]
+  {\scriptsize MIMIC-IV 2.2 admissions with an abdominal chief complaint and a principal diagnosis in one of nine other groups, built with MIMIC-CDM's own text pipeline: 713 OTHER cases and 648 same pipeline controls; rebuilds are byte identical}};
+\node[card, text width=4.9cm, align=left] (cr) at (2.8,1.2) {%
+  {\large\textcolor{dfxaqua}{\faIcon{book-medical}}}\ \textbf{MIMIC-CDM-CR} {\scriptsize(this work)}\\[2pt]
+  {\scriptsize open access case reports published 2020 or later, rebuilt in the case format; no MIMIC data, shareable}};
+
+% cohorts
+\node[lbl, anchor=west, font=\sffamily\bfseries\scriptsize] at (6.25,7.75) {\trainable\ used for training};
+\node[mcard, text width=6.4cm, align=left] (train) at (9.6,6.85) {%
+  \textbf{RL training}\ \ 2,404\ \ {\scriptsize 1,760 CDM, 279 OTHER, 365 controls}\\[1pt]
+  \textbf{Development}\ \ 212\ \ {\scriptsize checkpoint monitoring}};
+\node[lbl, anchor=west, font=\sffamily\bfseries\scriptsize] at (6.25,5.95) {\textcolor{dfxinktwo}{\faIcon{lock}}\ held out: every model, three evaluation seeds per case};
+\foreach \y/\n/\t/\c in {5.25/480/{CDM validation and test (51 diverticulitis)}/dfxinktwo,
+                         4.35/206/{OTHER from four groups seen in training}/dfxviolet,
+                         3.45/187/{OTHER from five time critical groups held out of training entirely}/dfxred,
+                         2.55/258/{same pipeline in set controls (source shortcut check)}/dfxinktwo,
+                         1.4/32/{MIMIC-CDM-CR: 19 out of scope, 13 in scope (9 complicated)}/dfxaqua} {
+  \node[card, minimum width=6.6cm, minimum height=0.72cm] at (9.6,\y) {};
+  \node[font=\sffamily\bfseries\small, text=\c, anchor=east] at (7.45,\y) {\n};
+  \node[lbl, anchor=west, align=left, text width=5.0cm] at (7.6,\y) {\t};
+}
+\draw[flow] (cdm.east) -- ++(0.2,0) |- (train.west);
+\draw[flow] (cdm.east) -- ++(0.2,0) |- (6.3,5.25);
+\draw[flow, draw=dfxviolet] (ow.east) -- ++(0.2,0) |- (6.3,4.35);
+\draw[flow, draw=dfxviolet] (ow.east) -- ++(0.2,0) |- ([yshift=-6pt]train.west);
+\draw[flow, draw=dfxviolet] (ow.east) -- ++(0.2,0) |- (6.3,3.45);
+\draw[flow, draw=dfxviolet] (ow.east) -- ++(0.2,0) |- (6.3,2.55);
+\draw[flow, draw=dfxaqua] (cr.east) -- (6.3,1.4);
+
+% measured
+\foreach \y/\ic/\c/\h/\t in {
+  6.75/bullseye/dfxblue/{Closed world}/{accuracy on answered cases, coverage, calibration (ECE, Brier), risk and coverage},
+  5.15/exclamation-triangle/dfxred/{Clinical safety}/{unflagged errors, confident errors, severity weighted error, tests and cost per case},
+  3.55/door-open/dfxviolet/{Open world}/{wrong commitment, deferral and naming OTHER on OTHER admissions},
+  1.95/user-md/dfxaqua/{Team and severity}/{the clinician model; escalation of complicated disease by guideline grade}} {
+  \node[card, text width=4.9cm, align=left] at (16.45,\y) {%
+    {\large\textcolor{\c}{\faIcon{\ic}}}\ \textbf{\h}\\[1pt] {\scriptsize\t}};
+}
+\node[lbl, align=center, font=\sffamily\tiny] at (16.45,0.55) {95\% case level bootstrap intervals (2,000 resamples);\\ paired comparisons on the same cases; Holm correction};
+\end{tikzpicture}
+\end{document}
