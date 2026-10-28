@@ -50,22 +50,22 @@
 \draw[flow] (hist.east) -- (3.7,3.7) |- (agent.west);
 
 % ---------------- terminal actions ----------------
-\node[card, minimum width=3.6cm, minimum height=2.3cm] (commit) at (12.7,4.95) {};
-\node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]commit.north west) {%
+\node[card, minimum width=3.6cm, minimum height=2.45cm] (commit) at (12.7,4.88) {};
+\node[anchor=north west, align=left, text width=3.25cm] at ([shift={(0.08,-0.08)}]commit.north west) {%
   {\large\textcolor{dfxinktwo}{\faIcon{check-circle}}}\hspace{4pt}\act{COMMIT}$(d, p)$\\[1pt]
-  {\scriptsize diagnosis $d$, stated probability $p$}};
+  {\scriptsize diagnosis $d$ with a stated\\ probability $p$}};
 % result bars: DEFER-Dx (first seed) on the 480 held out in set admissions (docs/RESULTS.md, section 1)
-\node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,4.62) {in set (480), seed 1: answered 77.6\%};
-\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,4.46) rectangle (14.25,4.62);
-\fill[dfxinktwo, rounded corners=1pt] (11.15,4.46) rectangle ({11.15+3.1*0.776},4.62);
-\node[lbl, anchor=north west, font=\sffamily\tiny] at (11.1,4.43) {accuracy on answered cases 95.2\%};
+\node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,4.42) {in set (480): answered 77.6\%};
+\fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,4.26) rectangle (14.25,4.42);
+\fill[dfxinktwo, rounded corners=1pt] (11.15,4.26) rectangle ({11.15+3.1*0.776},4.42);
+\node[lbl, anchor=north west, font=\sffamily\tiny] at (11.1,4.23) {accuracy on answered cases 95.2\%};
 
 \node[mcard, minimum width=3.6cm, minimum height=3.0cm] (defer) at (12.7,1.85) {};
-\node[anchor=north west, align=left, text width=3.4cm] at ([shift={(0.08,-0.08)}]defer.north west) {%
+\node[anchor=north west, align=left, text width=3.25cm] at ([shift={(0.08,-0.08)}]defer.north west) {%
   {\large\textcolor{dfxblue}{\faIcon{share}}}\hspace{4pt}\act{DEFER}$(q)$\\[1pt]
   {\scriptsize escalation to a clinician with a ranked differential $q$}};
 % result bars: DEFER-Dx (first seed) on 187 unseen time critical OTHER admissions (docs/RESULTS.md, section 3b)
-\node[lbl, anchor=west, font=\sffamily\tiny] at (11.1,1.8) {unseen time critical (187), seed 1:};
+\node[lbl, anchor=west, font=\sffamily\tiny] at (11.1,1.8) {unseen time critical (187):};
 \node[lbl, anchor=south west, font=\sffamily\tiny] at (11.1,1.4) {deferred 87.0\%};
 \fill[white, draw=dfxaxis, rounded corners=1pt] (11.15,1.24) rectangle (13.45,1.4);
 \fill[dfxblue, rounded corners=1pt] (11.15,1.24) rectangle ({11.15+2.3*0.870},1.4);
@@ -79,7 +79,7 @@
 \draw[mflow] (agent.east) -- ++(0.2,0) |- (defer.west);
 
 % ---------------- learning signal ----------------
-\node[card, text width=3.55cm, align=left] (rc) at (17.2,5.0) {%
+\node[card, text width=3.55cm, align=left] (rc) at (17.2,4.88) {%
   \textbf{\small Commitment reward} $R$\\[3pt]
   {\scriptsize\textcolor{dfxaqua}{\faIcon{check}}\ accuracy, $\mathbf{1}[d = y]$\\[1pt]
   \textcolor{dfxblue}{\faIcon{bullseye}}\ calibration, Brier score of $p$\\[1pt]

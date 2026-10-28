@@ -3,7 +3,7 @@
 \usepackage{dfxviz}
 \begin{document}
 \begin{tikzpicture}[viz]
-\fill[plav, draw=blav, rounded corners=7pt, line width=0.8pt] (0,0) rectangle (19.3,4.1);
+\fill[plav, draw=blav, rounded corners=7pt, line width=0.8pt] (0,-0.25) rectangle (19.3,4.1);
 \node[plabel, font=\sffamily\bfseries\small] at (0.15,4.0) {Team model: an escalated case reaches a clinician who may adopt the handoff};
 
 % escalated case and its handoff
@@ -12,8 +12,8 @@
   {\textcolor{dfxblue}{\faIcon{share}}}\ \textbf{\small Escalated case}\\
   {\scriptsize \act{DEFER}, or \act{COMMIT} of OTHER}};
 % result bars: in set handoffs whose top suggestion is wrong (docs/team.json, handoff_top_wrong_inset)
-\node[lbl, anchor=west, font=\sffamily\tiny] at (0.55,1.62) {in set handoffs with a wrong top suggestion};
-\foreach \y/\v/\l in {1.12/0.809/{DEFER-Dx, seed 1: 80.9\%}, 0.6/0.319/{DEFER-Dx, seed 2: 31.9\%}} {
+\node[lbl, anchor=west, font=\sffamily\tiny] at (0.55,1.85) {in set handoffs with a wrong top suggestion};
+\foreach \y/\v/\l in {1.42/0.809/{DEFER-Dx, first seed: 80.9\%}, 0.92/0.319/{DEFER-Dx, second seed: 31.9\%}} {
   \node[lbl, anchor=south west, font=\sffamily\tiny] at (0.55,\y) {\l};
   \fill[white, draw=dfxaxis, rounded corners=1pt] (0.6,\y-0.17) rectangle (3.9,\y);
   \fill[dfxred!80, rounded corners=1pt] (0.6,\y-0.17) rectangle ({0.6+3.3*\v},\y);
@@ -38,11 +38,11 @@
 \node[card, fill=white, text width=4.75cm, align=left] (out) at (16.75,1.85) {%
   \textbf{\small Team outcomes at} $f = 0.47$\\[2pt]
   {\tiny\renewcommand{\arraystretch}{1.15}%
-  \begin{tabular}{@{}l@{\hspace{5pt}}c@{\hspace{5pt}}c@{}}
+  \begin{tabular}{@{}l@{\hspace{4pt}}c@{\hspace{4pt}}c@{}}
   & team accuracy, & wrong in scope, \\
-  & in set (a) & unseen OTHER (b) \\[1pt]
-  \textcolor{dfxblue}{DEFER-Dx, seed 1} & 86.8\% & 15.8\% \\
-  \textcolor{dfxblue}{DEFER-Dx, seed 2} & 91.4\% & 37.0\% \\
+  & in set (a) & unseen (b) \\[1pt]
+  \textcolor{dfxblue}{DEFER-Dx, first seed} & 86.8\% & 15.8\% \\
+  \textcolor{dfxblue}{DEFER-Dx, second seed} & 91.4\% & 37.0\% \\
   \textcolor{dfxaqua}{control + threshold} & 91.5\% & 11.0\% \\
   \end{tabular}}\\[3pt]
   {\tiny\textcolor{dfxviolet}{\faIcon{exclamation-triangle}}\ $f = 0.47$: effect of adversarial AI advice on 225 physicians (Barrit et al.)}};

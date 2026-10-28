@@ -22,7 +22,7 @@ python3 paper/count_words.py     # exits 1 if a limit is exceeded or a hyphen or
 python3 paper/check_figure_numbers.py   # exits 1 if any number in a diagram differs from its source
 ```
 
-Last check: abstract 248 words (limit 250), main text 3,137 words (limit 4,000), 6 figures (limit 6), 3 tables (limit 4), and no hyphens or dashes in the prose.
+Last check: abstract 248 words (limit 250), main text 3,129 words (limit 4,000), 6 figures (limit 6), 3 tables (limit 4), and no hyphens or dashes in the prose.
 
 ## JAMIA requirements and where they are met
 
@@ -53,7 +53,11 @@ Last check: abstract 248 words (limit 250), main text 3,137 words (limit 4,000),
 
 ## Before submission
 
-- Author list, affiliations, corresponding author, funding, conflicts, CRediT roles and acknowledgments.
-- Confirm the wording of the AI use statement and the Ethics sentence on the one cloud GPU training run. The consensus reward's second seed was trained on a rented Lambda Cloud instance; see `docs/CONSENSUS_SEED1.md`.
-- Complete the references cited only by arXiv number (refs 6, 7, 14 to 17) with full author lists. Complete the author list of ref 9 (Savage et al.).
-- Optionally evaluate the consensus reward's second seed. Its adapter exists but has not been evaluated; the Limitations section says so.
+- **Author details:** author list and order (not decided), affiliations, corresponding author, funding, conflicts, CRediT roles and acknowledgments.
+- **AI use statement:** the narrow wording (software development, analysis support, figure preparation and language editing) is accurate only after the authors rewrite the drafted manuscript text themselves. The current text was drafted with Claude. Until it is rewritten, the accurate disclosure is that AI drafted text and figures. Remove the bracketed note in `main.tex` once the rewrite is done.
+- **Consensus reward's second seed:** not reported (team decision, Oct 28). It was trained on a rented cloud GPU (`docs/CONSENSUS_SEED1.md`) and is not evaluated. If it is ever reported, the Ethics section must say where it was trained.
+- **LA-CDM (ref 18):** cited as the arXiv preprint. `docs/PAPER.md` gives ICLR 2026, which could not be confirmed; restore it if the proceedings reference exists.
+- **Open, smaller:**
+  - the equity table (Supplementary Table S2) points to `docs/fairness/` rather than giving numbers;
+  - the data plots copied from `docs/figures/` still have hyphenated labels;
+  - check the keywords against MeSH ("Reinforcement Learning" may need to be "Machine Learning").

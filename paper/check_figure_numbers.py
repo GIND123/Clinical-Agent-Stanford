@@ -63,11 +63,11 @@ rows = [
      f"{100 * audit['cev_s1']['in_set']['noise']['K3']['sign_agreement_with_K16']:.0f}\\%", "cev_audit.json, K3 sign agreement"),
     ("fig_cev", "60\\% and 37\\%", f"{100 * audit['cev_s0']['in_set']['outcomes']['credited_share']:.0f}\\% and "
      f"{100 * audit['cev_s1']['in_set']['outcomes']['credited_share']:.0f}\\%", "cev_audit.json, credited share"),
-    ("fig_clinician", "seed 1: 80.9", f"seed 1: {pct(team['cev']['handoff_top_wrong_inset'])}", "team.json"),
-    ("fig_clinician", "seed 2: 31.9", f"seed 2: {pct(team['cev_seed1']['handoff_top_wrong_inset'])}", "team.json"),
-    ("fig_clinician", "seed 1} & 86.8\\% & 15.8", f"seed 1}} & {pct(team['cev']['team_acc_inset_f0.47']['value'])}\\% & "
+    ("fig_clinician", "first seed: 80.9", f"first seed: {pct(team['cev']['handoff_top_wrong_inset'])}", "team.json"),
+    ("fig_clinician", "second seed: 31.9", f"second seed: {pct(team['cev_seed1']['handoff_top_wrong_inset'])}", "team.json"),
+    ("fig_clinician", "first seed} & 86.8\\% & 15.8", f"first seed}} & {pct(team['cev']['team_acc_inset_f0.47']['value'])}\\% & "
      f"{pct(team['cev']['wrong_inset_unseen_f0.47']['value'])}", "team.json, f = 0.47"),
-    ("fig_clinician", "seed 2} & 91.4\\% & 37.0", f"seed 2}} & {pct(team['cev_seed1']['team_acc_inset_f0.47']['value'])}\\% & "
+    ("fig_clinician", "second seed} & 91.4\\% & 37.0", f"second seed}} & {pct(team['cev_seed1']['team_acc_inset_f0.47']['value'])}\\% & "
      f"{pct(team['cev_seed1']['wrong_inset_unseen_f0.47']['value'])}", "team.json, f = 0.47"),
     ("fig_clinician", "threshold} & 91.5\\% & 11.0", f"threshold}} & {pct(team['grpo_nodefer+thr@cev']['team_acc_inset_f0.47']['value'])}\\% & "
      f"{pct(team['grpo_nodefer+thr@cev']['wrong_inset_unseen_f0.47']['value'])}", "team.json, f = 0.47"),

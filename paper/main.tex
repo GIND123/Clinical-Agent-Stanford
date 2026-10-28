@@ -35,7 +35,7 @@
 \begin{center}
 {\LARGE\bfseries Training clinical agents to ask, test, commit and defer:\\[4pt] a counterfactual reward for learned escalation to clinicians\par}
 \vspace{1.2em}
-{\large [Author names, degrees]\par}
+{\large [Author names, degrees: order to be decided]\par}
 \vspace{0.6em}
 {[Department, institution, city, country for every author]\par}
 \end{center}
@@ -43,7 +43,7 @@
 \noindent\textbf{Corresponding author:} [Full name, postal address, email, telephone]\\[6pt]
 \textbf{Article type:} Research and Applications\\[6pt]
 \textbf{Keywords:} Clinical Decision Support Systems; Reinforcement Learning; Large Language Models; Diagnosis; Referral and Consultation\\[6pt]
-\textbf{Word count:} 3,137 (main text, excluding title page, abstract, references, figures and tables; \texttt{python3 paper/count\_words.py})\\[6pt]
+\textbf{Word count:} 3,129 (main text, excluding title page, abstract, references, figures and tables; \texttt{python3 paper/count\_words.py})\\[6pt]
 \textbf{Code and benchmark:} \url{https://github.com/GIND123/Clinical-Agent-Stanford}
 \end{titlepage}
 
@@ -238,7 +238,7 @@ Complicated disease is where a surgeon's decision matters most. A threshold sent
 
 \textbf{Implications.} Learned deferral should be compared with a threshold on an identically trained model at exactly matched coverage, with more than one training run of each, since coarse confidences and seed to seed variation make unmatched or single run comparisons easy to misread. The volume of escalation should be set as a budget by the clinical service rather than left to the reward. Agents that defer should be evaluated in the open world, on external cases, and with a model of the clinician who receives the case, and the handoff should be trained against that clinician and assessed by clinicians.
 
-\textbf{Limitations.} The data come from one centre and one organ system. OTHER labels are principal ICD codes; severity labels, the severity matrix and some test prices are proxies. The environment reveals only what was recorded, so test availability is informative, and it is static: the patient does not evolve while tests are pending. The clinician model is a sensitivity analysis calibrated to an adversarial study, not a measurement with these handoffs; a blinded rating of the handoffs and a user study are needed. Two training seeds per arm show seed to seed variation but cannot estimate it, and the consensus reward was evaluated with one seed (a second run was trained; its evaluation is pending). MIMIC-CDM-CR has 32 cases, too few for precise rates; it is an external check of behaviour, not a validation. No model here should be used for patient care.
+\textbf{Limitations.} The data come from one centre and one organ system. OTHER labels are principal ICD codes; severity labels, the severity matrix and some test prices are proxies. The environment reveals only what was recorded, so test availability is informative, and it is static: the patient does not evolve while tests are pending. The clinician model is a sensitivity analysis calibrated to an adversarial study, not a measurement with these handoffs; a blinded rating of the handoffs and a user study are needed. Two training seeds per arm show seed to seed variation but cannot estimate it, and the consensus reward was evaluated with one training seed. MIMIC-CDM-CR has 32 cases, too few for precise rates; it is an external check of behaviour, not a validation. No model here should be used for patient care.
 
 \section*{Conclusion}
 A counterfactual escalation value, used within a fixed escalation budget, trains a diagnostic agent whose deferral is stable, well targeted and more reliable than thresholding an identically trained agent. Whether that escalation is safe depends on the handoff, which should be trained and evaluated as carefully as the decision to escalate.
@@ -254,10 +254,10 @@ A counterfactual escalation value, used within a fixed escalation budget, trains
 [To be completed by the authors.]
 
 \section*{Ethics}
-MIMIC-IV is deidentified and was used under the PhysioNet credentialed data use agreement. No MIMIC text was sent to a hosted model API: every model ran on local weights. Training and evaluation ran on the authors' own GPU, except one comparator training run (the consensus reward's second seed), which ran on a rented cloud GPU instance controlled by the authors; its data files were deleted with the instance. Published case reports were used under their open access licences, and MIMIC-CDM-CR contains no patient data beyond what the reports published.
+MIMIC-IV is deidentified and was used under the PhysioNet credentialed data use agreement. No MIMIC text was sent to a hosted model API: every model ran on local weights. Every model reported here was trained and evaluated on the authors' own GPU. Published case reports were used under their open access licences, and MIMIC-CDM-CR contains no patient data beyond what the reports published.
 
 \section*{Use of generative AI}
-[Authors to confirm wording.] An AI assistant (Claude, Anthropic) was used to write and debug software, run analyses and draft text and figures. The authors reviewed, verified and take responsibility for all content. This is also disclosed in the cover letter.
+[Accurate only once the authors have rewritten the drafted manuscript text; see paper/README.md.] An AI assistant (Claude, Anthropic) was used for software development, analysis support, figure preparation and language editing. The authors reviewed and verified all content and take responsibility for it. This is also disclosed in the cover letter.
 
 \section*{Data availability}
 Code, configurations, aggregate results, figures and MIMIC-CDM-CR are available at \url{https://github.com/GIND123/Clinical-Agent-Stanford}. MIMIC-IV, MIMIC-IV-Note and MIMIC-IV-Ext-CDM are available to credentialed users from PhysioNet; MIMIC-CDM-OW is rebuilt deterministically from them by the released code. Model weights trained on MIMIC will be released only through PhysioNet's credentialed channel.
@@ -273,20 +273,20 @@ Code, configurations, aggregate results, figures and MIMIC-CDM-CR are available 
 \bibitem{fda2026} US Food and Drug Administration. Clinical Decision Support Software: guidance for industry and Food and Drug Administration staff. Revised January 2026.
 \bibitem{barrit2026} Barrit S, Salvagno M, Corriero A, et al. Subversion of clinical judgment by conversational artificial intelligence. \textit{medRxiv}. 2026. doi:10.64898/2026.10.05.26364541
 \bibitem{goddard2012} Goddard K, Roudsari A, Wyatt JC. Automation bias: a systematic review of frequency, effect mediators, and mitigators. \textit{J Am Med Inform Assoc}. 2012;19:121--127. doi:10.1136/amiajnl-2011-000089
-\bibitem{ldtl} Shen et al. LDTL. arXiv:2604.05116. 2026.
-\bibitem{che2026} Che et al. Abstention as an action can kill both the reward gradient and the KL anchor. arXiv:2608.00301. 2026.
-\bibitem{swaminathan2024} Swaminathan A, Lopez I, Wang W, et al. Selective prediction for extracting unstructured clinical data. \textit{J Am Med Inform Assoc}. 2024;31(1):188--197.
-\bibitem{savage2025} Savage T, et al. Large language model uncertainty proxies: discrimination and calibration for medical diagnosis and treatment. \textit{J Am Med Inform Assoc}. 2025;32(1). doi:10.1093/jamia/ocae254
+\bibitem{ldtl} Shen X, Liu H, Song D, Min MR. Uncertainty-guided latent diagnostic trajectory learning for sequential clinical diagnosis. arXiv:2604.05116. 2026.
+\bibitem{che2026} Che X, Yuan Y, Zhao W, Yu C. Abstention as an action can kill both the reward gradient and the KL anchor: collapse law and repair for error-penalized reinforcement learning. arXiv:2608.00301. 2026.
+\bibitem{swaminathan2024} Swaminathan A, Lopez I, Wang W, et al. Selective prediction for extracting unstructured clinical data. \textit{J Am Med Inform Assoc}. 2024;31(1):188--197. doi:10.1093/jamia/ocad182
+\bibitem{savage2025} Savage T, Wang J, Gallo R, et al. Large language model uncertainty proxies: discrimination and calibration for medical diagnosis and treatment. \textit{J Am Med Inform Assoc}. 2025;32(1):139--149. doi:10.1093/jamia/ocae254
 \bibitem{brown2026} Brown KE, Wrenn JO, Jackson NJ, et al. Auditor models to suppress poor artificial intelligence predictions can improve human-artificial intelligence collaborative performance. \textit{J Am Med Inform Assoc}. 2026;33(3):621--631. doi:10.1093/jamia/ocaf235
 \bibitem{mozannar2020} Mozannar H, Sontag D. Consistent estimators for learning to defer to an expert. In: \textit{Proceedings of ICML}. 2020.
 \bibitem{madras2018} Madras D, Pitassi T, Zemel R. Predict responsibly: improving fairness and accuracy by learning to defer. In: \textit{Advances in NeurIPS}. 2018.
 \bibitem{dvijotham2023} Dvijotham KD, Winkens J, Barsbey M, et al. Enhancing the reliability and accuracy of AI-enabled diagnosis via complementarity-driven deferral to clinicians. \textit{Nat Med}. 2023;29:1814--1820. doi:10.1038/s41591-023-02437-x
-\bibitem{tiar} Pan et al. TIAR. arXiv:2605.25850. 2026.
-\bibitem{karl} Gao et al. KARL. arXiv:2604.22779. 2026.
-\bibitem{awarl} Zhang et al. AWA-RL. arXiv:2607.10738. 2026.
-\bibitem{trustmed} Zhan et al. TrustMed-RL. arXiv:2610.04387. 2026.
-\bibitem{lacdm} Bani-Harouni et al. LA-CDM. In: \textit{Proceedings of ICLR}. 2026. arXiv:2506.13474.
-\bibitem{qwen3} Yang A, et al. Qwen3 technical report. arXiv:2505.09388. 2025.
+\bibitem{tiar} Pan M, Zhao S, Zhang N, Shin P, et al. TIAR: trajectory-informed advantage reweighting for LLM abstention learning. arXiv:2605.25850. 2026.
+\bibitem{karl} Gao C, Huang C, Luo K, Qiao Z, et al. KARL: mitigating hallucinations in LLMs via knowledge-boundary-aware reinforcement learning. arXiv:2604.22779. 2026.
+\bibitem{awarl} Zhang F, Fan T, Zheng Y, Niu X, et al. To answer or to abstain: mitigating search-agent hallucinations via abstention-aware reinforcement learning. arXiv:2607.10738. 2026.
+\bibitem{trustmed} Zhan W, Jiao Y, Song H, Xu S, et al. TrustMed-RL: long-horizon reinforcement learning for evidence-grounded clinical diagnosis. arXiv:2610.04387. 2026.
+\bibitem{lacdm} Bani-Harouni D, Pellegrini C, Özsoy E, Navab N, et al. Language agents for hypothesis-driven clinical decision making with reinforcement learning. arXiv:2506.13474. 2025.
+\bibitem{qwen3} Yang A, Li A, Yang B, Zhang B, et al. Qwen3 technical report. arXiv:2505.09388. 2025.
 \bibitem{lora} Hu EJ, Shen Y, Wallis P, et al. LoRA: low-rank adaptation of large language models. In: \textit{Proceedings of ICLR}. 2022.
 \bibitem{grpo} Shao Z, Wang P, Zhu Q, et al. DeepSeekMath: pushing the limits of mathematical reasoning in open language models. arXiv:2402.03300. 2024.
 \bibitem{vllm} Kwon W, Li Z, Zhuang S, et al. Efficient memory management for large language model serving with PagedAttention. In: \textit{Proceedings of SOSP}. 2023.

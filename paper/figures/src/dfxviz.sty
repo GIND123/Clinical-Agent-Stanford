@@ -43,6 +43,7 @@
     font=\sffamily\footnotesize, text=dfxink, line width=0.7pt, line cap=round, line join=round,
     >={Stealth[length=5pt,width=4pt]},
     background rectangle/.style={fill=white}, show background rectangle, inner frame sep=3pt,
+    execute at begin picture={\thickmuskip=5mu\medmuskip=4mu\thinmuskip=3mu},  % no stretchable maths spacing in ragged text
     every node/.append style={execute at begin node={\hyphenpenalty=10000\exhyphenpenalty=10000}}},
   panel/.style 2 args={draw=#2, fill=#1, rounded corners=7pt, line width=0.8pt, inner sep=7pt},
   ptitle/.style={font=\sffamily\bfseries\small, text=dfxink, align=center},

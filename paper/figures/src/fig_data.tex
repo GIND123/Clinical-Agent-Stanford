@@ -22,8 +22,8 @@
   {\scriptsize open access case reports, 2020 or later, rewritten in the case format; no MIMIC data; shareable}};
 
 % cohorts
-\node[lbl, anchor=west, font=\sffamily\bfseries\scriptsize] at (6.25,7.85) {\trainable\ training};
-\node[mcard, text width=6.4cm, align=left] (train) at (9.6,6.9) {%
+\node[lbl, anchor=west, font=\sffamily\bfseries\scriptsize] at (6.25,7.75) {\trainable\ training};
+\node[mcard, text width=6.4cm, align=left] (train) at (9.6,6.8) {%
   \textbf{RL training}\ \ 2,404\\ {\scriptsize 1,760 CDM, 279 OTHER, 365 same pipeline controls}\\[2pt]
   \textbf{Development}\ \ 212\ \ {\scriptsize checkpoint monitoring}};
 \node[lbl, anchor=west, font=\sffamily\bfseries\scriptsize] at (6.25,5.82) {\textcolor{dfxinktwo}{\faIcon{lock}}\ held out: every model, three evaluation seeds per case};
@@ -38,6 +38,8 @@
 }
 \draw[flow] (cdm.east) -- (5.72,6.85) |- ([yshift=6pt]train.west);
 \draw[flow] (5.72,6.85) |- (6.3,5.15);
+% the OW line crosses the CDM line to the 480 cohort at (5.88, 5.15): a white gap makes it read as a bridge
+\draw[white, line width=3.5pt] (5.88,4.98) -- (5.88,5.32);
 \draw[flow, draw=dfxviolet] (ow.east) -- (5.88,3.95) |- ([yshift=-6pt]train.west);
 \draw[flow, draw=dfxviolet] (5.88,3.95) |- (6.3,4.25);
 \draw[flow, draw=dfxviolet] (5.88,3.95) |- (6.3,3.35);

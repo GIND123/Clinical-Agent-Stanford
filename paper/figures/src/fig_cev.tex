@@ -20,7 +20,7 @@
 \node[lbl, anchor=west, font=\sffamily\scriptsize\itshape] at (1.6,8.2) {illustrative episode};
 
 % the escalation actually taken
-\node[mcard, minimum width=4.6cm, minimum height=1.65cm] (esc) at (14.45,8.75) {};
+\node[mcard, minimum width=4.95cm, minimum height=1.65cm] (esc) at (14.25,8.75) {};
 \node[bigicon=dfxblue, font=\LARGE] at ([xshift=0.45cm]esc.west) {\faIcon{user-md}};
 \node[anchor=west, align=left] at ([xshift=0.85cm]esc.west) {%
   \textbf{\small Escalation value}\\[2pt]
@@ -46,18 +46,18 @@
 \draw[brace] (13.72,7.25) -- (13.72,4.7);
 \node[lbl, font=\sffamily\tiny, align=left, anchor=north west] at (8.45,4.55) {Estimator audit, two seeds: with $K = 3$ the sign of $A$ matches $K = 16$ in 88\% and 92\% of in set\\ deferral states, and $A > 0$ (escalation credited) in 60\% and 37\% of them.};
 
-\node[card, fill=pgrey, minimum width=2.85cm, minimum height=1.6cm] (cont) at (15.7,5.95) {};
+\node[card, fill=pgrey, minimum width=2.7cm, minimum height=1.6cm] (cont) at (15.55,5.95) {};
 \node[align=left, anchor=west] at ([xshift=0.15cm]cont.west) {%
   \textbf{\small Continuation}\\ \textbf{\small value}\\[2pt]
   $\hat V(s) = \frac{1}{K}\sum_k R_k$};
 \draw[cflow] (14.0,5.95) -- (cont.west);
 
 % the credit
-\node[mcard, fill=white, minimum width=2.15cm, minimum height=1.9cm, align=center] (cred) at (18.05,7.3) {%
+\node[mcard, fill=white, minimum width=2.15cm, minimum height=1.75cm, align=center] (cred) at (18.05,7.4) {%
   {\large\textcolor{dfxblue}{\faIcon{balance-scale}}}\\[2pt]
   $A = E - \hat V(s)$\\[2pt] {\scriptsize advantage of}\\ {\scriptsize the \act{DEFER} turn}};
 \draw[mflow] (esc.east) -| (cred.north);
-\draw[flow, draw=dfxinktwo] (cont.east) -| ([xshift=-0.35cm]cred.south);
+\draw[flow, draw=dfxinktwo] (cont.east) -| ([xshift=-0.5cm]cred.south);
 
 % two regimes
 \node[card, text width=6.75cm, align=left] (red) at (3.9,6.9) {%
@@ -85,29 +85,28 @@
   {\Large\trainable}\\[2pt]
   \textbf{\small Policy update}\\ {\scriptsize clipped surrogate, LoRA only}};
 \draw[flow] (batch) -- (roll);
-\draw[flow] (roll.east) -- ++(0.25,0) |- (adv1.west);
-\draw[mflow] (roll.east) -- ++(0.25,0) |- (adv2.west);
-\draw[flow] (adv1.east) -- ++(0.25,0) |- ([yshift=2pt]upd.west);
-\draw[mflow] (adv2.east) -- ++(0.25,0) |- ([yshift=-2pt]upd.west);
+\draw[flow] (roll.east |- adv1) -- (adv1.west);
+\draw[mflow] (roll.east |- adv2) -- (adv2.west);
+\draw[flow] (adv1.east) -- (adv1 -| upd.west);
+\draw[mflow] (adv2.east) -- (adv2 -| upd.west);
 \draw[fback] (upd.south) -- (upd.south |- 0,0.05) -| node[pos=0.25, below, lbl, text=dfxred] {updated $\pi_\theta$ for the next step} (roll.south);
 
 % PI controller with a sketch of in-set deferral against the cap
 \node[card, minimum width=4.0cm, minimum height=2.6cm] (pi) at (17.1,1.55) {};
 \node[anchor=north west, align=left] at ([shift={(0.08,-0.06)}]pi.north west) {%
   {\textcolor{dfxviolet}{\faIcon{tachometer-alt}}}\ \textbf{\small PI controller}};
-\begin{scope}[shift={(15.35,0.55)}]
-  \draw[dfxaxis, line width=0.5pt] (0,0) -- (2.2,0); \draw[dfxaxis, line width=0.5pt] (0,0) -- (0,1.15);
-  \draw[dfxred, dash pattern=on 2pt off 1.5pt, line width=0.7pt] (0,0.493) -- (2.2,0.493);
-  \node[lbl, font=\sffamily\tiny, anchor=east] at (0,0) {0}; \node[lbl, font=\sffamily\tiny, anchor=east, text=dfxred] at (0,0.493) {30}; \node[lbl, font=\sffamily\tiny, anchor=east] at (0,1.15) {70};
-  \node[lbl, font=\sffamily\tiny, anchor=north] at (0,0) {1}; \node[lbl, font=\sffamily\tiny, anchor=north] at (2.2,0) {150};
-  \begin{scope}[x=0.014667cm, y=0.016429cm]
+\begin{scope}[shift={(15.62,0.55)}]
+  \draw[dfxaxis, line width=0.5pt] (0,0) -- (1.95,0); \draw[dfxaxis, line width=0.5pt] (0,0) -- (0,1.15);
+  \draw[dfxred, dash pattern=on 2pt off 1.5pt, line width=0.7pt] (0,0.493) -- (1.95,0.493);
+  \node[lbl, font=\sffamily\tiny, anchor=east, xshift=-1.5pt] at (0,0) {0}; \node[lbl, font=\sffamily\tiny, anchor=east, xshift=-1.5pt, text=dfxred] at (0,0.493) {30}; \node[lbl, font=\sffamily\tiny, anchor=east, xshift=-1.5pt] at (0,1.15) {70};
+  \node[lbl, font=\sffamily\tiny, anchor=north] at (0,0) {1}; \node[lbl, font=\sffamily\tiny, anchor=north] at (1.95,0) {150};
+  \begin{scope}[x=0.013cm, y=0.016429cm]
     \draw[dfxblue, line width=0.8pt] plot file {data/cev_inset_defer.dat};
   \end{scope}
-  \node[lbl, font=\sffamily\tiny, anchor=north] at (1.1,0) {training step};
+  \node[lbl, font=\sffamily\tiny, anchor=north] at (0.975,0) {training step};
   \node[lbl, font=\sffamily\tiny, anchor=south west] at (0.02,1.15) {in set deferral, \%};
 \end{scope}
-\node[lbl, font=\sffamily\tiny, align=left, anchor=west] at (17.65,1.15) {dashed: the\\ 30\% cap. $\nu$,\\ the price of a\\ deferral, holds\\ in set deferral\\ at the cap};
-\draw[flow, draw=dfxviolet, dash pattern=on 3pt off 2pt] (upd.east) -- (pi.west);
-\draw[->, draw=dfxviolet, line width=1.1pt, dash pattern=on 3pt off 2pt] (18.7,2.85) -- node[pos=0.22, left, lbl, text=dfxviolet] {$\nu$ enters $E$} (18.7,6.35);
+\node[lbl, font=\sffamily\tiny, align=left, anchor=west] at (17.72,1.15) {dashed: the\\ 30\% cap. $\nu$,\\ the price of a\\ deferral, holds\\ in set deferral\\ at the cap};
+\draw[->, draw=dfxviolet, line width=1.1pt, dash pattern=on 3pt off 2pt] (18.55,2.85) -- node[pos=0.2, left, lbl, text=dfxviolet] {$\nu$ enters $E$} ([xshift=0.5cm]cred.south);
 \end{tikzpicture}
 \end{document}
